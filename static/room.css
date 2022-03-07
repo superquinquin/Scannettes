@@ -1,0 +1,47 @@
+#modal {
+  display: none;
+  z-index: 1;
+  position: fixed;
+  background-color: dimgray;
+  width: 100vh;
+  height: 100vh;
+  padding: 20px 10px 20px 10px;
+  border-radius: 10px;
+}
+
+
+#modal_block{
+  display: inline-block;
+  background-color: darkgray;
+  border-radius: 10px;
+}
+
+#scanner_title {
+  font-size: 16;
+  color: white;
+  height: 30px;
+  width: 100vh;
+}
+
+#videobox {
+  border: 5px solid #000;
+  border-radius: 10px;
+}
+
+#videoElement {
+  margin: 30px;
+  width: 80vh;
+  height: 50vh;
+  display: none;
+}
+
+#canvas {
+  width: 100vh;
+  height: 50vh;
+  display: flex;
+}
+
+
+#cropped-canvas{
+  display: none;
+}

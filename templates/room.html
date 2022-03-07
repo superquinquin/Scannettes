@@ -1,0 +1,43 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scanner</title>
+  <link rel="stylesheet" media="all" href="/static/room.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script async src="https://docs.opencv.org/master/opencv.js" type="text/javascript"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js"></script>
+  <script src="https://cdn.rawgit.com/serratus/quaggaJS/0420d5e0/dist/quagga.min.js"></script>
+</head>
+
+<body>
+  <h1 id="room-name"></h1>
+  <h3 id="purchase-name"></h3>
+  <button id="display_modal">Open Scanner</button>
+  <div id="modal">
+    <div id="modal_block">
+      <p id="scanner_title">Scanner</p>
+      <div id="videobox">
+        <canvas id="canvas"></canvas>
+        <video autoplay="true" id="videoElement"></video>
+        <canvas id="cropped-canvas"></canvas>
+      </div>        
+    </div>
+  </div>
+  <div id="Queue-table">
+    <h5>Scanné</h5>
+  </div>
+  <div id="entries-table">
+    <h5>En attente</h5>
+  </div>
+  <div id="done-table">
+    <h5>Finis</h5>
+  </div>
+
+  <script type="text/javascript" src="/static/config.js"></script>
+  <script type="text/javascript" src="/static/room.js"></script> 
+  <script type="text/javascript" src="/static/camera.js"></script> 
+
+</body>
+</html>

@@ -1,0 +1,44 @@
+import json
+
+
+config = {
+          #server
+          'allowed_origins': '',
+          'static_url': '',
+          'address': '',
+          # ODOO
+          'url': '',
+          'login': '',
+          'password': '',
+          'db': '',
+          'verbose': False,
+          
+          'table_product': '',
+          'table_purchase': '',
+          'table_purchase_lines': '',
+
+          'timeDelta': [0,0,0,0],
+
+          # admin
+          'whitelist': '', #path
+
+          # CAMERA
+          'camera_video': True,
+          'camera_audio': False,
+          'camera_ideal_width': 1920,
+          'camera_ideal_height': 1080,
+          'camera_ideal_mode': 'environment',
+
+          'camera_frame_width': 300,
+          'camera_frame_height': 200,
+          'camera_FPS': 120,
+          'camera_package_frequency': 1, # 0 == all frames are transfered to the server.
+          # scale on FPS AS: cameraFPS / cameraPackageFrequency == number of package sent per second.
+          # setting 120FPS / 1 CPF + 1, result on a constant package transfert every 0.15 sec ( 6~7 frame per second received by the server)
+
+}
+
+with open('./static/config.js', 'w') as js:
+  js.write('var config = ')
+  json.dump(config, js)
+  js.write(';')
