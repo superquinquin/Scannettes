@@ -1,5 +1,5 @@
 
-
+var browser = get_browser_id()
 var socket = io.connect(config.address);
 
 socket.on('connect', function() {
@@ -15,7 +15,7 @@ const connectionBtn = document.getElementById('connection-btn')
 connectionBtn.onclick = function () { 
   let id = IDInput.value;
   let password = passwordInput.value;
-  socket.emit('ask_permission', {'id': id, 'password': password})
+  socket.emit('ask_permission', {'id': id, 'password': password, 'browser':browser})
 }
 
 socket.on('permission', (context) => {

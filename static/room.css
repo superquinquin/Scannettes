@@ -1,3 +1,76 @@
+html {
+  font-family: 'Raleway', sans-serif;
+}
+
+/* option modal */
+#option-colapse {
+  float: right;
+  position: relative;
+  padding: 10px 24px;
+  width: 200px;
+  top: -100px;
+  margin-right: 50px;
+}
+
+ #option-content {
+  float: right;
+  position: relative;
+  top: -60px;
+  right: -230px;
+  width: 200px;
+  padding: 10px 24px;
+
+  display: none;
+  overflow: hidden;
+ }
+
+/* closing div and button */
+#closing-option {
+  float: right;
+  display: block;
+  margin-top: 50px;
+  margin-right: 50px;
+}
+
+.closing-btn {
+  display: block;
+  padding: 10px 24px;
+  width: 200px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+
+/* add item modal */
+#added-item-content {
+  display: none;
+}
+
+.add-input {
+  display: block;
+}
+
+
+/* del btn */
+.btn {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* item modification */
+#modQueue-item-content {
+  display: none;
+}
+
+#modDone-item-content {
+  display: none;
+}
+
+.index {
+  visibility: hidden;
+}
+
+/* camera modal */
 #modal {
   display: none;
   z-index: 1;
@@ -44,4 +117,217 @@
 
 #cropped-canvas{
   display: none;
+}
+
+
+
+
+/* HEADER */
+
+#room-header {
+  width: 101%;
+  position: relative;
+  left: -10px;
+  top: -10px;
+  list-style-type: none;
+  overflow: auto;
+  background-color: #fef84c;
+  border-bottom: solid 2px #3C312E;
+}
+
+#room-name {
+  margin-left: 10px;
+}
+
+#purchase-name {
+  margin-left: 10px;
+}
+
+#option-colapse {
+  display: flex;
+  vertical-align: middle;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: black;
+  font-size: 20px;
+  background-color: #fef84c;
+  border-bottom-left-radius: 10px;
+}
+
+
+#option-colapse :hover {
+  color: white;
+  background-color: #3C312E;
+}
+
+/* TABLE */
+
+table {
+  border-collapse: collapse;
+  width: 90%;
+}
+
+th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 10px;
+  padding-right: 10px;
+  text-align: center;
+  background-color: #fef84c;
+  color: black;
+  border: 1px solid #fef84c;
+}
+
+td:nth-child(1) {
+  text-align: center;
+  width: 20px;
+}
+
+td:nth-child(2) {
+  text-align: center;
+  padding-left: 5px;
+  padding-right: 20px;
+}
+
+td:nth-child(4) {
+  padding-right: 20px;
+}
+
+td:nth-child(3), td:nth-child(5), td:nth-child(6), td:nth-child(7) {
+  text-align: center;
+  vertical-align: middle;
+  padding-right: 20px;
+}
+
+
+tr {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  width: 100%;
+  border: 1px solid #fef84c;
+  padding-left: 10px;
+}
+
+tr:nth-child(odd){
+  background-color: #f2f2f2;
+
+}
+tr:hover {
+  background-color: #ddd;
+}
+
+.val_received-btn {
+  font-size: 16px;
+  background-color: rgb(114, 197, 114);
+  border: solid 1px;
+  border-radius: 5px;
+  padding: 0px 10px 0px 10px;
+}
+
+.val_received-btn:hover {
+  cursor: pointer;
+  color: black;
+  background-color: #fef84c;
+}
+
+.mod_received-btn {
+  font-size: 16px;
+  background-color: rgb(224, 181, 101);
+  border: solid 1px;
+  border-radius: 5px;
+  padding: 0px 10px 0px 10px;
+}
+
+.mod_received-btn:hover {
+  cursor: pointer;
+  color: black;
+  background-color: #fef84c;
+}
+
+.mod-input {
+  border: solid #fef84c;
+  border-radius: 5px;
+  background-color: #fffee8;
+  width: 50px;
+}
+/* ADMIN BUTTON */
+
+.btn {
+  margin: 10px 10px 50px 5px;
+  padding: 5px 10px 5px 10px;
+  border: 1px solid black;
+  border-radius: 5px;
+  background-color: #fef84c;
+}
+
+.btn:hover {
+  cursor: pointer;
+  background-color: #3C312E;
+  color: white;
+}
+
+/* CLOSING ROOM */
+
+.closing-btn {
+  border: solid 1px black;
+  border-radius: 5px;
+  background-color: #fef84c;
+  width: 200px;
+}
+
+.closing-btn:hover {
+  cursor: pointer;
+  background-color: #3C312E;
+  color: white;
+}
+
+/* PRODUCT MODAL */
+
+.product-modal {
+  position: relative;
+  left: -10px;
+  width: 101%;
+  background-color: #fef84c;
+  border-top: solid 2px black;
+  border-bottom: solid 2px black;
+}
+
+#added-item-content {
+  margin-top: 10px;
+}
+
+#modQueue-item-content, #modDone-item-content {
+  margin-top: -55px;
+}
+
+.container {
+  padding: 20px 0px 20px 30px;
+}
+
+.add-input {
+  display: block;
+  margin-left: 5px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  width: 150px;
+  height: 20px;
+  border: solid 2px;
+  border-radius: 5px;
+  border-color: black;
+}
+
+.add-input-btn {
+  margin-top: 40px;
+}
+
+.add-input-btn button {
+  border-radius: 5px;
+  padding: 5px 10px 5px 10px;
+  background-color: white;
+}
+
+#accept-modDone-btn, #accept-modQueue-btn, #accept-add-btn {
+  margin-left: 20px;
 }

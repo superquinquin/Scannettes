@@ -105,6 +105,26 @@ modal_btn.onclick = async function () {
 }
 
 
+function draw_corner(X,Y, len, place) {
+  ctx.beginPath();
+
+  ctx.moveTo(X, Y);
+  if (place === 'bottomleft' || place === 'bottomright') {
+    ctx.lineTo(X, Y - len);
+  } else {
+    ctx.lineTo(X, Y + len);
+  }
+
+  ctx.moveTo(X, Y);
+  if (place === 'topright' || place === 'bottomright') {
+    ctx.lineTo(X - len, Y);
+  } else {
+    ctx.lineTo(X + len, Y);
+  }
+  ctx.stroke();
+}
+
+
 function stopStreamedVideo(videoElem) {
   var stream = videoElem.srcObject;
   var tracks = stream.getTracks();

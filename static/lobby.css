@@ -1,87 +1,185 @@
-
-
-#head {
-
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background-color: #333;
+html {
+  font-family: 'Raleway', sans-serif;
 }
 
-#head li {
-  float: left;
-  display: inline;
+img {
+  max-width: 100px;
+  max-height: 100px;
+  background-color: #abb8c3;
+  margin-top: 5px;
 }
 
-#title {
-  display: block;
-  color: white;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  background-color: #04AA6D;
-}
-
-#login {
-  float: right;
-  display: block;
-  color: white;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  background-color: #111;
-}
-
-
-
+/* ROOM CREATION MODAL */
 
 #creation-modal {
-  background-color: aqua;
-  width: 350px;
-  height: 300px;
-  border: solid 2px;
-  border-radius: 10px;
-  border-color: black;
-  z-index: 1;
+  background-color: #fef84c;
+  margin-top: 10px;
+  width: 101%;
+  position: relative;
+  left: -10px;
+  border-top: solid 2px;
+  border-bottom: solid 2px;
   display: none;
 }
 
 #container {
-  position: relative;
+  padding: 20px 0px 20px 30px;
 }
 
 #container h5 {
-  padding-left: 25px;
-  padding-right: 25px;
-  font-size: 20px;
+  font-size: 16px;
+  margin-bottom: 5px;
 }
 
 
 .inputs {
-  width: 200px;
-  height:30px;
-  padding-left: 25px;
-  padding-right: 25px;
+  display: block;
+  margin-left: 5px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  width: 150px;
+  height: 20px;
   border: solid 2px;
-  border-radius: 10px;
+  border-radius: 5px;
   border-color: black;
 }
 
+#purchases {
+  height: 30px;
+}
 
-
+#rayons {
+  height: 30px;
+}
 
 #modal-button {
-  text-align: right;
-  padding-left: 25px;
-  padding-right: 25px;
-  padding-top: 10px;
+  margin-top: 40px;
 }
 
 #modal-button button {
-  width: 100px;
-  height: 30px;
-  border: solid 2px;
-  border-radius: 10px;
-  border-color: black;
+  border-radius: 5px;
+  padding: 5px 10px 5px 10px;
+  background-color: white;
+}
+
+#createRoom {
+  margin-left: 20px;
+}
+
+
+/* HEADER */
+
+#head {
+  width: 101%;
+  position: relative;
+  left: -10px;
+  top: -10px;
+  list-style-type: none;
+  overflow: auto;
+  background-color: #fef84c;
+  border-bottom: solid 2px #3C312E;
+}
+
+
+
+
+.head-content {
+  display: inline;
+  vertical-align: middle;
+}
+
+#login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  float: right;
+}
+
+#login {
+  display: flex;
+  vertical-align: middle;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: black;
+  font-size: 20px;
+  background-color: #fef84c;
+  border-bottom-left-radius: 10px;
+}
+
+#login-container :hover {
+  color: white;
+  background-color: #3C312E;
+}
+
+/* management buttons */
+.mngmnt-btn {
+  margin: 10px 10px 50px 5px;
+  padding: 5px 10px 5px 10px;
+  border: 1px solid black;
+  border-radius: 5px;
+  background-color: #fef84c;
+}
+
+.mngmnt-btn:hover {
+  cursor: pointer;
+  color: white;
+  background-color: #3C312E;
+}
+
+#create-btn {
+  margin-left: 10px;
+}
+
+
+/* TABLE */
+
+table {
+  border-collapse: collapse;
+  width: 100vh;
+}
+
+th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 10px;
+  text-align: left;
+  background-color: #fef84c;
+  color: black;
+  border: 1px solid #fef84c;
+}
+
+tr {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  width: 100%;
+  border: 1px solid #fef84c;
+  padding-left: 10px;
+}
+
+td:nth-child(1) {
+  text-align: center;
+}
+
+tr:nth-child(even){background-color: #f2f2f2;}
+tr:hover {background-color: #ddd;}
+
+
+.password {
+  border: solid #fef84c;
+  border-radius: 5px;
+  background-color: #fffee8;
+}
+
+.join-btn {
+  background-color: #fffee8;
+  border-radius: 5px;
+  padding: 5px 10px 5px 10px;
+  border: solid #fef84c;
+}
+
+.join-btn:hover {
+  cursor: pointer;
+  background-color: #fef84c;
 }

@@ -4,6 +4,7 @@ import ssl
 import time
 import base64
 import erppeek
+import binascii
 import traceback
 import numpy as np
 import pandas as pd
@@ -11,7 +12,7 @@ from datetime import datetime
 from pyzbar.pyzbar import decode
 from dateutil.relativedelta import *
 from flask_socketio import emit, join_room
-ssl._create_default_https_context = ssl._create_unverified_context # Temporary just because i somehow have ssl problem everytime
+ssl._create_default_https_context = ssl._create_unverified_context
 pd.options.mode.chained_assignment = None
 
 from config import config
@@ -62,6 +63,8 @@ class Odoo:
   def search_product_from_ean(self, code_ean):
     return self.client.model(config['table_product']).browse([('barcode', '=', code_ean)])
 
+
+
   def get_purchase(self, timeDelta):
     global data
 
@@ -108,6 +111,7 @@ class Odoo:
           data['odoo']['purchases']['received'][id] = Purchase(id, name, create_date, added_date, status, table)
       
     data['odoo']['history']['update_purchase'].append(datetime.now().date().strftime("%Y-%m-%d %H:%M:%S"))
+
 
 
   def get_inventory(self):
@@ -162,7 +166,7 @@ class Lobby:
     global data
 
     data['lobby']['rooms'].pop(id)
-
+  
 
   # Lobby Users
   def create_user(self, context):
@@ -184,6 +188,7 @@ class Lobby:
     global data
 
     data['lobby']['users'].pop(id)
+
 
 
 
@@ -218,6 +223,10 @@ class Purchase:
     self.table_done = None
 
 
+  def status_quo(self):
+    """transfert purchased qty value to received qty as initial status quo value."""
+
+    self.table_entries['qty_received'] = self.table_entries['qty']
 
 
   def build_process_tables(self):
@@ -229,13 +238,14 @@ class Purchase:
     self.table_queue = pd.DataFrame([], columns= list(self.table.columns))
     self.table_done = pd.DataFrame([], columns= list(self.table.columns))
 
+    self.status_quo()
     self.process_status = 'started'
 
 
   def table_position_to_html(self):
-    html_entry_table = self.table_entries.to_html(buf=None, header=True, index=False, justify='left', classes='entry_table').replace('class', 'id')
-    html_table_queue = self.table_queue.to_html(buf=None, header=True, index=False, justify='left', classes='queue_table').replace('class', 'id')
-    html_table_done = self.table_done.to_html(buf=None, header=True, index=False, justify='left', classes='done_table').replace('class', 'id')
+    html_entry_table = self.table_entries.to_html(buf=None, header=True, index=False, classes='entry_table').replace('class', 'id').replace('border="1"','')
+    html_table_queue = self.table_queue.to_html(buf=None, header=True, index=False, classes='queue_table').replace('class', 'id').replace('border="1"','')
+    html_table_done = self.table_done.to_html(buf=None, header=True, index=False, classes='done_table').replace('class', 'id').replace('border="1"','')
 
     return html_entry_table, html_table_queue, html_table_done
 
@@ -316,6 +326,7 @@ class Room:
 
 
   def search_scanned_item(self, code_ean, odoo):
+    """SEARCH the product on odoo table. return Context dictionnary for js formating"""
     
     product = self.purchase.table_entries[(self.purchase.table_entries['barcode'] == code_ean)]
     if product.empty: 
@@ -366,6 +377,7 @@ class Room:
     product_barcode = context['barcode']
     product_received = context['newqty']
     from_table = context['table']
+    atype = context['type']
 
     if product_barcode not in self.purchase.scanned_barcodes:
       self.purchase.scanned_barcodes.append(product_barcode)
@@ -373,7 +385,8 @@ class Room:
     if from_table != 'dataframe done_table':
       if from_table == 'dataframe entry_table':
         product = self.purchase.table_entries[(self.purchase.table_entries['barcode'] == product_barcode) | (self.purchase.table_entries['id'] == product_id)]
-        product.loc[product.index, 'qty_received'] = product_received
+
+        if atype == 'mod': product.loc[product.index, 'qty_received'] = product_received
 
         self.purchase.table_done = pd.concat([self.purchase.table_done, product], ignore_index=True)
         self.purchase.table_entries = self.purchase.table_entries.drop(product.index, axis=0)
@@ -381,7 +394,8 @@ class Room:
 
       else:
         product = self.purchase.table_queue[(self.purchase.table_queue['barcode'] == product_barcode) | (self.purchase.table_queue['id'] == product_id)]
-        product.loc[product.index, 'qty_received'] = product_received
+        
+        if atype == 'mod': product.loc[product.index, 'qty_received'] = product_received
 
         self.purchase.table_done = pd.concat([self.purchase.table_done, product], ignore_index=True)
         self.purchase.table_queue = self.purchase.table_queue.drop(product.index, axis=0)
@@ -396,8 +410,102 @@ class Room:
     emit('broadcast_update_table_on_edit', context, broadcast=True, include_self=False, to=context['roomID'])
 
 
-  def update_table_on_scan(self):
-    pass
+  def add_item(self, context):
+    global data
+
+
+    product_id = int(context['product_id'])
+    product_name = context['product_name']
+    product_barcode = context['code_ean']
+    product_received = context['product_received_qty']
+    product_qty = context['product_qty']
+    product_pkg_qty = context['product_pkg_qty']
+
+    product = pd.DataFrame([[product_barcode, product_id, product_name,
+              product_qty, product_pkg_qty, product_received]], 
+              columns= self.purchase.table_done.columns)
+
+    self.purchase.new_items.append(product_barcode)
+    
+    if product_barcode not in self.purchase.scanned_barcodes:
+      self.purchase.scanned_barcodes.append(product_barcode)
+
+    self.purchase.table_done = pd.concat([self.purchase.table_done, product], ignore_index=True)
+
+    join_room(context['roomID'])
+    # broadcasting update
+    emit('broadcasted_added_item', context, broadcast=True, include_self=False, to=context['roomID'])
+
+
+
+  def del_item(self, context):
+    global data
+
+    from_table = context['fromTable']
+    index = [x - 1 for x in context['index']]
+    
+
+    if from_table == 'dataframe queue_table':
+      self.purchase.scanned_barcodes = [x for x in self.purchase.scanned_barcodes 
+                                        if x not in self.purchase.table_queue.loc[index, 'barcode'].values.tolist()] # supr barcode from scanned ones
+
+      self.purchase.table_queue = self.purchase.table_queue.drop(index, axis=0)
+      self.purchase.table_queue = self.purchase.table_queue.reset_index(drop=True)
+
+    else:
+      self.purchase.scanned_barcodes = [x for x in self.purchase.scanned_barcodes 
+                                        if x not in self.purchase.table_done.loc[index, 'barcode'].values.tolist()] # supr barcode from scanned ones
+
+      self.purchase.table_done = self.purchase.table_done.drop(index, axis=0)
+      self.purchase.table_done = self.purchase.table_done.reset_index(drop=True)
+
+    join_room(context['roomID'])
+    # broadcasting update
+    emit('broadcasted_deleted_item', context, broadcast=True, include_self=True, to=context['roomID'])
+
+
+  
+  def mod_item(self, context):
+    global data
+
+    from_table = context['fromTable']
+    index = int(context['index']) - 1
+    barcode = context['code_ean']
+    id = context['product_id']
+    name = context['product_name']
+
+    if from_table == 'dataframe queue_table':
+      self.purchase.table_queue.loc[index, 'barcode'] = barcode
+      self.purchase.table_queue.loc[index, 'id'] = id
+      self.purchase.table_queue.loc[index, 'name'] = name
+
+    else:
+      self.purchase.table_done.loc[index, 'barcode'] = barcode
+      self.purchase.table_done.loc[index, 'id'] = id
+      self.purchase.table_done.loc[index, 'name'] = name
+
+
+    join_room(context['roomID'])
+    # broadcasting update
+    emit('broadcasted_mod_item', context, broadcast=True, include_self=True, to=context['roomID'])
+
+  
+  def update_status_to_received(self):
+    global data
+
+    self.purchase.status = 'received'
+    self.purchase.process_status = 'finished'
+    self.status = 'close'
+
+    room_id = self.id
+    purchase_id = self.purchase.id
+    data['odoo']['purchases']['received'][purchase_id] = data['odoo']['purchases']['incoming'][purchase_id]
+    data['lobby']['rooms'][room_id].purchase = data['odoo']['purchases']['received'][purchase_id]
+    data['odoo']['purchases']['incoming'].pop(purchase_id)
+
+
+
+
 
 
 
@@ -409,17 +517,25 @@ class Room:
 
 
 class User:
-  def __init__(self, id, loc, admin):
+  def __init__(self, id, loc, browser_id, admin ):
+
     self.id = id
-    self.location = loc  # [lobby, roomID]
-    self.admin = admin
-    self.session = 1
+    self.token = self.generate_token()
+    self.browser_id = browser_id
+
+    self.last_connection = datetime.now()
     self.is_active = True
+
+    self.admin = admin
+    self.location = loc  # [lobby, roomID]
+
+    self.session = 1
 
   def is_admin(self):
     self.admin = True
 
-
+  def generate_token(self):
+    return binascii.hexlify(os.urandom(20)).decode()  
 
 
 
