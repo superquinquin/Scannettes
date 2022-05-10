@@ -1,11 +1,9 @@
 import time
 from flask import Flask, url_for, render_template, request
 from flask_socketio import SocketIO, emit, send, join_room, leave_room
-from pydantic import ConfigError
-from torch import ScriptObject
 
 from config import config
-from classes import data, Odoo, Purchase, Lobby, Room, User, Log  
+from classes import data, Odoo, Purchase, Lobby, Room, User, Log, BackUp
 from utils import get_passer
 
 
@@ -36,11 +34,14 @@ def login():
 
 @app.route('/lobby/<id>')
 def get_room(id):
-  return render_template('room.html')
+  # return render_template('room.html')
+  return render_template('room_mobile.html')
+
 
 @app.route('/lobby/admin/<id>&id=<user_id>&token=<token>&state=<state>')
 def get_room_admin(id, user_id, token, state):
-  return render_template('room.html')
+    # return render_template('room.html')
+  return render_template('room_mobile.html')
 
 
 
@@ -115,6 +116,7 @@ def redirect(context):
   id = context['id']
   password = context['password']
   browser = context['browser_id']
+  winWidth = context['winWidth']
   suffix = context['suffix']
   passer = get_passer(suffix)
 
@@ -134,7 +136,7 @@ def redirect(context):
         token = passer.get('token',None)
 
         if user.token == token and user.browser_id == browser:
-          emit('go_to_room', {'url': url_for('get_room_admin', id= id, user_id= user_id, token= token, state= room.status)})
+            emit('go_to_room', {'url': url_for('get_room_admin', id= id, user_id= user_id, token= token, state= room.status, winWidth=winWidth)})
         
         else:
           emit('go_to_room', {'url': url_for('get_room', id=id)})
@@ -179,14 +181,23 @@ def join_room(room):
   name = room.name
   id = room.id
   purchase = room.purchase.name
+
   html_ent, html_quet, html_dont = room.purchase.table_position_to_html()
+  entry_records, queue_records, done_records = room.purchase.get_table_records()
+
 
   context = {'room_id': id,
              'room_name': name,
              'purchase_name': purchase,
              'entries_table':html_ent,
              'queue_table':html_quet,
-             'done_table':html_dont}
+             'done_table':html_dont,
+             'entries_records': entry_records,
+             'queue_records': queue_records,
+             'done_records': done_records,
+             'scanned': room.purchase.scanned_barcodes,
+             'new': room.purchase.new_items,
+             'mod': room.purchase.modified_items}
   
   emit('load_existing_room', context)
 
@@ -237,14 +248,25 @@ def image(data_image):
   imageData = data_image['image']
   room_id = data_image['id']
   room = data['lobby']['rooms'][room_id]
-  room.barcode_decoder(imageData, room_id, room, odoo)
+  room.image_decoder(imageData, room_id, room, odoo)
+
+
+@socketio.on('laser')
+def laser(data_laser):
+  global data, odoo
+
+  room_id = data_laser['id']
+  barcode = data_laser['barcode']
+  room = data['lobby']['rooms'][room_id]
+  room.laser_decoder(data_laser, room_id, barcode, room, odoo)
+
+
 
 
 
 @socketio.on('update_table')
 def get_update_table(context):
   global data
-
   from_table = context['table']
   room_id = context['roomID']
   room = data['lobby']['rooms'][room_id]
@@ -257,6 +279,19 @@ def get_update_table(context):
 
   else: # done table
     room.update_table_on_edit(context)
+
+
+@socketio.on('block-product')
+def block_product(context):
+  global data
+  barcode = context['barcode']
+  room_id = context['roomID']
+  purchase = data['lobby']['rooms'][room_id].purchase
+  purchase.append_new_items(barcode)
+
+  emit('broadcast-block-wrong-item', context, broadcast=True, include_self=True)
+
+
 
 
 @socketio.on('add-new-item')
@@ -306,7 +341,6 @@ def suspend_room(context):
   emit('broacasted_suspension', context, broadcast=True, include_self=True)
 
 
-
 @socketio.on('finishing_room')
 def finish_room(context):
   global data, lobby
@@ -330,6 +364,55 @@ def finish_room(context):
   emit('broacasted_finish', context, broadcast=True, include_self=True)
 
 
+@socketio.on('recharging_room')
+def recharge_room(context):
+  global data, odoo
+
+  room_id = context['roomID']
+  suffix = context['suffix']
+  purchase = data['lobby']['rooms'][room_id].purchase
+  odoo.recharge_purchase(purchase)
+  emit('reload-on-recharge', context, broadcast=False, include_self=True)
+  emit('broadcast-recharge', context, broadcast=True, include_self=False)
+
+
+
+@socketio.on('validation-purchase')
+def validate_purchase(context):
+  global data, odoo
+
+  print('____validation process______')
+  room_id = context['roomID']
+  suffix = context['suffix']
+  room = data['lobby']['rooms'][room_id]
+  state = odoo.post_purchase(room)
+  room.update_status_to_verified()
+
+  if suffix == room_id:
+    url =  url_for('index')
+
+  else:
+    passer = get_passer(suffix)
+    user_id = passer.get('id',None)
+    token = passer.get('token',None)
+    url = url_for('index_admin', id= user_id, token= token)
+
+  
+
+  context['url'] = url
+  emit('close-room-on-validation', context)
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
   app.jinja_env.auto_reload = True
@@ -338,8 +421,11 @@ if __name__ == '__main__':
 
   odoo = Odoo()
   lobby = Lobby()
+  if config['build_on_backup']: 
+    data = BackUp.load_backup(config['backup_fileName'])
   odoo.build(config['url'], config['login'], config['password'], config['db'], config['verbose'], config['timeDelta'])
-  print(data['odoo'])
+  BackUp().BACKUP_RUNNER()
+  odoo.UPDATE_RUNNER()
 
   socketio.run(app)
   #http://localhost:5000/lobby

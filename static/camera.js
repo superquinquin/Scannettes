@@ -15,6 +15,12 @@ const croppedCanvas = document.getElementById('cropped-canvas');
 const croppedCTX = croppedCanvas.getContext('2d', { alpha: false });
 croppedCTX.canvas.hidden = true;
 
+// MODAL LASER
+const modal_laser_btn = document.getElementById('display_laser');
+const modal_laser = document.getElementById('modal-laser');
+const laserOutput = document.getElementById('laser-output')
+
+
 // CAMERA SCANNER MODAL APPLICATION
 modal_btn.onclick = async function () { 
   display = modal.style.display;
@@ -22,6 +28,8 @@ modal_btn.onclick = async function () {
     console.log('oppening modal & start streaming')
 
     modal.style.display = 'flex';
+    document.getElementById('html').style.overflowY = 'hidden';
+    modal_laser_btn.disabled = true;
 
     streaming = true;
     video = document.querySelector("#videoElement");
@@ -90,6 +98,8 @@ modal_btn.onclick = async function () {
   }else {
     console.log('closing modal & stop streaming');
     modal.style.display = 'none';
+    document.getElementById('html').style.overflowY = 'visible';
+    modal_laser_btn.disabled = false;
     stopStreamedVideo(video);
     streaming = false;
 
@@ -144,3 +154,56 @@ socket.on('change_color', function() {
 
 
 
+/////////////////////////////////////////// LASER SCANNER
+var doubleScanBlocker = false;
+var lastScanned = '';
+
+modal_laser_btn.onclick =  function () {
+
+  if (modal_laser.style.display != 'flex') {
+    modal_laser.style.display = 'flex';
+    document.getElementById('html').style.overflowY = 'hidden';
+    modal_btn.disabled = true;
+    laserOutput.value = "";
+    laserOutput.focus()
+
+
+    //KEEP FOCUS
+    if (modal_laser.style.display == 'flex') {
+      document.getElementsByTagName("body")[0].addEventListener("click", keepLaserFocus);
+    }
+    
+
+
+
+
+    // SENDING SCANNER OUTPUT
+    laserOutput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        console.log('has pressed enter')
+        let barcode = laserOutput.value;
+        let data = {'barcode': barcode, 'id': roomID};
+
+        if ((lastScanned != '' & barcode != lastScanned) | lastScanned == '') {
+          console.log('in', barcode, lastScanned)
+          socket.emit('laser', data);
+          lastScanned = barcode;
+        } 
+        
+        laserOutput.value = "";
+      }
+    });
+
+  } else {
+    modal_laser.style.display = 'none';
+    document.getElementById('html').style.overflowY = 'visible';
+    modal_btn.disabled = false;
+  }
+  
+}
+
+function keepLaserFocus(e) {
+  if (e.path[0].className != 'mod-input') {
+    laserOutput.focus()
+  }
+}

@@ -225,20 +225,20 @@ function append_row(context,tableID) {
   let table = document.getElementById(tableID);
   let row = document.createElement('tr');
 
-  let select = document.createElement('td')
-  let checkBox = document.createElement('input')
-  checkBox.setAttribute('type','checkbox')
-  checkBox.setAttribute('class','check')
+  let select = document.createElement('td');
+  let checkBox = document.createElement('input');
+  checkBox.setAttribute('type','checkbox');
+  checkBox.setAttribute('class','check');
   select.appendChild(checkBox);
-  row.appendChild(select)
+  row.appendChild(select);
 
   let barcode = document.createElement('td');
   barcode.innerHTML = context.code_ean;
-  row.appendChild(barcode)
+  row.appendChild(barcode);
 
   let id = document.createElement('td');
   id.innerHTML = context.product_id;
-  row.appendChild(id)
+  row.appendChild(id);
 
   let name = document.createElement('td');
   name.innerHTML = context.product_name;

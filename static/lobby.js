@@ -156,8 +156,8 @@ function redirect(id, index, tableID) {
 
   let table = document.getElementById(tableID)
   let password = table.rows[index].cells[5].getElementsByClassName('password').item(0).value;
-  
-  socket.emit('redirect', {'id': id, 'tableID': tableID, 'password': password, 'index': index, 'suffix': suffix, 'browser_id': browser});
+  let winWidth = window.innerWidth 
+  socket.emit('redirect', {'id': id, 'tableID': tableID, 'password': password, 'index': index, 'suffix': suffix, 'browser_id': browser, 'winWidth': winWidth});
 }
 
 socket.on('go_to_room', (data) => {

@@ -8,6 +8,7 @@ import binascii
 import traceback
 import numpy as np
 import pandas as pd
+from warnings import warn
 from datetime import datetime
 from pyzbar.pyzbar import decode
 from dateutil.relativedelta import *
@@ -15,11 +16,14 @@ from flask_socketio import emit, join_room
 ssl._create_default_https_context = ssl._create_unverified_context
 pd.options.mode.chained_assignment = None
 
+from threading import Timer
+from pickle import dump, load, HIGHEST_PROTOCOL
+
 from config import config
+from utils import get_delay
 
 
-data = {}
-
+data = {'cache': {'pos_max_id': None}}
 
 class Odoo:
   def __init__(self):
@@ -60,8 +64,106 @@ class Odoo:
         time.sleep(60)
 
 
+
+
+  def search_product_from_id(self, product_id):
+    return self.client.model(config['table_product']).get([('id', '=', product_id)])
+
+
+
   def search_product_from_ean(self, code_ean):
-    return self.client.model(config['table_product']).browse([('barcode', '=', code_ean)])
+    """search for product object in product table."""
+    return self.client.model(config['table_product']).get([('barcode', '=', code_ean)])
+
+
+
+  def search_alternative_ean(self, code_ean):
+    """search in multi_barcode for scanned ean
+    return product linked to main ean"""
+    alt_product = self.client.model(config['table_alternative_product']).get([('barcode','=',code_ean)])
+    if alt_product is not None:
+      return self.client.model(config['table_alternative_product']).get([('barcode','=',code_ean)]).product_id
+
+    else:
+      return None
+
+
+  def search_item_tmpl_id_from_product_id(self, product_id):
+    return self.client.model(config['table_product']).get([('id','=', product_id)]).product_tmpl.id
+
+  def search_item_UOM(self, product_tmpl_id):
+    return self.client.model(config['table_tmpl']).get([('id','=', product_tmpl_id)]).uom_id.id
+
+  def search_item_base_price(self, product_tmpl_id): 
+    res_partner_id = self.client.model(config['table_supplier']).get([('product_tmpl_id.id','=', product_tmpl_id)]).name.id
+    base_price = self.client.model(config['table_supplier']).get([('name','=',res_partner_id),('product_tmpl_id.id','=', product_tmpl_id)]).base_price
+    return base_price
+
+  def generate_purchased_item_name(self, product_tmpl_id):
+    product_name = self.client.model(config['tables_product']).get([('id','=',13847)]).name
+    res_partner_id = self.client.model(config['table_supplier']).get([('product_tmpl_id.id','=', product_tmpl_id)]).name.id
+    product_code = self.client.model(config['table_supplier']).get([('name','=',res_partner_id),('product_tmpl_id.id','=', product_tmpl_id)]).product_code
+    
+    return f'[{product_code}] {product_name}'
+
+
+  def apply_purchase_record_change(self, table, order_id, item_id, received_qty, is_recordList):
+    if is_recordList == False:
+      item = self.client.model(table).get([('order_id', '=', order_id),('product_id.id','=', item_id)])
+      item.qty_received = received_qty
+    
+    else:
+      for item in self.client.model(table).browse([('order_id', '=', order_id),('product_id.id','=', item_id)]):
+        item.qty_received = received_qty
+
+
+
+  def check_input_validity(self, table):
+    validity = True
+
+    for item in table.values.tolist():
+      item_validity = True
+      item_barcode = item[0]
+      item_id = item[1]
+
+      from_id = self.search_product_from_id(item_id)
+      from_ean = self.search_product_from_ean(item_barcode)
+      from_ean_alt = self.search_alternative_ean(item_barcode)
+
+
+      if from_id is None:
+        print('from_id is none')
+        item_validity = False
+        validity = False
+      
+      if (item_barcode and 
+         (from_ean is None and from_ean_alt is None)):
+        print('from ean is none')
+        item_validity = False
+        validity = False
+
+      if item_barcode:
+        # Cross validation
+        if (from_id and 
+            from_id.barcode != item_barcode):
+          print('wrong barcode from id')
+          item_validity = False
+          validity = False
+        
+        if (from_ean and
+            from_ean.id != item_id):
+          print('wrong id')
+          item_validity = False
+          validity = False     
+
+        if (from_ean_alt and 
+            from_ean_alt.id != item_id):
+          print('wrong alt id')
+          item_validity = False
+          validity = False 
+
+    return validity
+
 
 
 
@@ -70,11 +172,13 @@ class Odoo:
 
     incoming = list(data['odoo']['purchases']['incoming'].keys())
     received = list(data['odoo']['purchases']['received'].keys())
-    Y, M, W, D = timeDelta[0], timeDelta[1], timeDelta[2], timeDelta[3]
+    Y, M, W, D = timeDelta[0], timeDelta[1], timeDelta[2], timeDelta[3] # YEAR, MONTH, WEEK, DAY
 
-
-    date_ceiling = (datetime.now().date() + 
-                    relativedelta(years=-Y ,months=-M, weeks=-W, days=-D)).strftime("%Y-%m-%d %H:%M:%S")
+    if not data['odoo']['history']['update_purchase']:
+      date_ceiling = (datetime.now().date() + 
+                      relativedelta(years=-Y ,months=-M, weeks=-W, days=-D)).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+      date_ceiling = data['odoo']['history']['update_purchase'][-1]
     
     
     for pur in self.client.model(config['table_purchase']).browse([('create_date', '>', date_ceiling)]):
@@ -111,13 +215,126 @@ class Odoo:
           data['odoo']['purchases']['received'][id] = Purchase(id, name, create_date, added_date, status, table)
       
     data['odoo']['history']['update_purchase'].append(datetime.now().date().strftime("%Y-%m-%d %H:%M:%S"))
+    print(data['odoo'])
+
+
+  def post_purchase(self, room):
+    global data
+
+    room.purchase.process_status = 'verified'
+    purchase_id = room.purchase.id
+    purchase_new_items = room.purchase.new_items
+    table = room.purchase.table_done
+
+    if self.check_input_validity(table) == False:
+      # DATA VALIDITY IS TO BE PASSED TO ODOO
+      return False
+
+    # adding received values
+    for item in table.values.tolist():
+      item_barcode = item[0]
+      item_id = item[1]
+      item_received = item[-1]
+
+      if [item_barcode, item_id] in purchase_new_items:
+        self.create_purchase_record(room, item_id)
+        
+      # UPDATE ODOO RECORD.
+      try:
+        self.apply_purchase_record_change(config['table_purchase_lines'], purchase_id, item_id, item_received, False)
+
+      except ValueError as e:
+        # PASS AFFECT CHANGE ON MULTIPLE IDENTICAL RECORDS: VERIFICATION NEED TO BE DONE ON ODOO POST PROCESS
+        warn(f'item id {item_id} : plusieurs occurences trouvée. Veuillez vérifier la commandes odoo (commande id : {purchase_id})')
+        self.apply_purchase_record_change(config['table_purchase_lines'], purchase_id, item_id, item_received, True)
+    
+    return True
+
+
+
+  def create_purchase_record(self, room, item_id):
+    purchase_id = room.purchase.id
+    product = self.search_product_from_id(item_id)
+    product_tmpl_id = self.search_item_tmpl_id_from_product_id(item_id)
+    name = self.generate_purchased_item_name(product_tmpl_id)
+    uom = self.search_item_UOM(product_tmpl_id)
+    price = self.search_item_base_price(product_tmpl_id)
+
+    new_item = {'order_id': purchase_id,
+                'product_uom': uom,
+                'price_unit': price,
+                'product_qty': 0, #0
+                'name': name,
+                'product_id': product,
+                'date_planned': datetime.now()}
+
+    self.client.model(config['table_purchase_lines']).create(new_item)
+
+
+
+  def recharge_purchase(self, purchase):
+    """Request to update purchase data from odoo
+    keep room table structure untouched
+    In use when odoo is modified eg: 
+    new product added in odoo, 
+    change in quantity, pkg qty, name, barcode
+    product supr
+    ...
+    return purchase object 
+    """
+    global data
+
+    for item in self.client.model(config['table_purchase_lines']).browse([('order_id', '=', purchase.id)]):
+      passed = False
+      productData = {'item_id': item.product_id.id,
+                     'item_barcode': item.product_id.barcode,
+                     'item_name': item.name,
+                     'item_qty': item.product_qty,
+                     'item_qty_packaqe': item.product_qty_package,
+                     'item_qty_received': item.qty_received}
+
+
+      
+      # product_ID would work 99% of the time unless the product has been added through the APP.
+      # It then had been surely added thanks to barcode. We need to proceed to barcode search in this case.
+      round = 0
+      while passed == False:
+        if round == 0 or round == 1:
+          tableID = 'purchased'
+        elif round == 2 or round == 3:
+          tableID = 'queue'
+        elif round == 4 or round == 5:
+          tableID == 'done'
+
+        if round % 2 == 0:
+          key = 'id'
+          value = productData['item_id']
+        else:
+          key = 'barcode'
+          value = productData['item_barcode']
+
+        print(round, tableID, key, value, productData)
+        passed = purchase.update_item(tableID, key, value, productData)
+
+        if round == 6:
+          # newly added item in odoo
+          passed = purchase.create_new_item(productData)
+        
+        round += 1
+
+
+
 
 
 
   def get_inventory(self):
     global data
     pass
+  
 
+  def post_inventory(self):
+    global data
+    pass
 
 
   def build(self, url, login, password, db, verbose, timeDelta):
@@ -127,8 +344,29 @@ class Odoo:
     self.get_purchase(timeDelta)
     self.get_inventory()
 
-
     self.builded = True
+
+
+  def update_build(self):
+    self.get_purchase(config['timeDelta'])
+    self.get_inventory()
+
+    self.UPDATE_RUNNER()
+
+
+  def UPDATE_RUNNER(self):
+    """THREADING and schedulding update every XXXX hours
+    possibly placed under build"""
+    delay = get_delay(time= config['build_update'])
+    print(f'new update in : {delay} seconds')
+    timer = Timer(delay, self.update_build)
+    timer.start()
+
+
+
+
+
+
 
 
 
@@ -142,7 +380,6 @@ class Lobby:
 
     data['lobby'] = {'rooms': {},
                      'users': {'admin': {}}}
-
 
   # Lobby Rooms
   def create_room(self, input):
@@ -214,6 +451,7 @@ class Purchase:
     # is init and updated when a Room is created on this purchase
     self.scanned_barcodes = []
     self.new_items = []
+    self.mdofied_items = []
     self.process_status = None              # [None ,started, finished, verified] None > started > finished, 
                                             # when None, processing tables are not builded
                                             # On started processing tables are builded and at least partially filled
@@ -234,6 +472,7 @@ class Purchase:
 
     self.scanned_barcodes = []
     self.new_items = []
+    self.modified_items = []
     self.table_entries = self.table
     self.table_queue = pd.DataFrame([], columns= list(self.table.columns))
     self.table_done = pd.DataFrame([], columns= list(self.table.columns))
@@ -249,12 +488,57 @@ class Purchase:
 
     return html_entry_table, html_table_queue, html_table_done
 
+  def get_table_records(self):
+    entry_records = self.table_entries.to_dict('records')
+    queue_records = self.table_queue.to_dict('records')
+    done_records = self.table_done.to_dict('records')
 
+    return entry_records, queue_records, done_records
+  
+  def append_new_items(self, barcode):
+    if barcode not in self.new_items:
+      self.new_items.append(barcode)
 
+  def append_modified_items(self, barcode):
+    if barcode not in self.modified_items:
+      self.modified_items.append(barcode)
 
+  def append_scanned_items(self, barcode):
+    if barcode not in self.scanned_barcodes:
+      self.scanned_barcodes.append(barcode) 
 
+  def update_item(self, tableID, key, value, productData):
+    """for recharging odoo values into the purchases tables"""
+    passed = False
+    if tableID == 'purchased':
+      table = self.table_entries
+    elif tableID == 'queue':
+      table = self.table_queue
+    elif tableID == 'done':
+      table = self.table_done
 
+    if table.where(table[key] == value)[key].values.tolist():
+      passed = True
+      index = table[table[key] == value].index.tolist()
+      table.loc[index, 'barcode'] = productData['item_barcode']
+      table.loc[index, 'name'] = productData['item_name']
+      table.loc[index, 'qty'] = productData['item_qty']
+      table.loc[index, 'pckg_qty'] = productData['item_qty_packaqe']
+    
+    return passed
+  
+  def create_new_item(self, productData):
+    placeholder = pd.DataFrame([[productData['item_barcode'], 
+                                productData['item_id'], 
+                                productData['item_name'], 
+                                productData['item_qty'], 
+                                productData['item_qty_packaqe'], 
+                                productData['item_qty_received']]],
+       columns= ['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
 
+    self.table_entries = pd.concat([self.table_entries, placeholder], ignore_index=True)
+
+    return True
 
 
 class Room:
@@ -288,24 +572,29 @@ class Room:
 
 
 
-  def barcode_decoder(self, imageData, room_id, room, odoo):
+  def image_decoder(self, imageData, room_id, room, odoo):
     global data, Odoo
 
     image = self.decoder(imageData)
+
     image = np.array(image)
     ean = decode(image)
     if ean:
       code_ean = ean[0].data.decode("utf-8")
 
       if code_ean not in self.purchase.scanned_barcodes:
-        self.purchase.scanned_barcodes.append(code_ean)
+        self.purchase.append_scanned_items(code_ean)
 
         context = self.search_scanned_item(code_ean, odoo)
         context['room_id'] = room_id
+        context['scanned'] = self.purchase.scanned_barcodes
+        context['new'] = self.purchase.new_items
+        context['mod'] = self.purchase.modified_items
 
         join_room(room_id)
         emit('move_product_to_queue', context, broadcast=True, include_self=True, to=room_id)
         emit('change_color', broadcast=False, include_self=True, to=room_id)
+        emit('modify_scanned_item', context, broadcast=False, include_self=True, to=room_id)
         print(code_ean)
 
       else:
@@ -324,6 +613,28 @@ class Room:
     return image
 
 
+  def laser_decoder(self, laserData, room_id, barcode, room, odoo):
+    global data, Odoo
+
+    if barcode not in self.purchase.scanned_barcodes:
+      self.purchase.append_scanned_items(barcode)
+
+      context = self.search_scanned_item(barcode, odoo)
+      context['room_id'] = room_id
+      context['scanned'] = self.purchase.scanned_barcodes
+      context['new'] = self.purchase.new_items
+      context['mod'] = self.purchase.modified_items
+
+      join_room(room_id)
+      emit('move_product_to_queue', context, broadcast=True, include_self=True, to=room_id)
+      emit('modify_scanned_laser_item', context, broadcast=False, include_self=True, to=room_id)
+
+
+    else:
+      print(barcode, 'is already scanned')
+
+    
+
 
   def search_scanned_item(self, code_ean, odoo):
     """SEARCH the product on odoo table. return Context dictionnary for js formating"""
@@ -332,16 +643,27 @@ class Room:
     if product.empty: 
       # barcode not in purchase
       new_item = True
-      product = odoo.search_product_from_ean(code_ean)
+      self.purchase.append_new_items(code_ean)
+
+      alt = odoo.search_alternative_ean(code_ean)
+
+      if alt:
+        # alt barcode found, extract product from its product id
+        alt_id = alt.id
+        product = odoo.search_product_from_id(alt_id)
+      else:
+        # no alt barcode, search for barcode in odoo
+        product = odoo.search_product_from_ean(code_ean)
+
 
       if not product:
         # barcode not in odoo
         product_id, product_name, product_qty, product_pkg_qty, product_received_qty = 0,'', 0, 0, 0
       
       else:
-        #barcoed in odoo
-        product_id = product.product_tmpl_id.id[0]
-        product_name = product.name[0]
+        #barcode in odoo
+        product_id = product.product_tmpl_id.id
+        product_name = product.name
         product_qty, product_pkg_qty, product_received_qty = 0, 0, 0
 
 
@@ -358,12 +680,12 @@ class Room:
       product_id = product_name = product_qty = product_pkg_qty = product_received_qty = None # only code_ean is useful 
 
     #broadcasting update
-    context = {'code_ean': code_ean,
-               'product_id': product_id,
-               'product_name': product_name,
-               'product_qty':  product_qty,
-               'product_pkg_qty': product_pkg_qty,
-               'product_received_qty': product_received_qty,
+    context = {'barcode': code_ean,
+               'id': product_id,
+               'name': product_name,
+               'qty':  product_qty,
+               'pckg_qty': product_pkg_qty,
+               'qty_received': product_received_qty,
                'new_item': new_item}
 
     return context  
@@ -379,14 +701,15 @@ class Room:
     from_table = context['table']
     atype = context['type']
 
-    if product_barcode not in self.purchase.scanned_barcodes:
-      self.purchase.scanned_barcodes.append(product_barcode)
+    self.purchase.append_scanned_items(product_barcode)
 
     if from_table != 'dataframe done_table':
       if from_table == 'dataframe entry_table':
         product = self.purchase.table_entries[(self.purchase.table_entries['barcode'] == product_barcode) | (self.purchase.table_entries['id'] == product_id)]
 
-        if atype == 'mod': product.loc[product.index, 'qty_received'] = product_received
+        if atype == 'mod': 
+          product.loc[product.index, 'qty_received'] = product_received
+          self.purchase.append_modified_items(product_barcode)
 
         self.purchase.table_done = pd.concat([self.purchase.table_done, product], ignore_index=True)
         self.purchase.table_entries = self.purchase.table_entries.drop(product.index, axis=0)
@@ -395,7 +718,9 @@ class Room:
       else:
         product = self.purchase.table_queue[(self.purchase.table_queue['barcode'] == product_barcode) | (self.purchase.table_queue['id'] == product_id)]
         
-        if atype == 'mod': product.loc[product.index, 'qty_received'] = product_received
+        if atype == 'mod': 
+          product.loc[product.index, 'qty_received'] = product_received
+          self.purchase.append_modified_items(product_barcode)
 
         self.purchase.table_done = pd.concat([self.purchase.table_done, product], ignore_index=True)
         self.purchase.table_queue = self.purchase.table_queue.drop(product.index, axis=0)
@@ -405,9 +730,13 @@ class Room:
       product = self.purchase.table_done[(self.purchase.table_done['barcode'] == product_barcode) | (self.purchase.table_done['id'] == product_id)]
       self.purchase.table_done.loc[product.index, 'qty_received'] = product_received
 
+    context['scanned'] = self.purchase.scanned_barcodes
+    context['new'] = self.purchase.new_items
+    context['mod'] = self.purchase.modified_items
+
     join_room(context['roomID'])
     # broadcasting update
-    emit('broadcast_update_table_on_edit', context, broadcast=True, include_self=False, to=context['roomID'])
+    emit('broadcast_update_table_on_edit', context, broadcast=True, include_self=True, to=context['roomID'])
 
 
   def add_item(self, context):
@@ -425,10 +754,8 @@ class Room:
               product_qty, product_pkg_qty, product_received]], 
               columns= self.purchase.table_done.columns)
 
-    self.purchase.new_items.append(product_barcode)
-    
-    if product_barcode not in self.purchase.scanned_barcodes:
-      self.purchase.scanned_barcodes.append(product_barcode)
+    self.purchase.append_new_items(product_barcode)
+    self.purchase.append_scanned_items(product_barcode)
 
     self.purchase.table_done = pd.concat([self.purchase.table_done, product], ignore_index=True)
 
@@ -442,17 +769,24 @@ class Room:
     global data
 
     from_table = context['fromTable']
-    index = [x - 1 for x in context['index']]
+    index = context['index']
     
 
-    if from_table == 'dataframe queue_table':
+    if from_table == 'scanned-list':
       self.purchase.scanned_barcodes = [x for x in self.purchase.scanned_barcodes 
                                         if x not in self.purchase.table_queue.loc[index, 'barcode'].values.tolist()] # supr barcode from scanned ones
 
       self.purchase.table_queue = self.purchase.table_queue.drop(index, axis=0)
       self.purchase.table_queue = self.purchase.table_queue.reset_index(drop=True)
 
-    else:
+    elif from_table == 'purchased-list':
+      self.purchase.scanned_barcodes = [x for x in self.purchase.scanned_barcodes 
+                                  if x not in self.purchase.table_entries.loc[index, 'barcode'].values.tolist()] # supr barcode from scanned ones
+
+      self.purchase.table_entries = self.purchase.table_entries.drop(index, axis=0)
+      self.purchase.table_entries = self.purchase.table_entries.reset_index(drop=True)
+
+    elif from_table == 'verified-list':
       self.purchase.scanned_barcodes = [x for x in self.purchase.scanned_barcodes 
                                         if x not in self.purchase.table_done.loc[index, 'barcode'].values.tolist()] # supr barcode from scanned ones
 
@@ -473,6 +807,8 @@ class Room:
     barcode = context['code_ean']
     id = context['product_id']
     name = context['product_name']
+
+    self.purchase.append_modified_items(barcode)
 
     if from_table == 'dataframe queue_table':
       self.purchase.table_queue.loc[index, 'barcode'] = barcode
@@ -504,7 +840,20 @@ class Room:
     data['odoo']['purchases']['incoming'].pop(purchase_id)
 
 
+  def update_status_to_verified(self):
+    global data, lobby
+    
+    self.purchase.status = 'received'
+    self.purchase.process_status = 'verified'
+    self.status = 'close'
+    self.closing_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    room_id = self.id
+    purchase_id = self.purchase.id
+    data['odoo']['purchases']['received'].pop(purchase_id)
+    data['lobby']['rooms'].pop(room_id)
+
+    
 
 
 
@@ -553,3 +902,27 @@ class Log:
   def handle_error_log(self, ip, user, error):
     self.log.write(f'{ip} {user} {datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")} {error}')
 
+
+
+
+class BackUp:
+
+  def save_backup(self, data, fileName):
+    with open(f'./{fileName}.pickle','wb') as f:
+      dump(data, f, protocol= HIGHEST_PROTOCOL)
+
+  def load_backup(self, fileName):
+    with open(f'./{fileName}.pickle', 'rb') as f:
+      data = load(f)
+    return data
+
+  def BACKUP_RUNNER(self):
+    delay = get_delay(delta= config['backup_frequency'])
+    print(f'new start in : {delay} seconds')
+    timer = Timer(delay, self.BACKUP)
+    timer.start()
+
+  def BACKUP(self):
+    global data
+    self.save_backup(data, config['backup_fileName'])
+    self.BACKUP_RUNNER()
