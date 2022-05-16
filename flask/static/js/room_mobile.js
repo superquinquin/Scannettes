@@ -2,11 +2,24 @@
     var browser = get_browser_id()
     var roomID;
     var suffix;
+    var admin =  false;
     const currentLoc = window.location.href;
     roomID, suffix = get_suffix(currentLoc)
 
     const socket = io.connect(config.address);
 
+    const adminClose = document.getElementById('admin-close');
+    const suspender = document.getElementById('room-suspension');
+    const verifier = document.getElementById('admin-validation');
+    const recharger = document.getElementById('room-recharge');
+    adminClose.hidden = true;
+    verifier.disabled = true;
+    recharger.disabled = true;
+    suspender.disabled = true;
+
+    const delQueue = document.getElementById('del-from-queue');
+    const unlockQueue = document.getElementById('unlock-from-queue');
+    
     //  ON SOCKET CONNECTION
     socket.on("connection", (socket) => {
       console.log('joining room')
@@ -42,7 +55,7 @@
         product.scanned = context.scanned;
         product.new = context.new;
         product.mod = context.mod;
-        CreateProductBubble(product, 'scanned-list', true);
+        CreateProductBubble(product, 'scanned-list', admin);
       }
       // PURCHASED
       let purchasedRecords = context.entries_records
@@ -51,7 +64,7 @@
         product.scanned = context.scanned;
         product.new = context.new;
         product.mod = context.mod;
-        CreateProductBubble(product, 'purchased-list', true);
+        CreateProductBubble(product, 'purchased-list', admin);
       }
       // DONE
       let doneRecords = context.done_records;
@@ -60,22 +73,19 @@
         product.scanned = context.scanned;
         product.new = context.new;
         product.mod = context.mod;
-        CreateProductBubble(product, 'verified-list', true);
+        CreateProductBubble(product, 'verified-list', admin);
       }
     });
 
 
     socket.on('grant_permission', () => {
       console.log('grant permission')
-      // delQueue.hidden = false;
-      // delQueue.disabled = false;
-      // delDone.hidden = false;
-      // delDone.disabled = false;
-      // modQeueModalBtn.hidden = false;
-      // modDoneModalBtn.hidden = false;
-      // adminClose.hidden = false;
-      // suspender.disabled = false;
-      // verifier.disabled = false;
+      admin = true;
+      delQueue.hidden = false;
+      adminClose.hidden = false;
+      suspender.disabled = false;
+      verifier.disabled = false;
+      recharger.disabled = false;
     });
 
 
@@ -97,12 +107,17 @@
         var unlockBtn = delBtn.nextElementSibling;
         if (content.style.display == 'flex'){
           content.style.display = 'none';
-          delBtn.hidden = true;
-          unlockBtn.hidden = true;
+          if (admin) {
+            delBtn.hidden = true;
+            unlockBtn.hidden = true;
+          }
+
         } else {
           content.style.display = 'flex';
-          delBtn.hidden = false;
-          unlockBtn.hidden = false;
+          if (admin) {
+            delBtn.hidden = false;
+            unlockBtn.hidden = false;
+          }
         } 
       });
     }
@@ -390,7 +405,7 @@
               emptyPlaceholder(tableID)
             }
           }
-          CreateProductBubble(productData, 'verified-list', true);
+          CreateProductBubble(productData, 'verified-list', admin);
           // search for multiple copies to remove.
           RemoveFromScannerContainer('scanned-list',productData.barcode, productData.product_id);
           RemoveFromScannerContainer('scanned-laser-list', productData.barcode, productData.product_id);
@@ -588,17 +603,17 @@
       if (roomID == context.room_id) {
         if (newItem) {
           // new item: add row in queue table
-          CreateProductBubble(context, 'scanned-list', true);
+          CreateProductBubble(context, 'scanned-list', admin);
         } else {
           // search in entry table
           let productAray = purchasedTable.getElementsByClassName('product');
           for (const product of productAray) {
-            let ean = product.getElementsByClassName('code-barre').innerHTML;
+            let ean = product.getElementsByClassName('code-barre')[0].innerHTML;
             if (ean == scannedEan) {
               product.remove();
             }
           }
-          CreateProductBubble(context, 'scanned-list', true);
+          CreateProductBubble(context, 'scanned-list', admin);
         }
       }
       doubleScanBlocker = false;
@@ -610,7 +625,7 @@
       let modal = document.getElementById('scanned-item-modal');
       console.log(context)
 
-      CreateProductBubble(context, 'scanned-item-modal', true)
+      CreateProductBubble(context, 'scanned-item-modal', admin)
       modal.style.display = 'flex';
 
     });
@@ -619,7 +634,7 @@
       //  open modal for scanner to modify product without living camera mode
 
       let modal = document.getElementById('scanned-item-modal-laser');
-      CreateProductBubble(context, 'scanned-laser-list', true)
+      CreateProductBubble(context, 'scanned-laser-list', admin)
       // CreateProductBubble(context, 'scanned-list', true)
       // modal.style.display = 'flex';
     });
@@ -638,8 +653,7 @@
 
 
     // CLOSING ACTION
-    const adminClose = document.getElementById('admin-close');
-    // adminClose.hidden = true;
+
 
     function CloseCModal() {
       document.getElementById('confirmation-hub-modal').style.display = 'none';
@@ -675,8 +689,7 @@
 
 
 
-    const suspender = document.getElementById('room-suspension');
-    // suspender.disabled = true;
+
 
     suspender.onclick = function () {
       window.scrollTo(0,0); 
@@ -705,8 +718,6 @@
 
 
 
-    const verifier = document.getElementById('admin-validation');
-    // verifier.disabled = true;
 
     verifier.onclick = function () {
       window.scrollTo(0,0); 
@@ -734,8 +745,8 @@
     });
 
 
-    const recharger = document.getElementById('room-recharge');
-    // recharger.disabled = true;
+
+
     recharger.onclick = function () {
       window.scrollTo(0,0); 
       document.getElementById('confirmation-hub-modal').style.display = 'flex';

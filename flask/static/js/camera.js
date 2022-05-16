@@ -184,10 +184,13 @@ modal_laser_btn.onclick =  function () {
         let barcode = laserOutput.value;
         let data = {'barcode': barcode, 'id': roomID};
 
-        if ((lastScanned != '' & barcode != lastScanned) | lastScanned == '') {
+        console.log(barcode)
+        if (((lastScanned != '' & barcode != lastScanned) | lastScanned == '')) {
           console.log('in', barcode, lastScanned)
-          socket.emit('laser', data);
-          lastScanned = barcode;
+          if (barcode != '') {
+            socket.emit('laser', data);
+            lastScanned = barcode;
+          }
         } 
         
         laserOutput.value = "";

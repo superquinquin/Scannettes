@@ -6,19 +6,27 @@ config = {
           'allowed_origins': "",
           'static_url': '',
           'address': '',
+
           # ODOO
           'url': '',
           'login': '',
           'password': '',
           'db': '',
           'verbose': False,
-          
+   
           'table_product': '',
           'table_tmpl': '',
           'table_alternative_product': '',
           'table_purchase': '',
           'table_purchase_lines': '',
           'table_supplier': '',
+          'table_picking': '',
+          'table_move': '',
+          'table_move_line': '',
+
+          #post
+          'odoo_create_new_purchase_item': True, # bool
+          'odoo_auto_purchase_validation': False,
 
           #Build
           'timeDelta': [0,0,0,0],
@@ -28,13 +36,13 @@ config = {
 
           #BACKUP
           'build_on_backup': False, #BOOL
-          'backup_fileName': '',
+          'backup_fileName': './flask/backup.pickle',
           'backup_frequency': [0,3,0,0], #D, H, M, S
 
 
 
           # admin
-          'whitelist': '',
+          'whitelist': './flask/whitelist.txt',
 
           # CAMERA
           'camera_video': True,

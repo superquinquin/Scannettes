@@ -3,16 +3,21 @@ from flask import Flask, url_for, render_template, request
 from flask_socketio import SocketIO, emit, send, join_room, leave_room
 
 from config import config
-from classes import data, Odoo, Purchase, Lobby, Room, User, Log, BackUp
-from utils import get_passer
-
+from packages.odoo import Odoo, data
+from packages.purchase import Purchase
+from packages.lobby import Lobby
+from packages.room import Room
+from packages.user import User
+from packages.log import Log
+from packages.backup import BackUp
+from packages.utils import get_passer
 
 
 app = Flask(__name__,
             static_url_path= config['static_url'])
+            
 socketio = SocketIO(app, 
                     cors_allowed_origins= config['allowed_origins'])
-
 
 t = []
 
@@ -385,32 +390,29 @@ def validate_purchase(context):
   room_id = context['roomID']
   suffix = context['suffix']
   room = data['lobby']['rooms'][room_id]
-  state = odoo.post_purchase(room)
-  room.update_status_to_verified()
+  purchase = room.purchase
+  state = odoo.post_purchase(purchase)
+  if state:
+    room.update_status_to_verified()
+    pass
 
-  if suffix == room_id:
-    url =  url_for('index')
+    if suffix == room_id:
+      url =  url_for('index')
 
+    else:
+      passer = get_passer(suffix)
+      user_id = passer.get('id',None)
+      token = passer.get('token',None)
+      url = url_for('index_admin', id= user_id, token= token)
+
+      context['url'] = url
+      emit('close-room-on-validation', context)
+  
   else:
-    passer = get_passer(suffix)
-    user_id = passer.get('id',None)
-    token = passer.get('token',None)
-    url = url_for('index_admin', id= user_id, token= token)
+    pass
+    #mseeage d'erreur et énoncer les raisons du blocage.
 
   
-
-  context['url'] = url
-  emit('close-room-on-validation', context)
-
-
-
-
-
-
-
-
-
-
 
 
 
