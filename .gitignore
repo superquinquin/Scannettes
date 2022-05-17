@@ -2,4 +2,5 @@ flask/config.py
 flask/static/js/config.js
 flask/whitelist.txt
 flask/backup.pickle
+flask/log.log
 *.pyc
