@@ -2,5 +2,4 @@ flask/config.py
 flask/static/js/config.js
 flask/whitelist.txt
 flask/backup.pickle
-flask/__pycache__
-flask/packages/__pycache__
+*.pyc
