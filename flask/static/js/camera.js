@@ -173,8 +173,13 @@ modal_laser_btn.onclick =  function () {
       document.getElementsByTagName("body")[0].addEventListener("click", keepLaserFocus);
     }
     
-
-
+    if (document.activeElement === laserOutput) {
+      window.addEventListener("keydown", function (e) {
+        if (e.key != 'Shift' & e.key != 'Enter' & /^-?\d+$/.test(e.key)) {
+          laserOutput.value += e.key
+        }
+      });
+    }
 
 
     // SENDING SCANNER OUTPUT
