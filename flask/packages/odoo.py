@@ -6,13 +6,11 @@ import pandas as pd
 from datetime import datetime
 from threading import Timer
 
-from pydantic import conset
-
 from config import config
 from packages.purchase import Purchase
 from packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
 
-ssl._create_default_https_context = ssl._create_unverified_context
+# ssl._create_default_https_context = ssl._create_unverified_context
 pd.options.mode.chained_assignment = None
 
 data = {'cache': {'pos_max_id': None}}
@@ -234,7 +232,7 @@ class Odoo:
         elif picking_state == 'assigned':
           if id not in incoming + received:
             # add purchase to dict
-            moves = self.client.model('stock.move').browse([('origin', '=', name)])
+            moves = self.client.model(config['table_move']).browse([('origin', '=', name)])
             for item in moves:
 
               if item.state == 'assigned':   
@@ -369,7 +367,7 @@ class Odoo:
       return False
     print('test2 passed')
     # APPLY MODIFICATION TO ODOO ITEMS
-    moves = self.client.model('stock.move').browse([('origin', '=', name)])
+    moves = self.client.model(config['table_move']).browse([('origin', '=', name)])
     for move in moves:
       print('--', move.product_id)
       move_id = move.id
@@ -436,7 +434,7 @@ class Odoo:
     picking_state = self.get_picking_state(name) 
 
     if purchase_state == 'purchase' and picking_state == 'assigned':
-      moves = self.client.model('stock.move').browse([('origin', '=', name)])
+      moves = self.client.model(config['table_move']).browse([('origin', '=', name)])
       passed = False
 
       for item in moves:
