@@ -78,7 +78,7 @@ camera_config = {
           # setting 120FPS / 1 CPF + 1, result on a constant package transfert every 0.15 sec ( 6~7 frame per second received by the server) 
 }
 
-with open(r'C:\Users\rom88\Documents\GitHub\inventory-bl-scanner-webapp\flask\static\js\config.js', 'w') as js:
+with open('./flask/static/js/config.js', 'w') as js:
   js.write('var config = ')
   json.dump(camera_config, js)
   js.write(';')
