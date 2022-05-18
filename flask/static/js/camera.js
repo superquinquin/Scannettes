@@ -171,12 +171,16 @@ modal_laser_btn.onclick =  function () {
     //KEEP FOCUS
     if (modal_laser.style.display == 'flex') {
       document.getElementsByTagName("body")[0].addEventListener("click", keepLaserFocus);
+
     }
     
     if (document.activeElement === laserOutput) {
       window.addEventListener("keydown", function (e) {
         if (e.key != 'Shift' & e.key != 'Enter' & /^-?\d+$/.test(e.key)) {
-          laserOutput.value += e.key
+          if (document.activeElement === laserOutput) {
+            // tricks to make sure not writing ean number wwhile modifying qty
+            laserOutput.value += e.key
+          }
         }
       });
     }

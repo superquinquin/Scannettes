@@ -267,13 +267,15 @@ class Odoo:
 
 
 
-  def check_item_odoo_existence(self, table: pd.DataFrame) -> bool:
+  def check_item_odoo_existence(self, table: pd.DataFrame) -> dict:
+    item_list = []
     validity = True
 
     for item in table.values.tolist():
       item_validity = True
       item_barcode = item[0]
       item_id = item[1]
+      item_name = item[2]
 
       from_id = self.search_product_from_id(item_id)
       from_ean = self.search_product_from_ean(item_barcode)
@@ -318,11 +320,15 @@ class Odoo:
           print('wrong alt id')
           item_validity = False
           validity = False 
+        
+        if item_validity == False:
+          item_list.append(item_barcode)
 
-    return validity
+    return {'validity': validity, 'item_list': item_list}
 
 
-  def check_item_purchase_existence(self, purchase, table: pd.DataFrame, create: bool) -> bool:
+  def check_item_purchase_existence(self, purchase, table: pd.DataFrame, create: bool) -> dict:
+    item_list = []
     validity = True
     id = purchase.id
     name = purchase.name
@@ -336,17 +342,20 @@ class Odoo:
       if item_state == 'none' and create:
         # Create purchase item in odoo
         print('init item creation')
-        self.create_purchase_record(purchase, item_id)
+        passed = self.create_purchase_record(purchase, item_id)
+        if passed == False:
+          item_list.append(name)
         
       elif item_state == 'none' and create == False:
         validity = False
+        item_list.append(name)
 
-    return validity
+    return {'validity': validity, 'item_list': item_list}
 
 
 
 
-  def post_purchase(self, purchase) -> bool:
+  def post_purchase(self, purchase) -> dict:
     global data
 
     purchase.process_status = 'verified'
@@ -356,16 +365,20 @@ class Odoo:
     table = purchase.table_done
     
     # ====> purchase_item exist in ODOO
-    if self.check_item_odoo_existence(table) == False:
+    odoo_exist = self.check_item_odoo_existence(table)
+    if odoo_exist['validity'] == False:
       # DATA VALIDITY IS TO BE PASSED TO ODOO
-      return False
+      return {'validity': False, 'failed': 'odoo_exist', 'item_list': odoo_exist['item_list']}
     print('test1 passed')
+
     # <==== room item all in odoo purchase
-    if self.check_item_purchase_existence(purchase, table, config['odoo_create_new_purchase_item']) == False:
+    purchase_exist = self.check_item_purchase_existence(purchase, table, config['odoo_create_new_purchase_item'])
+    if purchase_exist['validity'] == False:
       # All product from the app are not in the odoo purchase object.
       # purchase items can be create if odoo_create_new_purchase_item == True
-      return False
+      return {'validity': False, 'failed': 'purchase_exist', 'item_list': purchase_exist['item_list']}
     print('test2 passed')
+
     # APPLY MODIFICATION TO ODOO ITEMS
     moves = self.client.model(config['table_move']).browse([('origin', '=', name)])
     for move in moves:
@@ -378,7 +391,9 @@ class Odoo:
         received_qty = purchase.get_item_received_qty(item_id)
         self.apply_purchase_record_change(move_id, received_qty)
         
-    return True
+    return {'validity': True, 'failed': 'none', 'item_list': []}
+
+
 
   def product_supplier_data(self, purchase, product):
     partner_item = self.client.model(config['table_supplier']).get([('id','=', purchase.supplier.id),
@@ -402,7 +417,14 @@ class Odoo:
 
   def create_purchase_record(self, purchase, item_id):
     purchase_id = purchase.id
+
     product = self.search_product_from_id(item_id)
+    if not product:
+      # TEMPORARY TO PREVENT BAD ODOO MANIPULATION, IF ANY INATTENDED PROBLEMS
+      # product does not exist on Odoo
+      # This very case might not happen as we check already product existence in odoo
+      return False
+
     uom = product.product_tmpl_id.uom_id.id
     name, price = self.product_supplier_data(self, purchase, product)
 
@@ -415,6 +437,8 @@ class Odoo:
                 'date_planned': datetime.now()}
 
     self.client.model(config['table_purchase_lines']).create(new_item)
+
+    return True
 
 
   def recharge_purchase(self, purchase) -> None:

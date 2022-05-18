@@ -51,9 +51,9 @@ socket.on('load_existing_lobby', function(context) {
   empty_table('room-verify-listing');
   for (var row of context.room) {
     if (row[3] == 'open') {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4]}, 'room-listing');
+      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-listing');
     } else {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4]}, 'room-verify-listing');
+      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-verify-listing');
     }
   }
   
@@ -273,7 +273,8 @@ function add_room_btn(input, tableID) {
   if (input.pur == '') {
     var purchase = 'Aucune';
   } else {
-    var purchase = input.pur;
+    var supplier = input.supplier
+    var purchase = input.pur + ' - ' + supplier;
   }
 
 

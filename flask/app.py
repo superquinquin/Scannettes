@@ -167,13 +167,15 @@ def join_lobby():
     status = data['lobby']['rooms'][k].status
     date = data['lobby']['rooms'][k].oppening_date
     purchase_name = data['lobby']['rooms'][k].purchase.name
+    purchase_supplier = data['lobby']['rooms'][k].purchase.supplier.name
 
-    context['room'].append([id, name, purchase_name, status, date])
+    context['room'].append([id, name, purchase_name, status, date, purchase_supplier])
   
   for k in data['odoo']['purchases']['incoming'].keys():
     id = data['odoo']['purchases']['incoming'][k].id
     name = data['odoo']['purchases']['incoming'][k].name
-    context['selector'].append(tuple((id, name)))
+    purchase_supplier = data['odoo']['purchases']['incoming'][k].supplier.name
+    context['selector'].append(tuple((id, name + ' - ' + purchase_supplier)))
   
   emit('load_existing_lobby', context, include_self=True)
 
@@ -186,6 +188,7 @@ def join_room(room):
   name = room.name
   id = room.id
   purchase = room.purchase.name
+  purchase_supplier = room.purchase.supplier.name
 
   html_ent, html_quet, html_dont = room.purchase.table_position_to_html()
   entry_records, queue_records, done_records = room.purchase.get_table_records()
@@ -194,6 +197,7 @@ def join_room(room):
   context = {'room_id': id,
              'room_name': name,
              'purchase_name': purchase,
+             'purchase_supplier': purchase_supplier,
              'entries_table':html_ent,
              'queue_table':html_quet,
              'done_table':html_dont,
@@ -217,6 +221,7 @@ def create_room(input):
   input['status'] = room.status
   input['users'] = room.users
   input['creation_date'] = room.oppening_date
+  input['supplier'] = room.purchase.supplier.name
   if room.purchase.process_status == None:
     room.purchase.build_process_tables()
   
@@ -392,9 +397,8 @@ def validate_purchase(context):
   room = data['lobby']['rooms'][room_id]
   purchase = room.purchase
   state = odoo.post_purchase(purchase)
-  if state:
+  if state['validity']:
     room.update_status_to_verified()
-    pass
 
     if suffix == room_id:
       url =  url_for('index')
@@ -409,8 +413,9 @@ def validate_purchase(context):
       emit('close-room-on-validation', context)
   
   else:
-    pass
-    #mseeage d'erreur et énoncer les raisons du blocage.
+    state['string_list'] = ', '.join(state['item_list'])
+    context['post_state'] = state
+    emit('close-test-fail-error-window', context)
 
   
 

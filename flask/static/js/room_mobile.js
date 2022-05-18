@@ -41,8 +41,9 @@
       //header
       const roomName = document.getElementById('room-name');
       const purchaseName = document.getElementById('purchase-name');
+      const pur = context.purchase_name + ' - ' + context.purchase_supplier;
       roomName.textContent = 'Salon : ' + context.room_name;
-      purchaseName.textContent = 'Commande : ' + context.purchase_name;
+      purchaseName.textContent = 'Commande : ' + pur;
 
       CloseCModal()
       canvasDimension()
@@ -744,7 +745,27 @@
       }
     });
 
+    socket.on('close-test-fail-error-window', function(context) {
+      if (roomID == context.roomID) {
+        let state = context.post_state
+        let test_name = state.failed
+        let item_list = state.string_list
 
+        window.scrollTo(0,0); 
+        document.getElementById('confirmation-hub-modal').style.display = 'flex';
+        document.getElementById('html').style.overflowY = 'hidden';
+
+        if (test_name  == 'odoo_exist') {
+          document.getElementById('heading-message').innerHTML = 'Odoo: Produit inexistant';
+          document.getElementById('content-message').innerHTML = "Veuillez rajouter les produits suivants dans Odoo, puis dans la commande associée: " + item_list;
+
+        } else if (test_name == 'purchase_exist') {
+          document.getElementById('heading-message').innerHTML = 'Commande: Produit inexistant';
+          document.getElementById('content-message').innerHTML = "Veuillez rajouter les produits suivants dans la commande associée : " + item_list;
+        }
+        document.getElementById('accept-confirmation').setAttribute('onclick','CloseCModal()')
+      }
+    });
 
 
     recharger.onclick = function () {
