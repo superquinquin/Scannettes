@@ -29,7 +29,8 @@ class Room:
     else:
       # create a pseudo-purchase.
       spo_id = 'spo' + str(len(list(data['odoo']['purchases']['pseudo-purchase'].keys())) + 1)
-      spo_supplier = 'none'
+      spo_supplier = None
+      spo_realness = False
       spo_ptype = 'purchase'
       spo_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
       spo_status = 'incoming'
@@ -37,6 +38,7 @@ class Room:
       data['odoo']['purchases']['pseudo-purchase'][id] = Purchase(spo_id,
                                                                   spo_id,
                                                                   spo_supplier,
+                                                                  spo_realness,
                                                                   spo_ptype,
                                                                   spo_date,
                                                                   spo_date,

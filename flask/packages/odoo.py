@@ -246,7 +246,7 @@ class Odoo:
                 items.append([item_barcode, item_id, item_name, item_qty, item_qty_packaqe, item_qty_received])
 
             table = pd.DataFrame(items, columns=['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
-            data['odoo']['purchases']['incoming'][id] = Purchase(id, name, supplier, 'purchase', create_date, added_date, 'incoming', table)
+            data['odoo']['purchases']['incoming'][id] = Purchase(id, name, supplier, True, 'purchase', create_date, added_date, 'incoming', table)
           
           else:
             # in case modification has been made

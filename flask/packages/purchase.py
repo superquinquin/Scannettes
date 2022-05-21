@@ -10,10 +10,13 @@ from config import config
 class Purchase:
   """purchase or inventory"""
   
-  def __init__(self, id, name, supplier, ptype, create_date, added_date, status, table):
+  def __init__(self, id, name, supplier, realness, ptype, create_date, added_date, status, table):
     self.id = id
     self.name = name
     self.supplier = supplier # partner_id
+
+    self.supplier_name = self.get_supplier_name()
+    self.real = realness # bool == > True= based on real purchase or inventory table 
     self.pType = ptype                       # ['purchase', 'inventory']
     self.create_date = create_date
     self.added_date = added_date
@@ -33,6 +36,16 @@ class Purchase:
     self.table_entries = None
     self.table_queue = None
     self.table_done = None
+
+
+  def get_supplier_name(self):
+    if self.supplier:
+      name = self.supplier.name
+    
+    else:
+      name = 'none'
+
+    return name
 
 
   def status_quo(self):

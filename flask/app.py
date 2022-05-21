@@ -1,3 +1,4 @@
+from math import perm
 import time
 from flask import Flask, url_for, render_template, request
 from flask_socketio import SocketIO, emit, send, join_room, leave_room
@@ -105,7 +106,12 @@ def verify_logger(context):
     user = data['lobby']['users']['admin'][user_id]
 
     if user.token == token and user.browser_id == browser_id:    
+      permission = True
       emit('grant_permission', {'permission': permission})
+  
+  if permission == False:
+    print('no permissions')
+    emit('denied_permission', {'permission': permission}, include_self=True)
   
 
 
@@ -167,15 +173,20 @@ def join_lobby():
     status = data['lobby']['rooms'][k].status
     date = data['lobby']['rooms'][k].oppening_date
     purchase_name = data['lobby']['rooms'][k].purchase.name
-    purchase_supplier = data['lobby']['rooms'][k].purchase.supplier.name
+    purchase_supplier = data['lobby']['rooms'][k].purchase.supplier_name
 
     context['room'].append([id, name, purchase_name, status, date, purchase_supplier])
   
   for k in data['odoo']['purchases']['incoming'].keys():
     id = data['odoo']['purchases']['incoming'][k].id
     name = data['odoo']['purchases']['incoming'][k].name
-    purchase_supplier = data['odoo']['purchases']['incoming'][k].supplier.name
-    context['selector'].append(tuple((id, name + ' - ' + purchase_supplier)))
+    purchase_supplier = data['odoo']['purchases']['incoming'][k].supplier_name
+
+    if data['odoo']['purchases']['incoming'][k].real:
+      context['selector'].append(tuple((id, name + ' - ' + purchase_supplier)))
+
+    else:
+      context['selector'].append(tuple((id, name)))
   
   emit('load_existing_lobby', context, include_self=True)
 
@@ -188,7 +199,7 @@ def join_room(room):
   name = room.name
   id = room.id
   purchase = room.purchase.name
-  purchase_supplier = room.purchase.supplier.name
+  purchase_supplier = room.purchase.supplier_name
 
   html_ent, html_quet, html_dont = room.purchase.table_position_to_html()
   entry_records, queue_records, done_records = room.purchase.get_table_records()
@@ -221,7 +232,8 @@ def create_room(input):
   input['status'] = room.status
   input['users'] = room.users
   input['creation_date'] = room.oppening_date
-  input['supplier'] = room.purchase.supplier.name
+  input['supplier'] = room.purchase.supplier_name
+
   if room.purchase.process_status == None:
     room.purchase.build_process_tables()
   

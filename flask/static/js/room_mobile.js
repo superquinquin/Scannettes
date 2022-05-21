@@ -30,21 +30,28 @@
     socket.on('connect', function() {
       console.log('has connected');
       socket.emit('message', {data: 'I\'m connected!'});
-      socket.emit('join_room', roomID);
-      if (suffix.slice(0,4) != 'room') {
-        console.log('verify permissions')
-        socket.emit('verify_connection', {'suffix': suffix, 'browser_id': browser})
-      }
+      // socket.emit('join_room', roomID);
+      
+      console.log('verify permissions')
+      socket.emit('verify_connection', {'suffix': suffix, 'browser_id': browser})
     });
 
     socket.on('load_existing_room', function(context) {
       //header
       const roomName = document.getElementById('room-name');
-      const purchaseName = document.getElementById('purchase-name');
-      const pur = context.purchase_name + ' - ' + context.purchase_supplier;
       roomName.textContent = 'Salon : ' + context.room_name;
-      purchaseName.textContent = 'Commande : ' + pur;
 
+      const purchaseName = document.getElementById('purchase-name');
+      console.log(context.purchase_supplier)
+      if (context.purchase_supplier == 'none') {
+        const pur = context.purchase_name;
+        purchaseName.textContent = 'Commande : ' + pur;
+
+      } else {
+        const pur = context.purchase_name + ' - ' + context.purchase_supplier;
+        purchaseName.textContent = 'Commande : ' + pur;
+      }
+ 
       CloseCModal()
       canvasDimension()
       scannedProductPlacement()
@@ -87,9 +94,12 @@
       suspender.disabled = false;
       verifier.disabled = false;
       recharger.disabled = false;
+      socket.emit('join_room', roomID);
     });
 
-
+    socket.on('denied_permission', () => {
+      socket.emit('join_room', roomID);
+    });
 
 
 

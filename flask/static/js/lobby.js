@@ -270,7 +270,11 @@ function add_room_btn(input, tableID) {
     var name = input.name;
   }
 
-  if (input.pur == '') {
+  if (typeof(input.pur) == 'number') {
+    input.pur = "PO" + input.pur.toString()
+  }
+
+  if (input.pur == null || input.pur.slice(0,3) == 'spo') {
     var purchase = 'Aucune';
   } else {
     var supplier = input.supplier
