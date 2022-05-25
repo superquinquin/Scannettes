@@ -4,7 +4,7 @@ var suffix;
 const currentLoc = window.location.href;
 suffix = get_suffix(currentLoc);
 
-const socket = io.connect(config.address);
+const socket = io.connect(config.ADDRESS);
 
 // room main
 const roomManagement = document.getElementById('room-management');

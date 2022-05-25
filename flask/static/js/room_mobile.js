@@ -6,7 +6,7 @@
     const currentLoc = window.location.href;
     roomID, suffix = get_suffix(currentLoc)
 
-    const socket = io.connect(config.address);
+    const socket = io.connect(config.ADDRESS);
 
     const adminClose = document.getElementById('admin-close');
     const suspender = document.getElementById('room-suspension');

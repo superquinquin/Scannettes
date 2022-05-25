@@ -85,7 +85,7 @@ class Room:
 
     bytes = base64.b64decode(data)
     pixels = np.array([b for b in bytes], dtype='uint8')
-    image = np.array(pixels).reshape(config['camera_frame_height'], config['camera_frame_width']).astype('uint8')
+    image = np.array(pixels).reshape(config.CAMERA_FRAME_HEIGHT, config.CAMERA_FRAME_WIDTH).astype('uint8')
     return image
 
 

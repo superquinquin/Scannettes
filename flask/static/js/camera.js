@@ -1,8 +1,8 @@
 
-const FPS = config.camera_FPS;
-const CPF = config.camera_package_frequency
-const croppedWidth = config.camera_frame_width;
-const croppedHeight = config.camera_frame_height;
+const FPS = config.CAMERA_FPS;
+const CPF = config.CAMERA_PKG_FREQUENCY
+const croppedWidth = config.CAMERA_FRAME_WIDTH;
+const croppedHeight = config.CAMERA_FRAME_HEIGHT;
 
 var streaming = false;
 
@@ -35,11 +35,11 @@ modal_btn.onclick = async function () {
     video = document.querySelector("#videoElement");
 
     if (navigator.mediaDevices.getUserMedia) {
-      var stream = await navigator.mediaDevices.getUserMedia({ video:      config.camera_video,
-                                                               audio:      config.camera_audio, 
-                                                               width:      { ideal: config.camera_ideal_width }, 
-                                                               height:     { ideal: config.camera_ideal_height },
-                                                               facingMode: { ideal: config.camera_ideal_mode }})
+      var stream = await navigator.mediaDevices.getUserMedia({ video:      config.CAMERA_ENABLE_VIDEO,
+                                                               audio:      config.CAMERA_ENABLE_AUDIO, 
+                                                               width:      { ideal: config.CAMERA_IDEAL_WIDTH }, 
+                                                               height:     { ideal: config.CAMERA_IDEAL_HEIGHT },
+                                                               facingMode: { ideal: config.CAMERA_IDEAL_MODE }})
       video.srcObject = stream;
       WIDTH = stream.getVideoTracks()[0].getSettings().width;
       HEIGHT = stream.getVideoTracks()[0].getSettings().height;

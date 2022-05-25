@@ -1,12 +1,13 @@
-from os.path import dirname
+import sys
+import traceback
 from datetime import datetime
 
+from config import config
 
 
 class Log:
   def __init__(self):
-    folder = dirname(__file__)
-    self.log = open(folder+'/log.log', 'a', encoding='utf-8', errors='ignore')
+    self.log = open(config.LOG_FILENAME, 'a', encoding='utf-8', errors='ignore')
 
   def handle_log(self, ip, user, request):
     self.log.write(f'{ip} {user} {datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")} {request}')

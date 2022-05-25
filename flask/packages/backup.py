@@ -18,12 +18,12 @@ class BackUp:
     return data
 
   def BACKUP_RUNNER(self):
-    delay = get_delay(delta= config['backup_frequency'])
+    delay = get_delay(delta= config.BACKUP_FREQUENCY)
     print(f'new start in : {delay} seconds')
     timer = Timer(delay, self.BACKUP)
     timer.start()
 
   def BACKUP(self):
     global data
-    self.save_backup(data, config['backup_fileName'])
+    self.save_backup(data, config.BACKUP_FILENAME)
     self.BACKUP_RUNNER()

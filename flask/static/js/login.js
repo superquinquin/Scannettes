@@ -1,6 +1,6 @@
 
 var browser = get_browser_id()
-var socket = io.connect(config.address);
+var socket = io.connect(config.ADDRESS);
 
 socket.on('connect', function() {
   console.log('is in loggin');

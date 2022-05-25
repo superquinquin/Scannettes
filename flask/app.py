@@ -1,9 +1,7 @@
-from math import perm
 import time
 from flask import Flask, url_for, render_template, request
 from flask_socketio import SocketIO, emit, send, join_room, leave_room
 
-from config import config
 from packages.odoo import Odoo, data
 from packages.purchase import Purchase
 from packages.lobby import Lobby
@@ -12,15 +10,19 @@ from packages.user import User
 from packages.log import Log
 from packages.backup import BackUp
 from packages.utils import get_passer
+from config import config
+
 
 
 app = Flask(__name__,
-            static_url_path= config['static_url'])
-            
-socketio = SocketIO(app, 
-                    cors_allowed_origins= config['allowed_origins'])
+            static_url_path= config.STATIC_URL)
 
-t = []
+app.config.from_object(config)
+
+socketio = SocketIO(app, 
+                    cors_allowed_origins= config.CORS_ALLOWED_ORIGINS,
+                    logger= config.LOGGER,
+                    engineio_logger= config.ENGINEIO_LOGGER)
 
 
 # route
@@ -61,20 +63,13 @@ def handle_my_custom_event(msg):
 def verify_loggin(context):
   global data
 
-  print(request.remote_addr)
-  print(request.environ['REMOTE_ADDR'])
-  if request.environ.get('HTTP_X_FORWARDED_FOR'):
-    print(request.environ['HTTP_X_FORWARDED_FOR'])
-  else:
-    print(request.environ.get('HTTP_X_FORWARDED_FOR'))
-
   permission = False
   url = ''
 
   id = context['id']
   password = context['password']
   browser_id = context['browser']
-  whitelist = open(config['whitelist'], 'r', encoding='utf-8', errors='ignore')
+  whitelist = open(config.WHITELIST_FILENAME, 'r', encoding='utf-8', errors='ignore')
 
   for identifier in whitelist.readlines():
     i = identifier.split()
@@ -83,10 +78,11 @@ def verify_loggin(context):
       data['lobby']['users']['admin'][id] = User(id, 'lobby', browser_id, permission)
       token = data['lobby']['users']['admin'][id].token
       url = url_for('index_admin', id= id, token= token)
+      print(data['lobby']['users']['admin'][id].id)
       break
-
-  print(data['lobby']['users']['admin'][id].id)
+      
   emit('permission', {'permission': permission, 'user_id': id, 'url': url}, include_self=True)
+
 
 
 @socketio.on('verify_connection')
@@ -256,16 +252,10 @@ def reset_room(id):
 
 @socketio.on('image')
 def image(data_image):
-  global data, odoo, t 
+  global data, odoo
   
   # temporaly tracking fluidity of the flux 
   # flux won't be further optimized, however frame interval each package is send can be modified
-  if t:
-    t.append(time.time())
-    print(t[1] - t[0])
-    t.pop(0)
-  else:
-    t.append(time.time())
 
   imageData = data_image['image']
   room_id = data_image['id']
@@ -435,14 +425,18 @@ def validate_purchase(context):
 
 if __name__ == '__main__':
   app.jinja_env.auto_reload = True
-  app.config['TEMPLATES_AUTO_RELOAD'] = True
-
-
+  
   odoo = Odoo()
   lobby = Lobby()
-  if config['build_on_backup']: 
-    data = BackUp.load_backup(config['backup_fileName'])
-  odoo.build(config['url'], config['login'], config['password'], config['db'], config['verbose'], config['timeDelta'])
+  log = Log()
+  if config.BUILD_ON_BACKUP: 
+    data = BackUp.load_backup(config.BACKUP_FILENAME)
+    
+  odoo.build(config.API_URL, 
+             config.SERVICE_ACCOUNT_LOGGIN, 
+             config.SERVICE_ACCOUNT_PASSWORD, 
+             config.API_DB, config.API_VERBOSE, 
+             config.DELTA_SEARCH_PURCHASE)
   BackUp().BACKUP_RUNNER()
   odoo.UPDATE_RUNNER()
 
