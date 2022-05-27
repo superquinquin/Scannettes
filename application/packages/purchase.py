@@ -2,9 +2,6 @@
 import pandas as pd
 from typing import Union
 
-from config import config
-# from packages.odoo import data
-
 
 
 class Purchase:

@@ -1,4 +1,3 @@
-import time
 from flask import Flask, url_for, render_template, request
 from flask_socketio import SocketIO, emit, send, join_room, leave_room
 
@@ -9,10 +8,14 @@ from packages.room import Room
 from packages.user import User
 from packages.log import Log
 from packages.backup import BackUp
-from packages.utils import get_passer
-from config import config
+from packages.utils import get_passer, define_config, parser
+from config import ClientJsonConfig, Config
 
 
+args = parser()
+config = define_config(args.config)
+ClientJsonConfig.to_json(config= Config, 
+                         subconfig= config)
 
 app = Flask(__name__,
             static_url_path= config.STATIC_URL)
@@ -428,18 +431,21 @@ if __name__ == '__main__':
   
   odoo = Odoo()
   lobby = Lobby()
-  log = Log()
   if config.BUILD_ON_BACKUP: 
     data = BackUp.load_backup(config.BACKUP_FILENAME)
-    
+  data['config'] = config
+  
   odoo.build(config.API_URL, 
              config.SERVICE_ACCOUNT_LOGGIN, 
              config.SERVICE_ACCOUNT_PASSWORD, 
              config.API_DB, config.API_VERBOSE, 
              config.DELTA_SEARCH_PURCHASE)
+  
+  log = Log()
   BackUp().BACKUP_RUNNER()
   odoo.UPDATE_RUNNER()
 
+  
   socketio.run(app)
   #http://localhost:5000/lobby
 

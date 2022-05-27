@@ -1,0 +1,217 @@
+import json
+from os import environ
+from typing import List, Dict, Union
+
+class Config(object):
+  # FLASK
+  SECRET_KEY: str  = environ.get('SECRET_KEY') or 'something'
+  STATIC_URL: str = '/static'
+  APPLICATION_ROOT: str = '/'
+
+  # FLASK-SOCKETIO
+  CORS_ALLOWED_ORIGINS: Union[str, List[str]] = '*'                               # SOCKETIO :: WILDCARD *; IDEAL LIST(URL)
+
+  # ERPPEEK API
+  ## SERVICE ACCOUNT
+  SERVICE_ACCOUNT_LOGGIN: str = 'rene.coty@wanadoo.fr'
+  SERVICE_ACCOUNT_PASSWORD: str = 'ReNeCoTy!MDP'
+
+  ## ERPPEEK DB TABLES NAMES
+  TABLE_PRODUCT: str = 'product'
+  TABLE_TMPL: str = 'tmpl'
+  TABLE_ALTERNATIVE_PRODUCT: str = 'product.alt'
+  TABLE_PURCHASE: str = 'purchase'
+  TABLE_PURCHASE_LINE: str = 'purchase.lines'
+  TABLE_SUPPLIER: str = 'supplier'
+  TABLE_PICKING: str = 'picking'
+  TABLE_MOVE: str = 'move'
+  TABLE_MOVE_LINE: str = 'move.lines'
+
+  # FILE PATH
+  BACKUP_FILENAME: str = './flask/backup.pickle'
+  WHITELIST_FILENAME: str = './flask/whitelist.txt'
+  LOG_FILENAME: str = './flask/log.log'
+  JSON_CONFIG_FILENAME: str = './flask/static/js/config.js'
+
+  # CAMERA
+  CAMERA_ENABLE_VIDEO: bool = True
+  CAMERA_ENABLE_AUDIO: bool = False
+  CAMERA_IDEAL_WIDTH: int = 1920
+  CAMERA_IDEAL_HEIGHT: int = 1080
+  CAMERA_IDEAL_MODE: str = 'environment'
+
+  @classmethod
+  def define_as_config(self):
+    """Standart config object pointing towards selected config references"""
+    
+    return self
+
+ 
+class ProductionConfig(Config):
+
+  # FLASK
+  ENV: str = 'production'
+  DEBUG: bool = False
+  TESTING: bool = False
+  TEMPLATES_AUTO_RELOAD: bool = False
+
+  # FLASK-SOCKETIO
+  ENGINEIO_LOGGER: bool = True
+  LOGGER: bool = True
+
+  # ERPPEEK API
+  ADDRESS: str = '00.000.000.000'                 # SERVER IP ADDRESS
+  API_URL: str = 'https://production.com'
+  API_DB: str = 'production'
+  API_VERBOSE: bool = False
+
+  ## POST OPTIONS
+  ODOO_CREATE_NEW_PURCHASE_LINE: bool = True
+  ODOO_AUTO_PURCHASE_VALIDATION: bool = False
+
+  ## UPDATE THREAD
+  DELTA_SEARCH_PURCHASE: List[int] = [0,1,0,0]                   # YEAR, MONTH, WEEK, DAY  
+  BUILD_UPDATE_TIME: List[int] = [23,59,50]                      # daily, TIME THREAD IS STARTED
+
+  ## BACKUP THREAD
+  BUILD_ON_BACKUP: bool = True
+  BACKUP_FREQUENCY: List[int] = [0,3,0,0]                           #DAY, HOURS, MINUTES, SECONDES
+
+  ## WRITE LOG
+  LOGGER_WRITE_ERROR: bool = True
+
+
+  # CAMERA
+  CAMERA_FRAME_WIDTH: int = 300
+  CAMERA_FRAME_HEIGHT: int = 200
+  CAMERA_FPS: int = 120
+  CAMERA_PKG_FREQUENCY: int = 2  # 0 == all frames are transfered to the server.
+                            # scale on FPS AS: cameraFPS / cameraPackageFrequency == number of package sent per second.
+                            # setting 120FPS / 1 CPF + 1, 
+                            # result on a constant package transfert every 0.15 sec 
+                            # ( 6~7 frame per second received by the server)
+
+
+
+
+
+class StagingConfig(Config):
+  # FLASK
+  ENV: str = 'development'
+  DEBUG: bool = True
+  TESTING: bool = True
+  TEMPLATES_AUTO_RELOAD: bool = True
+
+  # FLASK-SOCKETIO
+  ENGINEIO_LOGGER: bool = True
+  LOGGER: bool = True
+
+  # ERPPEEK API
+  ADDRESS: str = '00.000.000.000'
+  API_URL: str = 'https://staging.com'
+  API_DB: str = 'staging'
+  API_VERBOSE: bool = False
+
+  ## POST OPTIONS
+  ODOO_CREATE_NEW_PURCHASE_LINE: bool = True
+  ODOO_AUTO_PURCHASE_VALIDATION: bool = False
+
+  ## UPDATE THREAD
+  DELTA_SEARCH_PURCHASE: List[int] = [0,0,2,0]                # YEAR, MONTH, WEEK, DAY  
+  BUILD_UPDATE_TIME: List[int] = [23,59,50]                      # daily, TIME THREAD IS STARTED
+
+  ## BACKUP THREAD
+  BUILD_ON_BACKUP: bool = False
+  BACKUP_FREQUENCY: List[int] = [0,3,0,0]                           #DAY, HOURS, MINUTES, SECONDES
+
+  ## WRITE LOG
+  LOGGER_WRITE_ERROR: bool = False
+
+  # CAMERA 
+  CAMERA_FRAME_WIDTH: int = 300
+  CAMERA_FRAME_HEIGHT: int = 200
+  CAMERA_FPS: int = 120
+  CAMERA_PKG_FREQUENCY: int = 2
+
+
+
+
+class DevelopmentConfig(Config):
+  # FLASK
+  ENV: str = 'development'
+  DEBUG: bool = True
+  TESTING: bool = True
+  TEMPLATES_AUTO_RELOAD: bool = True
+
+  # FLASK-SOCKETIO
+  ENGINEIO_LOGGER: bool = False
+  LOGGER: bool = True
+
+  # ERPPEEK API
+  ADDRESS: str = 'http://localhost:5000'                # LOCALHOST
+  API_URL: str = 'https://staging.com'
+  API_DB: str = 'staging'
+  API_VERBOSE: bool = False
+
+  ## POST OPTIONS
+  ODOO_CREATE_NEW_PURCHASE_LINE: bool = True
+  ODOO_AUTO_PURCHASE_VALIDATION: bool = True
+
+  ## UPDATE THREAD
+  DELTA_SEARCH_PURCHASE: List[int] = [0,7,3,3]                # YEAR, MONTH, WEEK, DAY  
+  BUILD_UPDATE_TIME: List[int] = [23,59,50]                      # daily, TIME THREAD IS STARTED
+
+  ## BACKUP THREAD
+  BUILD_ON_BACKUP: bool = False
+  BACKUP_FREQUENCY: List[int] = [0,3,0,0]                        #DAY, HOURS, MINUTES, SECONDES
+
+  ## WRITE LOG
+  LOGGER_WRITE_ERROR: bool = False
+  
+  # CAMERA 
+  CAMERA_FRAME_WIDTH: int = 300
+  CAMERA_FRAME_HEIGHT: int = 200
+  CAMERA_FPS: int = 120
+  CAMERA_PKG_FREQUENCY: int = 2
+
+
+
+
+
+
+
+
+
+
+class ClientJsonConfig(object):
+  
+  @classmethod
+  def _to_dict(self, config: object, subconfig: object) -> Dict[str, Union[str, bool, int]]:
+    """__dict__ is not serialisable. Can't be parsed as Json"""
+
+    return  dict([(k, v) for k, v in 
+            list(config.__dict__.items()) + 
+            list(subconfig.__dict__.items()) 
+            if (k.startswith('CAMERA') or k.startswith('ADDRESS'))])
+
+  @classmethod
+  def to_json(self, config: object, subconfig: object):
+    """Build JSON client config"""
+    
+    with open(config.JSON_CONFIG_FILENAME, 'w') as js:
+      js.write('var config = ')
+      json.dump(self._to_dict(config, subconfig), js)
+      js.write(';')
+
+
+
+""" 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+CHOOSE ENV SET UP
+CHANGE OBJECT BINDED TO DEFINE_AS_CONFIG()
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+"""
+config = DevelopmentConfig.define_as_config()
+
+ClientJsonConfig.to_json(config= Config, 
+                         subconfig= config)

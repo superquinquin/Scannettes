@@ -5,7 +5,6 @@ from datetime import datetime
 from pyzbar.pyzbar import decode
 from flask_socketio import emit, join_room
 
-from config import config
 from packages.purchase import Purchase
 from packages.odoo import data
 
@@ -85,7 +84,8 @@ class Room:
 
     bytes = base64.b64decode(data)
     pixels = np.array([b for b in bytes], dtype='uint8')
-    image = np.array(pixels).reshape(config.CAMERA_FRAME_HEIGHT, config.CAMERA_FRAME_WIDTH).astype('uint8')
+    image = np.array(pixels).reshape(data['config'].CAMERA_FRAME_HEIGHT, 
+                                     data['config'].CAMERA_FRAME_WIDTH).astype('uint8')
     return image
 
 

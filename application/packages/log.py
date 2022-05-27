@@ -1,13 +1,13 @@
 import sys
 import traceback
 from datetime import datetime
+from packages.odoo import data
 
-from config import config
 
 
 class Log:
   def __init__(self):
-    self.log = open(config.LOG_FILENAME, 'a', encoding='utf-8', errors='ignore')
+    self.log = open(data['config'].LOG_FILENAME, 'a', encoding='utf-8', errors='ignore')
 
   def handle_log(self, ip, user, request):
     self.log.write(f'{ip} {user} {datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")} {request}')
