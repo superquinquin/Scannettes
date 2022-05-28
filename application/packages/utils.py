@@ -2,8 +2,7 @@ import pandas as pd
 from typing import Union
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
-import argparse
-from config import configDict
+
 
 
 def get_passer(suffix):
@@ -110,23 +109,3 @@ def update_item_auto_table_selector(purchase, productData: dict, state: Union[No
 
       passed = purchase.delete_item('queue', 'id', productData['item_id'], passed)
       passed = purchase.delete_item('queue', 'barcode', productData['item_barcode'], passed)
-
-
-
-def define_config(config_name: Union[None, str]=None):
-  if config_name is None:
-    config = configDict['dev']
-  
-  else:
-    config = configDict[config_name]
-  
-  return config
-
-
-def parser():
-  parser = argparse.ArgumentParser(description='choose config')
-  parser.add_argument('--config', choices=['dev', 'staging', 'production'],
-                      help= 'add config setup dev, staging or production')
-  args = parser.parse_args()
-
-  return args

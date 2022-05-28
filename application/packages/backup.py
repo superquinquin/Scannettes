@@ -1,8 +1,8 @@
 from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
 
-from packages.odoo import data
-from packages.utils import get_delay
+from application import data
+from application.packages.utils import get_delay
 
 
 class BackUp:

@@ -5,8 +5,9 @@ from datetime import datetime
 from pyzbar.pyzbar import decode
 from flask_socketio import emit, join_room
 
-from packages.purchase import Purchase
-from packages.odoo import data
+from application import data
+from application.packages.purchase import Purchase
+
 
 
 

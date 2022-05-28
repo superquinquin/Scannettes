@@ -1,7 +1,8 @@
 import sys
 import traceback
 from datetime import datetime
-from packages.odoo import data
+
+from application import data
 
 
 

@@ -1,6 +1,9 @@
-from packages.user import User
-from packages.room import Room
-from packages.odoo import data
+from flask import url_for
+from flask_socketio import emit
+
+from application import data
+from application.packages.user import User
+from application.packages.room import Room
 
 
 class Lobby:
@@ -54,3 +57,21 @@ class Lobby:
     global data
 
     data['lobby']['users'].pop(id)
+    
+  def get_user_permissions(self, context):
+    id  = context['id']
+    password = context['password']
+    
+    whitelist = open(data['config'].WHITELIST_FILENAME, 'r', encoding='utf-8', errors='ignore')
+
+    for identifier in whitelist.readlines():
+      i = identifier.split()
+      if id == i[0] and password == i[1]:
+        context['permission'] = True
+        data['lobby']['users']['admin'][id] = User(id, 'lobby', context['browser'], context['permission'])
+        token = data['lobby']['users']['admin'][id].token
+        context['url'] = url_for('index_admin', id= id, token= token)
+        print(data['lobby']['users']['admin'][id].id)
+        break
+        
+    emit('permission', {'permission': context['permission'], 'user_id': id, 'url': context['url']}, include_self=True)

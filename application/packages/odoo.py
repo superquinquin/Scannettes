@@ -6,22 +6,18 @@ import pandas as pd
 from datetime import datetime
 from threading import Timer
 
-
-from packages.purchase import Purchase
-from packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
+from application import data
+from application.packages.purchase import Purchase
+from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
 
 ssl._create_default_https_context = ssl._create_unverified_context
 pd.options.mode.chained_assignment = None
 
 
 
-data = {'cache': {'pos_max_id': None},
-        'config': None}
-
 class Odoo:
   def __init__(self):
     global data
-
     #STATUS
     self.builded = False
     self.connected = False

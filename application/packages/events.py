@@ -1,62 +1,12 @@
-from flask import Flask, url_for, render_template, request
-from flask_socketio import SocketIO, emit, send, join_room, leave_room
+from flask import url_for
+from flask_socketio import emit
 
-from packages.odoo import Odoo, data
-from packages.purchase import Purchase
-from packages.lobby import Lobby
-from packages.room import Room
-from packages.user import User
-from packages.log import Log
-from packages.backup import BackUp
-from packages.utils import get_passer, define_config, parser
-from config import ClientJsonConfig, Config
+from .. import socketio, data
+from application.packages import init_ext
+from .utils import get_passer
 
+odoo, lobby, log = init_ext(data['config'])
 
-args = parser()
-config = define_config(args.config)
-ClientJsonConfig.to_json(config= Config, 
-                         subconfig= config)
-
-app = Flask(__name__,
-            static_url_path= config.STATIC_URL)
-
-app.config.from_object(config)
-
-socketio = SocketIO(app, 
-                    cors_allowed_origins= config.CORS_ALLOWED_ORIGINS,
-                    logger= config.LOGGER,
-                    engineio_logger= config.ENGINEIO_LOGGER)
-
-
-# route
-@app.route('/lobby')
-def index():
-  return render_template('lobby.html')
-
-@app.route('/lobby&id=<id>&token=<token>')
-def index_admin(id, token):
-  return render_template('lobby.html')
-
-
-@app.route('/lobby/login')
-def login():
-  return render_template('login.html')
-
-
-@app.route('/lobby/<id>')
-def get_room(id):
-  # return render_template('room.html')
-  return render_template('room_mobile.html')
-
-
-@app.route('/lobby/admin/<id>&id=<user_id>&token=<token>&state=<state>')
-def get_room_admin(id, user_id, token, state):
-    # return render_template('room.html')
-  return render_template('room_mobile.html')
-
-
-
-# call
 @socketio.on('message')
 def handle_my_custom_event(msg):
   print(str(msg))
@@ -64,27 +14,29 @@ def handle_my_custom_event(msg):
 
 @socketio.on('ask_permission')
 def verify_loggin(context):
-  global data
+  global data, lobby
+  context['url'] = ''
+  context['permission'] = False
+  lobby.get_user_permissions(context)
+  
+  # permission = False
+  # url = ''
+  # id = context['id']
+  # password = context['password']
+  # browser_id = context['browser']
+  # whitelist = open(config.WHITELIST_FILENAME, 'r', encoding='utf-8', errors='ignore')
 
-  permission = False
-  url = ''
-
-  id = context['id']
-  password = context['password']
-  browser_id = context['browser']
-  whitelist = open(config.WHITELIST_FILENAME, 'r', encoding='utf-8', errors='ignore')
-
-  for identifier in whitelist.readlines():
-    i = identifier.split()
-    if id == i[0] and password == i[1]:
-      permission = True
-      data['lobby']['users']['admin'][id] = User(id, 'lobby', browser_id, permission)
-      token = data['lobby']['users']['admin'][id].token
-      url = url_for('index_admin', id= id, token= token)
-      print(data['lobby']['users']['admin'][id].id)
-      break
+  # for identifier in whitelist.readlines():
+  #   i = identifier.split()
+  #   if id == i[0] and password == i[1]:
+  #     permission = True
+  #     data['lobby']['users']['admin'][id] = User(id, 'lobby', browser_id, permission)
+  #     token = data['lobby']['users']['admin'][id].token
+  #     url = url_for('index_admin', id= id, token= token)
+  #     print(data['lobby']['users']['admin'][id].id)
+  #     break
       
-  emit('permission', {'permission': permission, 'user_id': id, 'url': url}, include_self=True)
+  # emit('permission', {'permission': permission, 'user_id': id, 'url': url}, include_self=True)
 
 
 
@@ -421,31 +373,3 @@ def validate_purchase(context):
     state['string_list'] = ', '.join(state['item_list'])
     context['post_state'] = state
     emit('close-test-fail-error-window', context)
-
-  
-
-
-
-if __name__ == '__main__':
-  app.jinja_env.auto_reload = True
-  
-  odoo = Odoo()
-  lobby = Lobby()
-  if config.BUILD_ON_BACKUP: 
-    data = BackUp.load_backup(config.BACKUP_FILENAME)
-  data['config'] = config
-  
-  odoo.build(config.API_URL, 
-             config.SERVICE_ACCOUNT_LOGGIN, 
-             config.SERVICE_ACCOUNT_PASSWORD, 
-             config.API_DB, config.API_VERBOSE, 
-             config.DELTA_SEARCH_PURCHASE)
-  
-  log = Log()
-  BackUp().BACKUP_RUNNER()
-  odoo.UPDATE_RUNNER()
-
-  
-  socketio.run(app)
-  #http://localhost:5000/lobby
-
