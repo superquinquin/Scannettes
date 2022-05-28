@@ -10,7 +10,7 @@ from application import data
 from application.packages.purchase import Purchase
 from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
 
-ssl._create_default_https_context = ssl._create_unverified_context
+# ssl._create_default_https_context = ssl._create_unverified_context
 pd.options.mode.chained_assignment = None
 
 
