@@ -1,6 +1,6 @@
-flask/config.py
-flask/static/js/config.js
-flask/whitelist.txt
-flask/backup.pickle
-flask/log.log
+application/config.py
+application/static/js/config.js
+application/whitelist.txt
+application/backup.pickle
+application/log.log
 *.pyc

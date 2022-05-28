@@ -3,8 +3,6 @@ from typing import Union
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
 
-from config import config
-# from packages.odoo import data
 
 
 def get_passer(suffix):
@@ -111,5 +109,3 @@ def update_item_auto_table_selector(purchase, productData: dict, state: Union[No
 
       passed = purchase.delete_item('queue', 'id', productData['item_id'], passed)
       passed = purchase.delete_item('queue', 'barcode', productData['item_barcode'], passed)
-
-
