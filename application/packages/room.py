@@ -79,14 +79,17 @@ class Room:
 
 
 
-  def decoder(self, data):
+  def decoder(self, image_data):
     """base64 strings
     decode it into numpy array of shape [n,m,1]"""
+    global data
 
-    bytes = base64.b64decode(data)
+    bytes = base64.b64decode(image_data)
     pixels = np.array([b for b in bytes], dtype='uint8')
+
     image = np.array(pixels).reshape(data['config'].CAMERA_FRAME_HEIGHT, 
                                      data['config'].CAMERA_FRAME_WIDTH).astype('uint8')
+    
     return image
 
 

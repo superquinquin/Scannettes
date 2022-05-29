@@ -2,7 +2,7 @@ from flask import Flask
 from flask_socketio import SocketIO
 from application.config import define_config, define_client_config, parser
 
-socketio = SocketIO()
+socketio = SocketIO(async_mode='eventlet')
 data = {}
 
 
