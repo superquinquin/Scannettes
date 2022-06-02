@@ -4,12 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-colorama = "*"
 eventlet = "*"
-pyzbar = "*"
+pyzbar = {extras = ["scripts"], version = "*"}
 python-dateutil = "*"
 numpy = "*"
 pandas = "*"
+colorama = {version = "*", sys_platform="!='fake'"}
 Flask = "==2.1"
 Flask-SocketIO = "==4.3.1"
 Werkzeug = "==2.0.0"

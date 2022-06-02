@@ -1,7 +1,6 @@
 Flask==2.1
 Flask-SocketIO==4.3.1
 Werkzeug==2.0.0
-colorama
 eventlet
 pyzbar
 python-dateutil

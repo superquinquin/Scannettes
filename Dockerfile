@@ -1,17 +1,21 @@
-FROM python:3.8-alpine
+FROM python:3.9.13-slim
 
-RUN adduser -D alkivi
+RUN adduser alkivi
 
 WORKDIR /usr/src/app
 
-RUN apk --no-cache add \
-        gcc g++ make libffi-dev openssl-dev git openssh-client musl-dev cargo libzbar
+
+RUN apt-get update \
+	&& apt-get install zbar-tools -y
+
 
 RUN pip install --upgrade pip
 RUN pip install pipenv 
+
 COPY Pipfile ./
 COPY Pipfile.lock ./
-RUN pipenv install --system --keep-outdated
+RUN pipenv
+RUN pipenv install --system
 
 COPY app.py ./
 ADD application ./application
