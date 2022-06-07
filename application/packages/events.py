@@ -1,12 +1,11 @@
 from flask import url_for
 from flask_socketio import emit
-
-from .. import socketio, data
-from application.packages import init_ext
+from .. import socketio, data, odoo, lobby
 from .utils import get_passer
 
-odoo, lobby, log = init_ext(data['config'])
 
+  
+  
 @socketio.on('message')
 def handle_my_custom_event(msg):
   print(str(msg))
@@ -14,7 +13,8 @@ def handle_my_custom_event(msg):
 
 @socketio.on('ask_permission')
 def verify_loggin(context):
-  global data, lobby
+  global lobby
+  
   context['url'] = ''
   context['permission'] = False
   lobby.get_user_permissions(context)
