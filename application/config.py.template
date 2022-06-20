@@ -12,9 +12,13 @@ class Config(object):
   CORS_ALLOWED_ORIGINS: Union[str, List[str]] = '*'                               # SOCKETIO :: WILDCARD *; IDEAL LIST(URL)
 
   # ERPPEEK API
+  ADDRESS: str = environ.get('ERPPEEK_ADDRESS', '00.000.000.000')                 # SERVER IP ADDRESS
+  API_URL: str = environ.get('ERPPEEK_API_URL', 'https://production.com')
+  API_DB: str = environ.get('ERPPEEK_API_DB', 'production')
+
   ## SERVICE ACCOUNT
-  SERVICE_ACCOUNT_LOGGIN: str = 'rene.coty@wanadoo.fr'
-  SERVICE_ACCOUNT_PASSWORD: str = 'ReNeCoTy!MDP'
+  SERVICE_ACCOUNT_LOGGIN: str = environ.get('ERPPEEK_SERVICE_ACCOUNT_LOGGIN', 'rene.coty@wanadoo.fr')
+  SERVICE_ACCOUNT_PASSWORD: str = environ.get('ERPPEEK_SERVICE_ACCOUNT_PASSWORD', 'ReNeCoTy!MDP')
 
   ## ERPPEEK DB TABLES NAMES
   TABLE_PRODUCT: str = 'product'
@@ -60,9 +64,6 @@ class ProductionConfig(Config):
   LOGGER: bool = True
 
   # ERPPEEK API
-  ADDRESS: str = '00.000.000.000'                 # SERVER IP ADDRESS
-  API_URL: str = 'https://production.com'
-  API_DB: str = 'production'
   API_VERBOSE: bool = False
 
   ## POST OPTIONS
@@ -107,9 +108,6 @@ class StagingConfig(Config):
   LOGGER: bool = True
 
   # ERPPEEK API
-  ADDRESS: str = '00.000.000.000'
-  API_URL: str = 'https://staging.com'
-  API_DB: str = 'staging'
   API_VERBOSE: bool = False
 
   ## POST OPTIONS
@@ -176,13 +174,6 @@ class DevelopmentConfig(Config):
 
 
 
-
-
-
-
-
-
-
 class ClientJsonConfig(object):
   
   @classmethod
@@ -208,22 +199,8 @@ class ClientJsonConfig(object):
 configDict = {
   'production': ProductionConfig,
   'staging': StagingConfig,
-  'dev': DevelopmentConfig}
-
-def define_config(config_name: Union[None, str]=None):
-  if config_name is None:
-    config = configDict['dev']
-  
-  else:
-    config = configDict[config_name]
-      
-  return config
-
-
-def define_client_config(config):
-  
-  ClientJsonConfig.to_json(config= Config, 
-                      subconfig= config)
+  'dev': DevelopmentConfig
+}
 
 
 def parser():
@@ -233,3 +210,19 @@ def parser():
   args = parser.parse_args()
 
   return args
+
+
+
+def define_config(config_name: Union[None, str]=None):
+  if config_name is None:
+    config_name = environ.get('APP_CONFIG', 'dev')
+  
+  config = configDict[config_name]
+      
+  return config
+
+
+def define_client_config(config):
+  
+  ClientJsonConfig.to_json(config= Config, 
+                      subconfig= config)

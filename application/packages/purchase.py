@@ -1,7 +1,11 @@
 import pandas as pd
 from typing import Union
 
-
+class Supplier:
+  def __init__(self, partner_id, partner_name):
+    self.id = partner_id
+    self.name = partner_name
+    
 
 class Purchase:
   """purchase or inventory"""
@@ -9,7 +13,13 @@ class Purchase:
   def __init__(self, id, name, supplier, realness, ptype, create_date, added_date, status, table):
     self.id = id
     self.name = name
-    self.supplier = supplier # partner_id
+    
+    if supplier is None:
+      self.supplier = Supplier(None, 
+                               None)
+    else:
+      self.supplier = Supplier(supplier.id, 
+                               supplier.name) # partner_id
 
     self.supplier_name = self.get_supplier_name()
     self.real = realness # bool == > True= based on real purchase or inventory table 
@@ -24,7 +34,7 @@ class Purchase:
     self.wrong_items = []                   # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! to be used for wrong name and add color
     self.scanned_barcodes = []
     self.new_items = []
-    self.mdofied_items = []
+    self.modified_items = []
     self.process_status = None              # [None ,started, finished, verified] None > started > finished, 
                                             # when None, processing tables are not builded
                                             # On started processing tables are builded and at least partially filled

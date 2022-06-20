@@ -2,12 +2,28 @@ from flask import Flask
 from flask_socketio import SocketIO
 from application.config import define_config, define_client_config, parser
 
+data = {'config': define_config(parser().config),
+        
+        'odoo':  {'history':{'update_purchase': [],
+                              'update_inventory': []},
 
-data = {'config': define_config(parser().config)}
+                  'purchases': {'incoming':{},
+                                'received': {},
+                                'done': {},
+                                'draft': {},
+                                'pseudo-purchase': {}},
+
+                    'inventory': {}},
+        
+        'lobby': {'rooms': {},
+                  'users': {'admin': {}}}
+        }
+
+
 from application.packages import init_ext
+socketio = SocketIO(async_mode='gevents') #
+odoo, lobby, log = init_ext()
 
-socketio = SocketIO(async_mode='eventlet') #
-odoo, lobby, log = init_ext(data['config'])
 
 
 
@@ -20,9 +36,12 @@ def create_app(config_name: str = None, main: bool = True) -> Flask :
   
   app = Flask(__name__,
               static_url_path= config.STATIC_URL)
-  app.jinja_env.auto_reload = True
   app.config.from_object(config)
 
+  # from application.packages.backup import BackUp
+  # if config.BUILD_ON_BACKUP:
+  #   BackUp().load_backup(config)
+  # BackUp().BACKUP_RUNNER()
   
   import application.packages.routes as routes
   import application.packages.events

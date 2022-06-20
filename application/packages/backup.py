@@ -1,19 +1,28 @@
 from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
-
-from application import data
+import json
 from application.packages.utils import get_delay
-
+from application import data
 
 class BackUp:
 
   def save_backup(self, data, fileName):
     with open(fileName, 'wb') as f:
       dump(data, f, protocol= HIGHEST_PROTOCOL)
+      # json.dump(data, fileName)
 
-  def load_backup(self, fileName):
-    with open(fileName, 'rb') as f:
-      data = load(f)
+  def load_backup(self, config):
+    global data
+    print('loading backup')
+    try:
+      with open(config.BACKUP_FILENAME, 'rb') as f:
+        data = load(f)
+        data['config'] = config
+    
+    except (FileNotFoundError or EOFError) as e:
+      # data remain empty
+      pass
+    
     return data
 
   def BACKUP_RUNNER(self):

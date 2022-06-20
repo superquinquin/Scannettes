@@ -8,10 +8,11 @@ from application.packages.room import Room
 
 class Lobby:
   def __init__(self):
-    global data
+    pass
+    # global data
 
-    data['lobby'] = {'rooms': {},
-                     'users': {'admin': {}}}
+    # data['lobby'] = {'rooms': {},
+    #                  'users': {'admin': {}}}
 
   # Lobby Rooms
   def create_room(self, input):
@@ -71,6 +72,7 @@ class Lobby:
         data['lobby']['users']['admin'][id] = User(id, 'lobby', context['browser'], context['permission'])
         token = data['lobby']['users']['admin'][id].token
         context['url'] = url_for('index_admin', id= id, token= token)
+        print(data['lobby'])
         print(data['lobby']['users']['admin'][id].id)
         break
         

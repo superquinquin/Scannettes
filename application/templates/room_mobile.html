@@ -41,9 +41,11 @@
   <div id="modal-laser">
     <div id="modal-laser-container">
       <div id="modal-laser-head">
-        <h5>Scanner</h5>
         <p id="laser-title"><strong>Veuillez scanner un produit avec un scanner laser</strong></p>
-        <input type="text" readonly="readonly" id="laser-output">
+        <input type="text" readonly="readonly" id="laser-output" style="outline: none; border: 0; color: white">
+        <div id="errorBox">
+          <p id="errorText"></p>
+        </div>
       </div>
       <div class="scanned-laser-container">
         <p id="scanned-laser-situation" class="situation">Aucun produit</p>
@@ -67,7 +69,14 @@
     </div>
   </div>
 
-
+  <div id="toTop" style="display: none;">
+    <div id="totop-container">
+      <button id="totop-btn" onclick="scrolltop()">
+        <div id="caret"><p>&#8248</p></div>
+        <div id="content"><p><strong>Top</strong></p></div>
+      </button>
+    </div>
+  </div>  
 
   <div id="stats-block">
     <p>Il reste <strong>XX</strong> produits à scanner</p>

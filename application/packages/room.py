@@ -216,6 +216,7 @@ class Room:
     else:
       product = self.purchase.table_done[(self.purchase.table_done['barcode'] == product_barcode) | (self.purchase.table_done['id'] == product_id)]
       self.purchase.table_done.loc[product.index, 'qty_received'] = product_received
+      self.purchase.append_modified_items(product_barcode)
 
     context['scanned'] = self.purchase.scanned_barcodes
     context['new'] = self.purchase.new_items

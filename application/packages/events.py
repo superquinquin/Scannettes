@@ -1,11 +1,19 @@
 from flask import url_for
 from flask_socketio import emit
 from .. import socketio, data, odoo, lobby
-from .utils import get_passer
+from .utils import get_passer, get_task_permission
 
 
+def task_permission_redirector(context) -> bool:
+  permission = get_task_permission(context['suffix'])
+  
+  if permission == False:
+    emit('task-access-denied', context, include_self=True)
+
+  return permission
   
   
+
 @socketio.on('message')
 def handle_my_custom_event(msg):
   print(str(msg))
@@ -19,24 +27,6 @@ def verify_loggin(context):
   context['permission'] = False
   lobby.get_user_permissions(context)
   
-  # permission = False
-  # url = ''
-  # id = context['id']
-  # password = context['password']
-  # browser_id = context['browser']
-  # whitelist = open(config.WHITELIST_FILENAME, 'r', encoding='utf-8', errors='ignore')
-
-  # for identifier in whitelist.readlines():
-  #   i = identifier.split()
-  #   if id == i[0] and password == i[1]:
-  #     permission = True
-  #     data['lobby']['users']['admin'][id] = User(id, 'lobby', browser_id, permission)
-  #     token = data['lobby']['users']['admin'][id].token
-  #     url = url_for('index_admin', id= id, token= token)
-  #     print(data['lobby']['users']['admin'][id].id)
-  #     break
-      
-  # emit('permission', {'permission': permission, 'user_id': id, 'url': url}, include_self=True)
 
 
 
@@ -55,7 +45,8 @@ def verify_logger(context):
 
   if user_id in data['lobby']['users']['admin'].keys():
     user = data['lobby']['users']['admin'][user_id]
-
+    print(user.token, user.browser_id)
+    print(token, browser_id)
     if user.token == token and user.browser_id == browser_id:    
       permission = True
       emit('grant_permission', {'permission': permission})
@@ -113,6 +104,7 @@ def redirect(context):
 @socketio.on('join_lobby')
 def join_lobby():
   global data
+  print(data)
   print('joining lobby')
 
   context = {'room': [],
@@ -272,9 +264,13 @@ def get_new_item(context):
 @socketio.on('del_item')
 def get_del_item(context):
   global data
-  room_id = context['roomID']
-  room = data['lobby']['rooms'][room_id]
-  room.del_item(context)
+  
+  permission = task_permission_redirector(context)
+  
+  if permission:
+    room_id = context['roomID']
+    room = data['lobby']['rooms'][room_id]
+    room.del_item(context)
 
 
 @socketio.on('mod_item')
@@ -289,23 +285,26 @@ def get_mod_item(context):
 @socketio.on('suspending_room')
 def suspend_room(context):
   global data, lobby
+  
+  permission = task_permission_redirector(context)
+  
+  if permission:
+    room_id = context['roomID']
+    suffix = context['suffix']
 
-  room_id = context['roomID']
-  suffix = context['suffix']
+    if suffix == room_id:
+      url =  url_for('index')
 
-  if suffix == room_id:
-    url =  url_for('index')
+    else:
+      passer = get_passer(suffix)
+      user_id = passer.get('id',None)
+      token = passer.get('token',None)
+      url = url_for('index_admin', id= user_id, token= token)
 
-  else:
-    passer = get_passer(suffix)
-    user_id = passer.get('id',None)
-    token = passer.get('token',None)
-    url = url_for('index_admin', id= user_id, token= token)
+    lobby.delete_room(room_id)
 
-  lobby.delete_room(room_id)
-
-  context['url'] = url
-  emit('broacasted_suspension', context, broadcast=True, include_self=True)
+    context['url'] = url
+    emit('broacasted_suspension', context, broadcast=True, include_self=True)
 
 
 @socketio.on('finishing_room')
@@ -335,41 +334,46 @@ def finish_room(context):
 def recharge_room(context):
   global data, odoo
 
-  room_id = context['roomID']
-  suffix = context['suffix']
-  purchase = data['lobby']['rooms'][room_id].purchase
-  odoo.recharge_purchase(purchase)
-  emit('reload-on-recharge', context, broadcast=False, include_self=True)
-  emit('broadcast-recharge', context, broadcast=True, include_self=False)
+  permission = task_permission_redirector(context)
+  
+  if permission:
+    room_id = context['roomID']
+    purchase = data['lobby']['rooms'][room_id].purchase
+    odoo.recharge_purchase(purchase)
+    emit('reload-on-recharge', context, broadcast=False, include_self=True)
+    emit('broadcast-recharge', context, broadcast=True, include_self=False)
 
 
 
 @socketio.on('validation-purchase')
 def validate_purchase(context):
   global data, odoo
-
-  print('____validation process______')
-  room_id = context['roomID']
-  suffix = context['suffix']
-  room = data['lobby']['rooms'][room_id]
-  purchase = room.purchase
-  state = odoo.post_purchase(purchase)
-  if state['validity']:
-    room.update_status_to_verified()
-
-    if suffix == room_id:
-      url =  url_for('index')
-
-    else:
-      passer = get_passer(suffix)
-      user_id = passer.get('id',None)
-      token = passer.get('token',None)
-      url = url_for('index_admin', id= user_id, token= token)
-
-      context['url'] = url
-      emit('close-room-on-validation', context)
   
-  else:
-    state['string_list'] = ', '.join(state['item_list'])
-    context['post_state'] = state
-    emit('close-test-fail-error-window', context)
+  permission = task_permission_redirector(context)
+  
+  if permission:
+    print('____validation process______')
+    room_id = context['roomID']
+    suffix = context['suffix']
+    room = data['lobby']['rooms'][room_id]
+    purchase = room.purchase
+    state = odoo.post_purchase(purchase)
+    if state['validity']:
+      room.update_status_to_verified()
+
+      if suffix == room_id:
+        url =  url_for('index')
+
+      else:
+        passer = get_passer(suffix)
+        user_id = passer.get('id',None)
+        token = passer.get('token',None)
+        url = url_for('index_admin', id= user_id, token= token)
+
+        context['url'] = url
+        emit('close-room-on-validation', context)
+    
+    else:
+      state['string_list'] = ', '.join(state['item_list'])
+      context['post_state'] = state
+      emit('close-test-fail-error-window', context)

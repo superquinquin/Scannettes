@@ -4,3 +4,5 @@ application/whitelist.txt
 application/backup.pickle
 application/log.log
 *.pyc
+.venv
+docker-compose.yml
