@@ -23,3 +23,9 @@ class User:
 
   def generate_token(self):
     return binascii.hexlify(os.urandom(20)).decode()  
+  
+  def verify_permision(self, token):
+    if token == self.token:
+      return True
+    else:
+      return False

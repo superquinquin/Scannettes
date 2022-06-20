@@ -2,6 +2,8 @@ import pandas as pd
 from typing import Union
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
+from application import data
+
 
 
 
@@ -56,13 +58,33 @@ def get_ceiling_date(timeDelta: list, data: dict, key: str) -> str:
 
   Y, M, W, D = timeDelta[0], timeDelta[1], timeDelta[2], timeDelta[3] # YEAR, MONTH, WEEK, DAY
 
-  if not data['odoo']['history'][key]:
-    date_ceiling = (datetime.now().date() + 
-                    relativedelta(years=-Y ,months=-M, weeks=-W, days=-D)).strftime("%Y-%m-%d %H:%M:%S")
-  else:
+  if data['odoo']['history'][key] and data['config'].ENV == 'production':
     date_ceiling = data['odoo']['history'][key][-1]
+    
+  else:
+    date_ceiling = (datetime.now().date() + 
+                relativedelta(years=-Y ,months=-M, weeks=-W, days=-D)).strftime("%Y-%m-%d %H:%M:%S")
 
   return date_ceiling
+
+
+
+def get_task_permission(suffix: str) -> bool:
+  permission = False
+  
+  passer = get_passer(suffix)
+  id = passer.get('id',None)
+  token = passer.get('token',None)
+  state = passer.get('state',None)
+  
+  user = data['lobby']['users']['admin'].get(id, None)
+  if user:
+    permission = user.verify_permision(token)
+  
+  return permission
+
+
+
 
 
 

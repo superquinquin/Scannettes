@@ -8,6 +8,9 @@ from threading import Timer
 from application import data
 from application.packages.purchase import Purchase
 from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
+# from threading import Timer
+# from pickle import dump, load, HIGHEST_PROTOCOL
+
 
 pd.options.mode.chained_assignment = None
 
@@ -25,18 +28,6 @@ class Odoo:
     self.log = None
     self.tz = None
     self.user = None
-
-    # DATA
-    data['odoo'] = {'history':{'update_purchase': [],
-                       'update_inventory': []},
-
-            'purchases': {'incoming':{},
-                          'received': {},
-                          'done': {},
-                          'draft': {},
-                          'pseudo-purchase': {}},
-
-            'inventory': {}}
 
 
   def connect(self, url, login, password, db, verbose):
@@ -176,6 +167,7 @@ class Odoo:
     """
     global data
 
+
     draft = list(data['odoo']['purchases']['draft'].keys())
     incoming = list(data['odoo']['purchases']['incoming'].keys())
     received = list(data['odoo']['purchases']['received'].keys())
@@ -249,18 +241,19 @@ class Odoo:
             # in case modification has been made
             if id in incoming:
               purchase = data['odoo']['purchases']['incoming'][id]
-              data['odoo']['purchases']['incoming'][id] = self.recharge_purchase(purchase)
+              self.recharge_purchase(purchase)
 
             elif id in received:
               purchase = data['odoo']['purchases']['received'][id]
-              data['odoo']['purchases']['received'][id] = self.recharge_purchase(purchase)
+              self.recharge_purchase(purchase)
 
       elif purchase_state == 'draft':
         data['odoo']['purchases']['draft'][id] = None # Placeholder to keep tracking drafts
 
       
     data['odoo']['history']['update_purchase'].append(datetime.now().date().strftime("%Y-%m-%d %H:%M:%S"))
-    print(data['odoo'])
+
+    return data
 
 
 
@@ -451,9 +444,8 @@ class Odoo:
     global data
     id = purchase.id
     name = purchase.name
-    purchase_state = self.client.model(data['config'].TABLE_PURCHASE).browse([('id', '=', id)]).state
+    purchase_state = self.client.model(data['config'].TABLE_PURCHASE).get([('id', '=', id)]).state
     picking_state = self.get_picking_state(name) 
-
     if purchase_state == 'purchase' and picking_state == 'assigned':
       moves = self.client.model(data['config'].TABLE_MOVE).browse([('origin', '=', name)])
       passed = False
@@ -475,7 +467,7 @@ class Odoo:
 
       elif id in list(data['odoo']['purchases']['received'].keys()):
         data['odoo']['purchases']['received'].pip(id)
-
+    
 
 
   def get_inventory(self):
@@ -492,23 +484,25 @@ class Odoo:
     """Building base dataset
     activate only on first activation of the server"""
     self.connect(url, login, password, db, verbose)
-    self.get_purchase(timeDelta)
+    data = self.get_purchase(timeDelta)
     self.get_inventory()
 
     self.builded = True
 
-
-  def update_build(self):
-    self.get_purchase(data['config'].DELTA_SEARCH_PURCHASE)
-    self.get_inventory()
-
-    self.UPDATE_RUNNER()
+    return data
 
 
   def UPDATE_RUNNER(self):
     """THREADING and schedulding update every XXXX hours
     possibly placed under build"""
-    delay = get_delay(time= data['config'].BUILD_UPDATE_TIME)
+    delay = get_delay(time= data['config'].BUILD_UPDATE_TIME) #time
     print(f'new update in : {delay} seconds')
     timer = Timer(delay, self.update_build)
     timer.start()
+
+
+  def update_build(self):
+    global data
+    data = self.get_purchase(data['config'].DELTA_SEARCH_PURCHASE)
+    self.get_inventory()
+    self.UPDATE_RUNNER()
