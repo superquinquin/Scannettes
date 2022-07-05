@@ -8,9 +8,6 @@ from threading import Timer
 from application import data
 from application.packages.purchase import Purchase
 from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
-# from threading import Timer
-# from pickle import dump, load, HIGHEST_PROTOCOL
-
 
 pd.options.mode.chained_assignment = None
 
@@ -18,7 +15,6 @@ pd.options.mode.chained_assignment = None
 
 class Odoo:
   def __init__(self):
-    global data
     #STATUS
     self.builded = False
     self.connected = False
@@ -47,36 +43,33 @@ class Odoo:
 
 
   def search_product_from_id(self, product_id):
-    return self.client.model(data['config'].TABLE_PRODUCT).get([('id', '=', product_id)])
+    return self.client.model('product.product').get([('id', '=', product_id)])
 
 
 
   def search_product_from_ean(self, code_ean):
     """search for product object in product table."""
-    return self.client.model(data['config'].TABLE_PRODUCT).get([('barcode', '=', code_ean)])
+    return self.client.model('product.product').get([('barcode', '=', code_ean)])
 
 
 
   def search_alternative_ean(self, code_ean):
     """search in multi_barcode for scanned ean
     return product linked to main ean"""
-    alt_product = self.client.model(data['config'].TABLE_ALTERNATIVE_PRODUCT).get([('barcode','=',code_ean)])
+    alt_product = self.client.model('product.multi.barcode').get([('barcode','=',code_ean)])
     if alt_product is not None:
-      return self.client.model(data['config'].TABLE_ALTERNATIVE_PRODUCT).get([('barcode','=',code_ean)]).product_id
+      return self.client.model('product.multi.barcode').get([('barcode','=',code_ean)]).product_id
 
     else:
       return None
 
 
   def search_item_tmpl_id_from_product_id(self, product_id):
-    return self.client.model(data['config'].TABLE_PRODUCT).get([('id','=', product_id)]).product_tmpl_id.id
-
-
-
+    return self.client.model('product.product').get([('id','=', product_id)]).product_tmpl_id.id
 
 
   def apply_purchase_record_change(self, move_id, received_qty):
-      move = self.client.model(data['config'].TABLE_MOVE_LINE).get([('move_id.id','=', move_id)])
+      move = self.client.model('stock.move.line').get([('move_id.id','=', move_id)])
       move.qty_done = received_qty
     
 
@@ -84,7 +77,7 @@ class Odoo:
   def get_picking_state(self, name):
 
     try:
-      picking = self.client.model(data['config'].TABLE_PICKING).get([('origin','=', name)])
+      picking = self.client.model('stock.picking').get([('origin','=', name)])
       if picking:
         picking_state = picking.state
 
@@ -95,7 +88,7 @@ class Odoo:
       # multiple picking ID heading towards a purchase.
       # most likely 1st is canceled and next one correct it.
       # state priority : None < Cancel < assigned < done
-      picking = self.client.model(data['config'].TABLE_PICKING).browse([('origin','=', name)])
+      picking = self.client.model('stock.picking').browse([('origin','=', name)])
       picking_state = None
 
       for pick in picking:
@@ -116,7 +109,7 @@ class Odoo:
   def get_item_state(self, name: str, id: int):
 
     try:
-      item = self.client.model(data['config'].TABLE_MOVE).get([('origin','=', name), ('product_id.id','=', id)])
+      item = self.client.model('stock.move').get([('origin','=', name), ('product_id.id','=', id)])
       if item:
         item_state = item.state
 
@@ -127,7 +120,7 @@ class Odoo:
       # multiple picking ID heading towards a purchase.
       # most likely 1st is canceled and next one correct it.
       # state priority : None < Cancel < assigned < done
-      items = self.client.model(data['config'].TABLE_MOVE).browse([('origin','=', name), ('product_id.id','=', id)])
+      items = self.client.model('stock.move').browse([('origin','=', name), ('product_id.id','=', id)])
       item_state = None
 
       for item in items:
@@ -145,7 +138,7 @@ class Odoo:
     return item_state
 
 
-  def get_purchase(self, timeDelta: list) -> None:
+  def get_purchase(self, timeDelta: list, data) -> None:
     """
     Collect tracked Odoo Purchases adn group them in sub-groups based on pruchase & picking state ['draft', 'incoming', 'received', 'done'].
     Purchase state : ['draft', 'purchase', 'cancel'], draft = price requeste, purchase = purchase incoming.
@@ -165,8 +158,6 @@ class Odoo:
 
     Return Modification to nested dict data['odoo']['purchases'] and data['odoo']['history']['update_purchase']
     """
-    global data
-
 
     draft = list(data['odoo']['purchases']['draft'].keys())
     incoming = list(data['odoo']['purchases']['incoming'].keys())
@@ -175,10 +166,10 @@ class Odoo:
 
     date_ceiling = get_ceiling_date(timeDelta, data, 'update_purchase')
     
-    purhasesList = (self.client.model(data['config'].TABLE_PURCHASE).browse([('create_date', '>', date_ceiling)]) +
-                   self.client.model(data['config'].TABLE_PURCHASE).browse([('id', 'in', draft)]) + 
-                   self.client.model(data['config'].TABLE_PURCHASE).browse([('id', 'in', incoming)]) +
-                   self.client.model(data['config'].TABLE_PURCHASE).browse([('id', 'in', received)]))
+    purhasesList = (self.client.model('purchase.order').browse([('create_date', '>', date_ceiling)]) +
+                   self.client.model('purchase.order').browse([('id', 'in', draft)]) + 
+                   self.client.model('purchase.order').browse([('id', 'in', incoming)]) +
+                   self.client.model('purchase.order').browse([('id', 'in', received)]))
     data['odoo']['purchases']['draft'] = {} # reset to avoid duplicate
 
     for pur in purhasesList:
@@ -221,7 +212,7 @@ class Odoo:
         elif picking_state == 'assigned':
           if id not in incoming + received:
             # add purchase to dict
-            moves = self.client.model(data['config'].TABLE_MOVE).browse([('origin', '=', name)])
+            moves = self.client.model('stock.move').browse([('origin', '=', name)])
             for item in moves:
 
               if item.state == 'assigned':   
@@ -241,11 +232,11 @@ class Odoo:
             # in case modification has been made
             if id in incoming:
               purchase = data['odoo']['purchases']['incoming'][id]
-              self.recharge_purchase(purchase)
+              self.recharge_purchase(purchase, data)
 
             elif id in received:
               purchase = data['odoo']['purchases']['received'][id]
-              self.recharge_purchase(purchase)
+              self.recharge_purchase(purchase, data)
 
       elif purchase_state == 'draft':
         data['odoo']['purchases']['draft'][id] = None # Placeholder to keep tracking drafts
@@ -345,8 +336,7 @@ class Odoo:
 
 
 
-  def post_purchase(self, purchase) -> dict:
-    global data
+  def post_purchase(self, purchase, data) -> dict:
 
     purchase.process_status = 'verified'
     id = purchase.id
@@ -370,7 +360,7 @@ class Odoo:
     print('test2 passed')
 
     # APPLY MODIFICATION TO ODOO ITEMS
-    moves = self.client.model(data['config'].TABLE_MOVE).browse([('origin', '=', name)])
+    moves = self.client.model('stock.move').browse([('origin', '=', name)])
     for move in moves:
       print('--', move.product_id)
       move_id = move.id
@@ -386,7 +376,7 @@ class Odoo:
 
 
   def product_supplier_data(self, purchase, product):
-    partner_item = self.client.model(data['config'].TABLE_SUPPLIER).get([('id','=', purchase.supplier.id),
+    partner_item = self.client.model('product.supplierinfo').get([('id','=', purchase.supplier.id),
                                                                    ('product_tmpl_id.id','=', product.product_tmpl_id.id)])
     if partner_item:
       price = partner_item.base_price
@@ -426,12 +416,12 @@ class Odoo:
                 'product_id': product,
                 'date_planned': datetime.now()}
 
-    self.client.model(data['config'].TABLE_PURCHASE_LINE).create(new_item)
+    self.client.model('purchase.order.line').create(new_item)
 
     return True
 
 
-  def recharge_purchase(self, purchase) -> None:
+  def recharge_purchase(self, purchase, data) -> None:
     """Request to update purchase data from odoo
     keep room table structure untouched
     In use when odoo is modified eg: 
@@ -441,13 +431,13 @@ class Odoo:
     ...
     return purchase object 
     """
-    global data
+
     id = purchase.id
     name = purchase.name
-    purchase_state = self.client.model(data['config'].TABLE_PURCHASE).get([('id', '=', id)]).state
+    purchase_state = self.client.model('purchase.order').get([('id', '=', id)]).state
     picking_state = self.get_picking_state(name) 
     if purchase_state == 'purchase' and picking_state == 'assigned':
-      moves = self.client.model(data['config'].TABLE_MOVE).browse([('origin', '=', name)])
+      moves = self.client.model('stock.move').browse([('origin', '=', name)])
       passed = False
 
       for item in moves:
@@ -471,20 +461,18 @@ class Odoo:
 
 
   def get_inventory(self):
-    global data
     pass
   
 
   def post_inventory(self):
-    global data
     pass
 
 
-  def build(self, url, login, password, db, verbose, timeDelta):
+  def build(self, data, url, login, password, db, verbose, timeDelta):
     """Building base dataset
     activate only on first activation of the server"""
     self.connect(url, login, password, db, verbose)
-    data = self.get_purchase(timeDelta)
+    data = self.get_purchase(timeDelta, data)
     self.get_inventory()
 
     self.builded = True
@@ -503,6 +491,6 @@ class Odoo:
 
   def update_build(self):
     global data
-    data = self.get_purchase(data['config'].DELTA_SEARCH_PURCHASE)
+    data = self.get_purchase(data['config'].DELTA_SEARCH_PURCHASE, data)
     self.get_inventory()
     self.UPDATE_RUNNER()

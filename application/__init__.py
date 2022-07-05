@@ -21,7 +21,7 @@ data = {'config': define_config(parser().config),
 
 
 from application.packages import init_ext
-socketio = SocketIO(async_mode='gevents') #
+socketio = SocketIO(async_mode='gevent') #
 odoo, lobby, log = init_ext()
 
 

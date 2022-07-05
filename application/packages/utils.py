@@ -1,8 +1,7 @@
 import pandas as pd
-from typing import Union
+from typing import Dict, Union
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
-from application import data
 
 
 
@@ -69,7 +68,7 @@ def get_ceiling_date(timeDelta: list, data: dict, key: str) -> str:
 
 
 
-def get_task_permission(suffix: str) -> bool:
+def get_task_permission(data: Dict, suffix: str) -> bool:
   permission = False
   
   passer = get_passer(suffix)

@@ -19,7 +19,8 @@ def init_ext():
   lobby = Lobby()
   log = Log()
   
-  data = odoo.build( config.API_URL, 
+  data = odoo.build(data,
+                    config.API_URL, 
                     config.SERVICE_ACCOUNT_LOGGIN, 
                     config.SERVICE_ACCOUNT_PASSWORD, 
                     config.API_DB, 
