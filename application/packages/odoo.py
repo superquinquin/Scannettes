@@ -3,9 +3,9 @@ import time
 import erppeek
 import pandas as pd
 from datetime import datetime
-from threading import Timer
+# from threading import Timer
 
-from application import data
+# from application import data
 from application.packages.purchase import Purchase
 from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
 
@@ -240,8 +240,7 @@ class Odoo:
 
       elif purchase_state == 'draft':
         data['odoo']['purchases']['draft'][id] = None # Placeholder to keep tracking drafts
-
-      
+    
     data['odoo']['history']['update_purchase'].append(datetime.now().date().strftime("%Y-%m-%d %H:%M:%S"))
 
     return data
@@ -478,19 +477,3 @@ class Odoo:
     self.builded = True
 
     return data
-
-
-  def UPDATE_RUNNER(self):
-    """THREADING and schedulding update every XXXX hours
-    possibly placed under build"""
-    delay = get_delay(time= data['config'].BUILD_UPDATE_TIME) #time
-    print(f'new update in : {delay} seconds')
-    timer = Timer(delay, self.update_build)
-    timer.start()
-
-
-  def update_build(self):
-    global data
-    data = self.get_purchase(data['config'].DELTA_SEARCH_PURCHASE, data)
-    self.get_inventory()
-    self.UPDATE_RUNNER()

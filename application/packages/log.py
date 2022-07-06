@@ -1,17 +1,15 @@
 import sys
-import traceback
 from datetime import datetime
 
-from application import data
 
+class Log(object):
+  def __init__(self, config):
+    self.terminal = sys.stderr
+    self.log = open(config.LOG_FILENAME, 'a', encoding='utf-8')
 
-
-class Log:
-  def __init__(self):
-    self.log = open(data['config'].LOG_FILENAME, 'a', encoding='utf-8', errors='ignore')
-
-  def handle_log(self, ip, user, request):
-    self.log.write(f'{ip} {user} {datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")} {request}')
-
-  def handle_error_log(self, ip, user, error):
-    self.log.write(f'{ip} {user} {datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")} {error}')
+  def handle_error_log(self, e):
+    self.terminal.write(e)
+    self.log.write('----------------------------------------------------------\n')
+    self.log.write(f'{datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")}\n')
+    self.log.write(e)
+    self.log.write('----------------------------------------------------------\n')

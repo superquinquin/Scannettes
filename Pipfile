@@ -4,18 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-python-dateutil = "*"
-numpy = "==1.21.5"
-pandas = "==1.3.5"
-Flask = "==2.1"
-Flask-SocketIO = "==4.3.1"
-Werkzeug = "==2.0.0"
-ERPpeek = "*"
+flask = "==2.1"
+flask-socketio = "==4.3.1"
 python-socketio = "==4.6.0"
 python-engineio = "==3.13.2"
-importlib-metadata = "*"
-uwsgi = "*"
+werkzeug = "==2.0.0"
+numpy = "==1.21.5"
+pandas = "==1.3.5"
 gevent = "*"
+python-dateutil = "*"
+erppeek = "*"
+uwsgi = "*"
+importlib-metadata = "*"
+gevent-websocket = "*"
 
 [dev-packages]
 
