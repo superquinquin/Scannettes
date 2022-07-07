@@ -11,4 +11,3 @@ python-dateutil
 ERPpeek
 uwsgi
 importlib-metadata
-gevent-websocket
