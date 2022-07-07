@@ -1,28 +1,24 @@
+import sys
 from flask import Flask
 from flask_socketio import SocketIO
 from application.config import define_config, define_client_config, parser
-
-data = {'config': define_config(parser().config),
-        
-        'odoo':  {'history':{'update_purchase': [],
-                              'update_inventory': []},
-
-                  'purchases': {'incoming':{},
-                                'received': {},
-                                'done': {},
-                                'draft': {},
-                                'pseudo-purchase': {}},
-
-                    'inventory': {}},
-        
-        'lobby': {'rooms': {},
-                  'users': {'admin': {}}}
-        }
-
-
 from application.packages import init_ext
-socketio = SocketIO(async_mode='gevents') #
-odoo, lobby, log = init_ext()
+from application.packages.log import Log, Hook, ErrLogFlush
+from application.packages.backup import Data, BackUp, Update
+
+
+config = define_config(parser().config)
+socketio = SocketIO(async_mode='gevent') #
+data = Data.init_data(config)
+data, odoo, lobby = init_ext(data)
+
+Log(config)
+sys.excepthook = Hook().exception_hook
+sys.stderr = ErrLogFlush(config)
+
+Update(odoo).UPDATE_RUNNER(config)
+BackUp().BACKUP_RUNNER(config)
+
 
 
 
@@ -37,11 +33,7 @@ def create_app(config_name: str = None, main: bool = True) -> Flask :
   app = Flask(__name__,
               static_url_path= config.STATIC_URL)
   app.config.from_object(config)
-
-  # from application.packages.backup import BackUp
-  # if config.BUILD_ON_BACKUP:
-  #   BackUp().load_backup(config)
-  # BackUp().BACKUP_RUNNER()
+  
   
   import application.packages.routes as routes
   import application.packages.events

@@ -3,18 +3,15 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from pyzbar.pyzbar import decode
-from flask_socketio import emit, join_room
 
-from application import data
 from application.packages.purchase import Purchase
 
 
 
 
 class Room:
-  def __init__(self, id, name, password, purchase_id, rayon_id):
-    global data
-
+  
+  def __init__(self, id, name, password, purchase_id, rayon_id, data):
     # status
     self.id = id
     self.name = name
@@ -26,32 +23,42 @@ class Room:
 
     if purchase_id != None:
       self.purchase = data['odoo']['purchases']['incoming'][purchase_id]
+      
     else:
-      # create a pseudo-purchase.
-      spo_id = 'spo' + str(len(list(data['odoo']['purchases']['pseudo-purchase'].keys())) + 1)
-      spo_supplier = None
-      spo_realness = False
-      spo_ptype = 'purchase'
-      spo_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-      spo_status = 'incoming'
-      spo_table = pd.DataFrame([], columns=['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
-      data['odoo']['purchases']['pseudo-purchase'][id] = Purchase(spo_id,
-                                                                  spo_id,
-                                                                  spo_supplier,
-                                                                  spo_realness,
-                                                                  spo_ptype,
-                                                                  spo_date,
-                                                                  spo_date,
-                                                                  spo_status,
-                                                                  spo_table)
-      self.purchase = data['odoo']['purchases']['pseudo-purchase'][id]
+      self.purchase = self.generate_pseaudo_purchase(data, id)
 
 
 
-  def image_decoder(self, imageData, room_id, room, odoo):
-    global data, Odoo
 
-    image = self.decoder(imageData)
+  def generate_pseaudo_purchase(self, data, id):
+    # create a pseudo-purchase.
+    spo_id = 'spo' + str(len(list(data['odoo']['purchases']['pseudo-purchase'].keys())) + 1)
+    spo_supplier = None
+    spo_realness = False
+    spo_ptype = 'purchase'
+    spo_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    spo_status = 'incoming'
+    spo_table = pd.DataFrame([], columns=['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
+    
+    data['odoo']['purchases']['pseudo-purchase'][id] = Purchase(spo_id,
+                                                                spo_id,
+                                                                spo_supplier,
+                                                                spo_realness,
+                                                                spo_ptype,
+                                                                spo_date,
+                                                                spo_date,
+                                                                spo_status,
+                                                                spo_table)
+    
+    return data['odoo']['purchases']['pseudo-purchase'][id]    
+    
+    
+    
+  def image_decoder(self, imageData, room_id, room, odoo, data):
+    """ 
+    state: 0 for no ean found; 1 for new ean ; 2 for ean already scanned
+    """
+    image = self.decoder(imageData, data)
 
     image = np.array(image)
     ean = decode(image)
@@ -66,23 +73,24 @@ class Room:
         context['scanned'] = self.purchase.scanned_barcodes
         context['new'] = self.purchase.new_items
         context['mod'] = self.purchase.modified_items
-
-        join_room(room_id)
-        emit('move_product_to_queue', context, broadcast=True, include_self=True, to=room_id)
-        emit('change_color', broadcast=False, include_self=True, to=room_id)
-        emit('modify_scanned_item', context, broadcast=False, include_self=True, to=room_id)
+        context['state'] = 1
         print(code_ean)
 
       else:
-        emit('change_color', broadcast=False, include_self=True, to=room_id)
+        context = {'state': 2}
         print(code_ean, 'is already scanned')
+    
+    else:
+      context = {'state': 0}
+    
+    return context
 
 
 
-  def decoder(self, image_data):
+
+  def decoder(self, image_data, data):
     """base64 strings
     decode it into numpy array of shape [n,m,1]"""
-    global data
 
     bytes = base64.b64decode(image_data)
     pixels = np.array([b for b in bytes], dtype='uint8')
@@ -93,8 +101,10 @@ class Room:
     return image
 
 
-  def laser_decoder(self, laserData, room_id, barcode, room, odoo):
-    global data, Odoo
+  def laser_decoder(self, laserData, room_id, barcode, room, odoo, data):
+    """
+      state: 1 ok; state 2: already scanned
+    """
 
     if barcode not in self.purchase.scanned_barcodes:
       self.purchase.append_scanned_items(barcode)
@@ -104,16 +114,15 @@ class Room:
       context['scanned'] = self.purchase.scanned_barcodes
       context['new'] = self.purchase.new_items
       context['mod'] = self.purchase.modified_items
-
-      join_room(room_id)
-      emit('move_product_to_queue', context, broadcast=True, include_self=True, to=room_id)
-      emit('modify_scanned_laser_item', context, broadcast=False, include_self=True, to=room_id)
-
+      context['state'] = 1
 
     else:
+      context = {'state': 2}
       print(barcode, 'is already scanned')
-
     
+    return context
+
+
 
 
   def search_scanned_item(self, code_ean, odoo):
@@ -180,7 +189,6 @@ class Room:
 
 
   def update_table_on_edit(self, context):
-    global data
 
     product_id = int(context['product_id'])
     product_barcode = context['barcode']
@@ -222,15 +230,11 @@ class Room:
     context['new'] = self.purchase.new_items
     context['mod'] = self.purchase.modified_items
 
-    join_room(context['roomID'])
-    # broadcasting update
-    emit('broadcast_update_table_on_edit', context, broadcast=True, include_self=True, to=context['roomID'])
+    return context
 
 
   def add_item(self, context):
-    global data
-
-
+    
     product_id = int(context['product_id'])
     product_name = context['product_name']
     product_barcode = context['code_ean']
@@ -247,14 +251,11 @@ class Room:
 
     self.purchase.table_done = pd.concat([self.purchase.table_done, product], ignore_index=True)
 
-    join_room(context['roomID'])
-    # broadcasting update
-    emit('broadcasted_added_item', context, broadcast=True, include_self=False, to=context['roomID'])
+    return context
 
 
 
   def del_item(self, context):
-    global data
 
     from_table = context['fromTable']
     index = context['index']
@@ -281,14 +282,11 @@ class Room:
       self.purchase.table_done = self.purchase.table_done.drop(index, axis=0)
       self.purchase.table_done = self.purchase.table_done.reset_index(drop=True)
 
-    join_room(context['roomID'])
-    # broadcasting update
-    emit('broadcasted_deleted_item', context, broadcast=True, include_self=True, to=context['roomID'])
+    return context
 
 
   
   def mod_item(self, context):
-    global data
 
     from_table = context['fromTable']
     index = int(context['index']) - 1
@@ -307,15 +305,12 @@ class Room:
       self.purchase.table_done.loc[index, 'barcode'] = barcode
       self.purchase.table_done.loc[index, 'id'] = id
       self.purchase.table_done.loc[index, 'name'] = name
+      
+    return context
 
 
-    join_room(context['roomID'])
-    # broadcasting update
-    emit('broadcasted_mod_item', context, broadcast=True, include_self=True, to=context['roomID'])
 
-  
-  def update_status_to_received(self):
-    global data
+  def update_status_to_received(self, data):
 
     self.purchase.status = 'received'
     self.purchase.process_status = 'finished'
@@ -328,10 +323,10 @@ class Room:
     data['odoo']['purchases']['incoming'].pop(purchase_id)
 
 
-  def update_status_to_verified(self):
-    global data, lobby
-    status = self.purchase.status
+
+  def update_status_to_verified(self, data):
     
+    status = self.purchase.status
     self.purchase.status = 'received'
     self.purchase.process_status = 'verified'
     self.status = 'close'

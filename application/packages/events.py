@@ -1,11 +1,11 @@
 from flask import url_for
-from flask_socketio import emit
+from flask_socketio import emit, join_room
 from .. import socketio, data, odoo, lobby
 from .utils import get_passer, get_task_permission
 
 
-def task_permission_redirector(context) -> bool:
-  permission = get_task_permission(context['suffix'])
+def task_permission_redirector(data, context) -> bool:
+  permission = get_task_permission(data, context['suffix'])
   
   if permission == False:
     emit('task-access-denied', context, include_self=True)
@@ -25,7 +25,16 @@ def verify_loggin(context):
   
   context['url'] = ''
   context['permission'] = False
-  lobby.get_user_permissions(context)
+  context = lobby.get_user_permissions(context, data)
+  print(context)
+  if context['permission'] == True:
+    context['url'] = url_for('index_admin', 
+                             id= context['id'], 
+                             token= context['token'])
+  print('ask permision', context)
+  emit('permission', 
+       context, 
+       include_self=True)
   
 
 
@@ -135,7 +144,7 @@ def join_lobby():
 
 
 @socketio.on('join_room')
-def join_room(room):
+def joining_room(room):
   global data
 
   room = data['lobby']['rooms'][room]
@@ -170,7 +179,7 @@ def create_room(input):
   global data, lobby
   print('create room')
 
-  room = lobby.create_room(input)
+  room = lobby.create_room(input, data)
 
   input['status'] = room.status
   input['users'] = room.users
@@ -179,21 +188,21 @@ def create_room(input):
 
   if room.purchase.process_status == None:
     room.purchase.build_process_tables()
-  
+
   emit('add_room', input, broadcast=True, include_self=True)
 
 
 @socketio.on('del_room')
 def del_room(id):
   global lobby
-  lobby.delete_room(id)
+  lobby.delete_room(id, data)
 
 
 @socketio.on('reset_room')
 def reset_room(id):
   global lobby
-  print(id)
-  lobby.reset_room(id)
+
+  lobby.reset_room(id, data)
 
 
 
@@ -207,7 +216,19 @@ def image(data_image):
   imageData = data_image['image']
   room_id = data_image['id']
   room = data['lobby']['rooms'][room_id]
-  room.image_decoder(imageData, room_id, room, odoo)
+  context = room.image_decoder(imageData, room_id, room, odoo, data)
+  
+  if context['state'] == 1:
+    join_room(room_id)
+    emit('move_product_to_queue', context, broadcast=True, include_self=True, to=room_id)
+    emit('change_color', broadcast=False, include_self=True, to=room_id)
+    emit('modify_scanned_item', context, broadcast=False, include_self=True, to=room_id)
+  
+  elif context['state'] == 2:
+    emit('change_color', broadcast=False, include_self=True, to=room_id)
+
+  
+  
 
 
 @socketio.on('laser')
@@ -217,7 +238,12 @@ def laser(data_laser):
   room_id = data_laser['id']
   barcode = data_laser['barcode']
   room = data['lobby']['rooms'][room_id]
-  room.laser_decoder(data_laser, room_id, barcode, room, odoo)
+  context = room.laser_decoder(data_laser, room_id, barcode, room, odoo, data)
+  
+  if context['state'] == 1:
+    join_room(room_id)
+    emit('move_product_to_queue', context, broadcast=True, include_self=True, to=room_id)
+    emit('modify_scanned_laser_item', context, broadcast=False, include_self=True, to=room_id)
 
 
 
@@ -231,13 +257,16 @@ def get_update_table(context):
   room = data['lobby']['rooms'][room_id]
 
   if from_table == 'dataframe entry_table':
-    room.update_table_on_edit(context)
+    context = room.update_table_on_edit(context)
 
   elif from_table == 'dataframe queue_table':
-    room.update_table_on_edit(context)
+    context = room.update_table_on_edit(context)
 
   else: # done table
-    room.update_table_on_edit(context)
+    context = room.update_table_on_edit(context)
+  
+  join_room(context['roomID'])
+  emit('broadcast_update_table_on_edit', context, broadcast=True, include_self=True, to=context['roomID'])
 
 
 @socketio.on('block-product')
@@ -258,19 +287,25 @@ def get_new_item(context):
   global data
   room_id = context['roomID']
   room = data['lobby']['rooms'][room_id]
-  room.add_item(context)
+  context = room.add_item(context)
+  
+  join_room(context['roomID'])
+  emit('broadcasted_added_item', context, broadcast=True, include_self=False, to=context['roomID'])
   
 
 @socketio.on('del_item')
 def get_del_item(context):
   global data
   
-  permission = task_permission_redirector(context)
+  permission = task_permission_redirector(data, context)
   
   if permission:
     room_id = context['roomID']
     room = data['lobby']['rooms'][room_id]
-    room.del_item(context)
+    context = room.del_item(context)
+    
+    join_room(context['roomID'])
+    emit('broadcasted_deleted_item', context, broadcast=True, include_self=True, to=context['roomID'])
 
 
 @socketio.on('mod_item')
@@ -279,14 +314,17 @@ def get_mod_item(context):
   print(context)
   room_id = context['roomID']
   room = data['lobby']['rooms'][room_id]
-  room.mod_item(context)
+  context = room.mod_item(context)
+  
+  join_room(context['roomID'])
+  emit('broadcasted_mod_item', context, broadcast=True, include_self=True, to=context['roomID'])
 
 
 @socketio.on('suspending_room')
 def suspend_room(context):
   global data, lobby
   
-  permission = task_permission_redirector(context)
+  permission = task_permission_redirector(data, context)
   
   if permission:
     room_id = context['roomID']
@@ -301,7 +339,7 @@ def suspend_room(context):
       token = passer.get('token',None)
       url = url_for('index_admin', id= user_id, token= token)
 
-    lobby.delete_room(room_id)
+    lobby.delete_room(room_id, data)
 
     context['url'] = url
     emit('broacasted_suspension', context, broadcast=True, include_self=True)
@@ -324,7 +362,7 @@ def finish_room(context):
     url = url_for('index_admin', id= user_id, token= token)
 
   room = data['lobby']['rooms'][room_id]
-  room.update_status_to_received()
+  room.update_status_to_received(data)
 
   context['url'] = url
   emit('broacasted_finish', context, broadcast=True, include_self=True)
@@ -334,12 +372,12 @@ def finish_room(context):
 def recharge_room(context):
   global data, odoo
 
-  permission = task_permission_redirector(context)
+  permission = task_permission_redirector(data, context)
   
   if permission:
     room_id = context['roomID']
     purchase = data['lobby']['rooms'][room_id].purchase
-    odoo.recharge_purchase(purchase)
+    odoo.recharge_purchase(purchase, data)
     emit('reload-on-recharge', context, broadcast=False, include_self=True)
     emit('broadcast-recharge', context, broadcast=True, include_self=False)
 
@@ -347,9 +385,9 @@ def recharge_room(context):
 
 @socketio.on('validation-purchase')
 def validate_purchase(context):
-  global data, odoo
+  global data, odoo, lobby
   
-  permission = task_permission_redirector(context)
+  permission = task_permission_redirector(data, context)
   
   if permission:
     print('____validation process______')
@@ -357,9 +395,9 @@ def validate_purchase(context):
     suffix = context['suffix']
     room = data['lobby']['rooms'][room_id]
     purchase = room.purchase
-    state = odoo.post_purchase(purchase)
+    state = odoo.post_purchase(purchase, data)
     if state['validity']:
-      room.update_status_to_verified()
+      room.update_status_to_verified(data)
 
       if suffix == room_id:
         url =  url_for('index')
