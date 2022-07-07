@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -6,6 +7,9 @@ from logging.handlers import RotatingFileHandler
 class Log:
   def __init__(self, config) -> None:
     self.env = config.ENV
+    
+    self.mkdir(config)
+    
     self.log = logging.getLogger('')
     self.log.setLevel(logging.DEBUG)
     
@@ -15,6 +19,12 @@ class Log:
     self.log.addHandler(console)
     self.log.addHandler(handler)
 
+
+  def mkdir(self, config):
+    folder_name = '/'.join(config.LOG_FILENAME.split('/')[:-1])
+    print(folder_name)
+    if not os.path.exists(folder_name):
+      os.makedirs('./log')
 
 
   def log_handler(self, config):
