@@ -1,15 +1,62 @@
 import sys
-from datetime import datetime
+import logging
+from logging.handlers import RotatingFileHandler
 
 
-class Log(object):
+class Log:
+  def __init__(self, config) -> None:
+    self.env = config.ENV
+    self.log = logging.getLogger('')
+    self.log.setLevel(logging.DEBUG)
+    
+    handler = self.log_handler(config)
+    console = self.console_handler()
+
+    self.log.addHandler(console)
+    self.log.addHandler(handler)
+
+
+
+  def log_handler(self, config):
+    handler = RotatingFileHandler(config.LOG_FILENAME, maxBytes=5*1024*1024,
+                                  backupCount=5)
+    formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s')
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter) 
+    
+    return handler
+  
+  
+  def console_handler(self):
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s')
+    console.setFormatter(formatter)
+    
+    return console    
+
+
+class Hook:
+  def __init__(self):
+    self.log = logging.getLogger('exceptionHook')
+    
+  def exception_hook(self, exc_type, exc_value, tb):
+    
+    self.log.error("Uncaught exception", exc_info=(exc_type, exc_value, tb))
+
+
+
+class ErrLogFlush:
   def __init__(self, config):
-    self.terminal = sys.stderr
-    self.log = open(config.LOG_FILENAME, 'a', encoding='utf-8')
+    self.console = sys.stderr
+    self.file = open(config.LOG_FILENAME, 'a')
 
-  def handle_error_log(self, e):
-    self.terminal.write(e)
-    self.log.write('----------------------------------------------------------\n')
-    self.log.write(f'{datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")}\n')
-    self.log.write(e)
-    self.log.write('----------------------------------------------------------\n')
+  def write(self, message):
+    self.console.write(message)
+    self.file.write(message)
+ 
+  def flush(self):
+    self.console.flush()
+    self.file.flush()   
+
+

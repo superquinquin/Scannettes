@@ -188,7 +188,7 @@ def create_room(input):
 
   if room.purchase.process_status == None:
     room.purchase.build_process_tables()
-  
+
   emit('add_room', input, broadcast=True, include_self=True)
 
 

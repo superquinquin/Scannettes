@@ -1,8 +1,9 @@
-import logging
+import sys
 from flask import Flask
 from flask_socketio import SocketIO
 from application.config import define_config, define_client_config, parser
 from application.packages import init_ext
+from application.packages.log import Log, Hook, ErrLogFlush
 from application.packages.backup import Data, BackUp, Update
 
 
@@ -10,6 +11,11 @@ config = define_config(parser().config)
 socketio = SocketIO(async_mode='gevent') #
 data = Data.init_data(config)
 data, odoo, lobby = init_ext(data)
+
+Log(config)
+sys.excepthook = Hook().exception_hook
+sys.stderr = ErrLogFlush(config)
+
 Update(odoo).UPDATE_RUNNER(config)
 BackUp().BACKUP_RUNNER(config)
 
@@ -27,8 +33,7 @@ def create_app(config_name: str = None, main: bool = True) -> Flask :
   app = Flask(__name__,
               static_url_path= config.STATIC_URL)
   app.config.from_object(config)
-  logging.basicConfig(filename= config.LOG_FILENAME,level=logging.DEBUG)
-
+  
   
   import application.packages.routes as routes
   import application.packages.events
