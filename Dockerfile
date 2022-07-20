@@ -27,7 +27,7 @@ RUN pipenv install --system
 ADD application ./application
 COPY boot.sh ./boot.sh
 COPY wsgi.py ./wsgi.py
-RUN mkdir ./volume
+RUN mkdir -p ./volume/log
 RUN chmod a+x boot.sh
 
 RUN chown -R alkivi:alkivi ./
