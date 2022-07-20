@@ -129,41 +129,44 @@ class Room:
     """SEARCH the product on odoo table. return Context dictionnary for js formating"""
     
     product = self.purchase.table_entries[(self.purchase.table_entries['barcode'] == code_ean)]
-    print(product)
-    if product.empty: 
-      # barcode not in purchase
+    alt = odoo.search_alternative_ean(code_ean)
+    
+    if ((product.empty and not alt) or 
+        (product.empty and alt and 
+         self.purchase.table_entries[(self.purchase.table_entries['barcode'] == alt.barcode)].empty)):
+      
       new_item = True
       self.purchase.append_new_items(code_ean)
-
-      alt = odoo.search_alternative_ean(code_ean)
-      print(alt)
-
+      product = odoo.search_product_from_ean(code_ean)
+      
       if alt:
-        # alt barcode found, extract product from its product id
-        alt_id = alt.id
-        product = odoo.search_product_from_id(alt_id)
-      else:
-        # no alt barcode, search for barcode in odoo
+        # if product has alt, but alt nor main barcode are in purchase 
+        # (could happen if scan by mistake the wrong purchase)
+        # then use main barcode and enter it inside the purchase a new product
+        # next is to the user appreciation.
+        product_name = alt.name
+        product_id = alt.id
+        
+      elif product:
+        # product in odoo but not in the purchase
         product = odoo.search_product_from_ean(code_ean)
-      
-      print(product)
-      if not product:
-        # barcode not in odoo
-        product_id, product_name, product_qty, product_pkg_qty, product_received_qty = 0,'', 0, 0, 0
+        product_name = product.name
+        product_id = product.id
       
       else:
-        #barcode in odoo
-        print('product: ', product)
-        product_id = product.id
-        product_name = product.name
-        product_qty, product_pkg_qty, product_received_qty = 0, 0, 0
-
-
+        # barcode never recognized
+        product_id, product_name = 0, ''
+      
+      
+      product_qty, product_pkg_qty, product_received_qty = 0, 0, 0
       placeholder = pd.DataFrame([[code_ean,product_id, product_name, product_qty, product_pkg_qty, product_received_qty]]
-                                , columns= ['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
+                          , columns= ['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
       self.purchase.table_queue = pd.concat([self.purchase.table_queue, placeholder], ignore_index=True)
-
-    else:
+          
+    else:  
+      if product.empty and alt:
+        product = self.purchase.table_entries[(self.purchase.table_entries['barcode'] == alt.barcode)]
+        
       #barcode in purchase
       new_item = False
       self.purchase.table_queue = pd.concat([self.purchase.table_queue, product], ignore_index=True)
@@ -174,7 +177,8 @@ class Room:
       product_qty =  product.values.tolist()[0][3]
       product_pkg_qty = product.values.tolist()[0][4]
       product_received_qty =  product.values.tolist()[0][5]
-
+     
+     
     #broadcasting update
     context = {'barcode': code_ean,
                'id': product_id,
@@ -182,11 +186,10 @@ class Room:
                'qty':  product_qty,
                'pckg_qty': product_pkg_qty,
                'qty_received': product_received_qty,
-               'new_item': new_item}
-
-    return context  
-
-
+               'new_item': new_item} 
+     
+    return context
+      
 
   def update_table_on_edit(self, context):
 

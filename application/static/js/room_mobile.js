@@ -436,7 +436,7 @@ function RemoveFromScannerContainer(tableID, barcode, productId) {
     let id = product.getElementsByClassName('product-id')[0].innerHTML;
     let ean = product.getElementsByClassName('code-barre')[0].innerHTML;
 
-    if ((id == productId & id != "0") | ean == barcode) {
+    if ((id == productId & id != "0") || ean == barcode) {
       product.remove();
       if (tableID == 'scanned-item-modal') {
         document.getElementById('scanned-item-modal').style.display = 'none';
@@ -509,8 +509,15 @@ function getRecordData(product) {
 
   let table = product.parentElement;
   let tableID = table.id;
-  let index;
+  if (tableID == "scanned-laser-list") {
+    // avoid indexing error due both scanned list composition dif
+    // as laser scan is bind to one user, it is just a partial representation of scanned list
+    // need to redirect towards full scanned list:
+    table = document.getElementById('scanned-list');
+  }
 
+
+  let index;
   let tableElements = table.getElementsByClassName('product');
   for (var i = 0; i < tableElements.length; i++) {
     let id = tableElements[i].getElementsByClassName('product-id')[0].innerHTML;
@@ -522,6 +529,7 @@ function getRecordData(product) {
   productData = {'name':name, 'id': productId, 'barcode':barcode,
                   'qty': qty, 'pckg_qty': pkgQty, 'qty_received': receivedQty,
                   'tableID':tableID, 'index': index}
+
   return productData
 }
 

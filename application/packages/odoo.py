@@ -270,6 +270,11 @@ class Odoo:
         print('alt_',from_ean_alt.id, from_ean_alt.barcode)
       print('____')
 
+      if from_ean_alt:
+        # replace alternate barcode to main one in oder to cross validate id and barcode
+        # barcode from id is always the main barcode, then block if the scanned barcode is an alt
+        item_barcode = from_ean_alt.barcode
+
       if from_id is None:
         print('from_id is none')
         item_validity = False
@@ -440,14 +445,14 @@ class Odoo:
       passed = False
 
       for item in moves:
-        if item.state == 'assigned':   
-          productData = {'item_id': item.product_id.id,
-                        'item_barcode': item.product_id.barcode,
-                        'item_name': re.sub('\[.*?\]', '', item.name).strip(),
-                        'item_qty': item.product_qty,
-                        'item_qty_packaqe': item.product_qty_package,
-                        'item_qty_received': 0}
-          update_item_auto_table_selector(purchase, productData, purchase.process_status, item.state)
+        # if item.state == 'assigned':   
+        productData = {'item_id': item.product_id.id,
+                      'item_barcode': item.product_id.barcode,
+                      'item_name': re.sub('\[.*?\]', '', item.name).strip(),
+                      'item_qty': item.product_qty,
+                      'item_qty_packaqe': item.product_qty_package,
+                      'item_qty_received': 0}
+        update_item_auto_table_selector(purchase, productData, purchase.process_status, item.state)
       
     elif purchase_state == 'cancel' or picking_state == 'cancel':
       # remove from data dict

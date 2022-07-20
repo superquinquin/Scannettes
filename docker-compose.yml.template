@@ -15,6 +15,10 @@ services:
       - "8000:8000"
     networks:
       - inventaire
+    volumes:
+      - ./volume:/usr/src/app/volume
 
 networks:
   inventaire:
+
+

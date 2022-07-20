@@ -1,6 +1,7 @@
 import json
 from os import environ
 from typing import List, Dict, Union
+import argparse
 
 class Config(object):
   # FLASK
@@ -20,22 +21,11 @@ class Config(object):
   SERVICE_ACCOUNT_LOGGIN: str = environ.get('ERPPEEK_SERVICE_ACCOUNT_LOGGIN', 'rene.coty@wanadoo.fr')
   SERVICE_ACCOUNT_PASSWORD: str = environ.get('ERPPEEK_SERVICE_ACCOUNT_PASSWORD', 'ReNeCoTy!MDP')
 
-  ## ERPPEEK DB TABLES NAMES
-  TABLE_PRODUCT: str = 'product'
-  TABLE_TMPL: str = 'tmpl'
-  TABLE_ALTERNATIVE_PRODUCT: str = 'product.alt'
-  TABLE_PURCHASE: str = 'purchase'
-  TABLE_PURCHASE_LINE: str = 'purchase.lines'
-  TABLE_SUPPLIER: str = 'supplier'
-  TABLE_PICKING: str = 'picking'
-  TABLE_MOVE: str = 'move'
-  TABLE_MOVE_LINE: str = 'move.lines'
-
   # FILE PATH
-  BACKUP_FILENAME: str = './flask/backup.pickle'
-  WHITELIST_FILENAME: str = './flask/whitelist.txt'
-  LOG_FILENAME: str = './flask/log.log'
-  JSON_CONFIG_FILENAME: str = './flask/static/js/config.js'
+  BACKUP_FILENAME: str = './volume/backup.pickle'
+  WHITELIST_FILENAME: str = './application/whitelist.txt'
+  LOG_FILENAME: str = './volume/log/log.log'
+  JSON_CONFIG_FILENAME: str = './application/static/js/config.js'
 
   # CAMERA
   CAMERA_ENABLE_VIDEO: bool = True

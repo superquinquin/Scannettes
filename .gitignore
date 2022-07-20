@@ -1,8 +1,9 @@
 application/config.py
 application/static/js/config.js
 application/whitelist.txt
-application/backup.pickle
-.log
+volume/
+*.log
+*.pickle
 *.pyc
 .venv
 docker-compose.yml

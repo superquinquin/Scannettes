@@ -3,8 +3,8 @@
 from gevent import monkey
 monkey.patch_all()
 
-from application import create_app, socketio, data
-from application.config import parser, define_config
+from application import create_app, socketio
+from application.config import parser
 app = create_app(parser().config)
 
 if __name__ == '__main__':
