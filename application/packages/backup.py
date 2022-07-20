@@ -1,5 +1,7 @@
+import time
 from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
+from xmlrpc.client import ProtocolError
 
 from application.packages.utils import get_delay
 
@@ -94,6 +96,17 @@ class Update:
   def update_build(self):
     from application import data
     
-    data = self.odoo.get_purchase(data['config'].DELTA_SEARCH_PURCHASE, data)
-    self.odoo.get_inventory()
-    self.UPDATE_RUNNER(data['config'])
+    while True:
+      try:
+        data = self.odoo.get_purchase(data['config'].DELTA_SEARCH_PURCHASE, data)
+        self.odoo.get_inventory()
+        self.UPDATE_RUNNER(data['config'])
+        break
+      
+      except ProtocolError as pe:
+        time.sleep(60)
+
+      except KeyError as ke:
+        self.UPDATE_RUNNER(data['config'])
+        break
+        
