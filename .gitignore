@@ -2,7 +2,8 @@
 application/config.py
 application/static/js/config.js
 application/whitelist.txt
-application/backup.pickle
+volume/
+*.pickle
 *.log
 *.pyc
 .venv
