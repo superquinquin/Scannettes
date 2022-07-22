@@ -178,7 +178,7 @@ window.addEventListener("keydown", function (e) {
       if (document.activeElement === laserOutput) {
         // tricks to make sure not writing ean number wwhile modifying qty
         laserOutput.value += e.key
-        laserOutputAutoClearance()
+        //laserOutputAutoClearance()
       }
     }
   }
@@ -194,8 +194,7 @@ laserOutput.addEventListener('keypress', function(e) {
     let isnan = isNaN(Number(barcode));
     let data = {'barcode': barcode, 'id': roomID};
 
-    if ((barcodeLength == 13 || barcodeLength == 8) 
-          && isnan == false) {
+    if ((barcodeLength < 16) {
       if (barcode != lastScanned) {
         if (barcode != '') {
           socket.emit('laser', data);
@@ -217,7 +216,7 @@ laserOutput.addEventListener('keypress', function(e) {
         errorText.innerHTML = "";
       }, 3000);                       
     }
-    laserOutput.value = "";
+    //laserOutput.value = "";
   }
 });
 
