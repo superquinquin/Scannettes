@@ -194,7 +194,7 @@ laserOutput.addEventListener('keypress', function(e) {
     let isnan = isNaN(Number(barcode));
     let data = {'barcode': barcode, 'id': roomID};
 
-    if (barcodeLength < 16) {
+    if (barcodeLength == 13 || barcodeLength == 8) {
       if (barcode != lastScanned) {
         if (barcode != '') {
           socket.emit('laser', data);
