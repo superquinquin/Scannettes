@@ -5,6 +5,7 @@ from datetime import datetime
 from pyzbar.pyzbar import decode
 
 from application.packages.purchase import Purchase
+from application.packages.utils import generate_token
 
 
 
@@ -16,6 +17,7 @@ class Room:
     self.id = id
     self.name = name
     self.password = password
+    self.token = generate_token(10)
     self.status = 'open' # [open, close]
     self.oppening_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     self.closing_date = None
@@ -52,7 +54,7 @@ class Room:
     
     return data['odoo']['purchases']['pseudo-purchase'][id]    
     
-    
+
     
   def image_decoder(self, imageData, room_id, room, odoo, data):
     """ 

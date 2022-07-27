@@ -1,9 +1,15 @@
+import os
+import binascii
 import pandas as pd
 from typing import Dict, Union
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
 
 
+
+
+def generate_token(size):
+  return binascii.hexlify(os.urandom(size)).decode()  
 
 
 def get_passer(suffix):

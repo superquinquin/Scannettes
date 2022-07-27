@@ -12,9 +12,9 @@ socketio = SocketIO(async_mode='gevent') #
 data = Data.init_data(config)
 data, odoo, lobby = init_ext(data)
 
-#Log(config)
-#sys.excepthook = Hook().exception_hook
-#sys.stderr = ErrLogFlush(config)
+Log(config)
+sys.excepthook = Hook().exception_hook
+sys.stderr = ErrLogFlush(config)
 
 Update(odoo).UPDATE_RUNNER(config)
 BackUp().BACKUP_RUNNER(config)
@@ -40,8 +40,8 @@ def create_app(config_name: str = None, main: bool = True) -> Flask :
   app.add_url_rule('/lobby', view_func= routes.index)
   app.add_url_rule('/lobby&id=<id>&token=<token>', view_func= routes.index_admin)
   app.add_url_rule('/lobby/login', view_func= routes.login)
-  app.add_url_rule('/lobby/<id>', view_func= routes.get_room)
-  app.add_url_rule('/lobby/admin/<id>&id=<user_id>&token=<token>&state=<state>', view_func= routes.get_room_admin)
+  app.add_url_rule('/lobby/<id>&roomtoken=<room_token>', view_func= routes.get_room)
+  app.add_url_rule('/lobby/admin/<id>&roomtoken=<room_token>&id=<user_id>&token=<token>&state=<state>', view_func= routes.get_room_admin)
   
   socketio.init_app(app, 
                     cors_allowed_origins= config.CORS_ALLOWED_ORIGINS,

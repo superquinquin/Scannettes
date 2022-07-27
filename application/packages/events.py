@@ -51,6 +51,11 @@ def verify_logger(context):
   user_id = passer.get('id',None)
   token = passer.get('token',None)
   state = passer.get('state',None)
+  
+  roomID = context.get('roomID', None)
+  if roomID:
+    room = data['lobby']['rooms'][roomID]
+    room_state = room.status
 
   if user_id in data['lobby']['users']['admin'].keys():
     user = data['lobby']['users']['admin'][user_id]
@@ -60,9 +65,15 @@ def verify_logger(context):
       permission = True
       emit('grant_permission', {'permission': permission})
   
-  if permission == False:
+  if permission == False and room_state == 'open':
     print('no permissions')
     emit('denied_permission', {'permission': permission}, include_self=True)
+  
+  elif roomID and permission == False and room_state == 'close':
+    print('access denied to closed room')
+    emit('no_access_redirection', {'permission': permission,
+                                   'url': url_for('index')}, 
+                                    include_self=True)
   
 
 
@@ -83,12 +94,12 @@ def redirect(context):
   passer = get_passer(suffix)
 
   room = data['lobby']['rooms'][id]
-
+  room_token = room.token
 
   if password == room.password:
 
     if suffix == 'lobby':
-      emit('go_to_room', {'url': url_for('get_room', id=id)})
+      emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
 
     else:
       user_id = passer.get('id',None)
@@ -98,13 +109,14 @@ def redirect(context):
         token = passer.get('token',None)
 
         if user.token == token and user.browser_id == browser:
-            emit('go_to_room', {'url': url_for('get_room_admin', id= id, user_id= user_id, token= token, state= room.status, winWidth=winWidth)})
+            emit('go_to_room', {'url': url_for('get_room_admin', id= id, room_token= room_token, user_id= user_id, 
+                                                                token= token, state= room.status, winWidth=winWidth)})
         
         else:
-          emit('go_to_room', {'url': url_for('get_room', id=id)})
+          emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
       
       else:
-        emit('go_to_room', {'url': url_for('get_room', id=id)})
+        emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
 
   else:
     emit('access_denied', context,include_self=True)
@@ -150,6 +162,7 @@ def joining_room(room):
   room = data['lobby']['rooms'][room]
   name = room.name
   id = room.id
+  room_state = room.status
   purchase = room.purchase.name
   purchase_supplier = room.purchase.supplier_name
 
@@ -161,9 +174,9 @@ def joining_room(room):
              'room_name': name,
              'purchase_name': purchase,
              'purchase_supplier': purchase_supplier,
-             'entries_table':html_ent,
-             'queue_table':html_quet,
-             'done_table':html_dont,
+            #  'entries_table':html_ent,
+            #  'queue_table':html_quet,
+            #  'done_table':html_dont,
              'entries_records': entry_records,
              'queue_records': queue_records,
              'done_records': done_records,
@@ -329,15 +342,17 @@ def suspend_room(context):
   if permission:
     room_id = context['roomID']
     suffix = context['suffix']
-
-    if suffix == room_id:
+    
+    passer = get_passer(suffix)
+    user_id = passer.get('id',None)
+    token = passer.get('token',None)
+    
+    if not user_id or not token:
       url =  url_for('index')
-
+      
     else:
-      passer = get_passer(suffix)
-      user_id = passer.get('id',None)
-      token = passer.get('token',None)
       url = url_for('index_admin', id= user_id, token= token)
+
 
     lobby.delete_room(room_id, data)
 
@@ -351,15 +366,17 @@ def finish_room(context):
 
   room_id = context['roomID']
   suffix = context['suffix']
-
-  if suffix == room_id:
+  
+  passer = get_passer(suffix)
+  user_id = passer.get('id',None)
+  token = passer.get('token',None)
+  
+  if not user_id or not token:
     url =  url_for('index')
-
+    
   else:
-    passer = get_passer(suffix)
-    user_id = passer.get('id',None)
-    token = passer.get('token',None)
     url = url_for('index_admin', id= user_id, token= token)
+
 
   room = data['lobby']['rooms'][room_id]
   room.update_status_to_received(data)
@@ -398,15 +415,16 @@ def validate_purchase(context):
     state = odoo.post_purchase(purchase, data)
     if state['validity']:
       room.update_status_to_verified(data)
-
-      if suffix == room_id:
+      
+      passer = get_passer(suffix)
+      user_id = passer.get('id',None)
+      token = passer.get('token',None)
+      
+      if not user_id or not token:
         url =  url_for('index')
-
+        
       else:
-        passer = get_passer(suffix)
-        user_id = passer.get('id',None)
-        token = passer.get('token',None)
-        url = url_for('index_admin', id= user_id, token= token)
+        url = url_for('index_admin', id= user_id, token= token)      
 
         context['url'] = url
         emit('close-room-on-validation', context)

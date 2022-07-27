@@ -8,7 +8,7 @@ class Log:
   def __init__(self, config) -> None:
     self.env = config.ENV
     
-    self.mkdir(config)
+    # self.mkdir(config)
     
     self.log = logging.getLogger('')
     self.log.setLevel(logging.DEBUG)
