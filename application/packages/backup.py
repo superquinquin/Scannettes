@@ -15,7 +15,7 @@ class Data(object):
     if config.BUILD_ON_BACKUP == True:
       data = BackUp().load_backup(config)
     
-    elif config.BUILD_ON_BACKUP == False or data == None:
+    if config.BUILD_ON_BACKUP == False or data == None:
       data = {'config': config,
               
               'odoo':  {'history':{'update_purchase': [],
@@ -32,6 +32,7 @@ class Data(object):
               'lobby': {'rooms': {},
                         'users': {'admin': {}}}
               } 
+      data['config'] = config
 
     return data
     
