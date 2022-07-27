@@ -18,7 +18,7 @@ croppedCTX.canvas.hidden = true;
 // MODAL LASER
 const modal_laser_btn = document.getElementById('display_laser');
 const modal_laser = document.getElementById('modal-laser');
-const laserOutput = document.getElementById('laser-output')
+const laserOutput = document.getElementById('laser-output');
 
 
 // CAMERA SCANNER MODAL APPLICATION
@@ -207,7 +207,7 @@ laserOutput.addEventListener('keypress', function(e) {
       let errorBox = document.getElementById('errorBox');
       let errorText = document.getElementById('errorText');
       errorBox.style.border = "solid 3px red";
-      errorText.innerHTML += `<strong>Erreur: Réponse anormale du scanner</strong>
+      errorText.innerHTML = `<strong>Erreur: Réponse anormale du scanner</strong>
                               <br>Si de nouvelles erreurs apparaissent : 
                               <br><strong>débranchez et rebranchez le scanner à l'appareil</strong>,
                               <br><strong>Ou rechargez la page</strong>,
@@ -222,9 +222,16 @@ laserOutput.addEventListener('keypress', function(e) {
 });
 
 
-function keepLaserFocus(e) {
-  if (e.path[0].className != 'mod-input') {
-    laserOutput.focus()
+function keepLaserFocus() {
+  if (modal_laser.style.display == 'flex') {
+    console.log('auto focus')
+    if (laserOutput === document.activeElement) {
+      var pass;
+    } else if ((document.activeElement.className.match('mod-input'))){
+      var pass;
+    } else {
+      laserOutput.focus()
+    }
   }
 }
 

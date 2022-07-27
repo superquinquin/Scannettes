@@ -33,11 +33,12 @@ socket.on('connect', function() {
   // socket.emit('join_room', roomID);
   
   console.log('verify permissions')
-  socket.emit('verify_connection', {'suffix': suffix, 'browser_id': browser})
+  socket.emit('verify_connection', {'suffix': suffix, 'roomID': roomID, 'browser_id': browser})
 });
 
 socket.on('load_existing_room', function(context) {
   //header
+  roomState = context.room_state
   const roomName = document.getElementById('room-name');
   roomName.textContent = 'Salon : ' + context.room_name;
 
@@ -101,7 +102,9 @@ socket.on('denied_permission', () => {
   socket.emit('join_room', roomID);
 });
 
-
+socket.on('no_access_redirection', (context) => {
+  window.location = context.url
+});
 
 
 
@@ -286,6 +289,7 @@ function CreateProductBubble(context, tableID, admin) {
   let inp = document.createElement('input');
   inp.classList.add('mod-input');
   inp.setAttribute('type', 'text');
+  inp.setAttribute('onkeydown', 'acceptModFromKey(this)')
   inpBlock.appendChild(inp);
   inputMod.appendChild(inpBlock)
 
@@ -483,9 +487,19 @@ function acceptMod(element) {
       color -= 5 ;
     }, 150);
   }
-
 }
 
+function acceptModFromKey(element) {
+  if (event.key === 'Enter') {
+    acceptMod(element)
+    if (document.getElementById('modal-laser').style.display == 'flex') {
+      setTimeout(() => {
+        document.getElementById('laser-output').focus();
+      }, 100)
+
+    }
+  }
+}
 
 
 function QtyVerificationN(element) {
@@ -560,9 +574,9 @@ function translateTableID(tableID) {
 }
 
 function get_suffix(url) {
-  let array = url.split('%26id%3D');
+  let array = url.split('%26roomtoken%3D');
   if (array.length > 1) {
-    suffix = '%26id%3D' + array[array.length - 1];
+    suffix = '%26roomtoken%3D' + array[array.length - 1];
     roomID = array[0].split('/')[array[0].split('/').length - 1];
   } else {
     suffix = roomID = url.split('/')[url.split('/').length - 1];
@@ -944,3 +958,6 @@ window.addEventListener('scroll', function() {
 function scrolltop() {
   window.scrollTo(0, 0);
 }
+
+
+

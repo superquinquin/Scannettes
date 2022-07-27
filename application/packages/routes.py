@@ -13,11 +13,9 @@ def login():
   return render_template('login.html')
 
 
-def get_room(id):
-  # return render_template('room.html')
+def get_room(id, room_token):
   return render_template('room_mobile.html')
 
 
-def get_room_admin(id, user_id, token, state):
-    # return render_template('room.html')
+def get_room_admin(id, room_token, user_id, token, state):
   return render_template('room_mobile.html')

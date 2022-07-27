@@ -1,13 +1,14 @@
 import os
 import binascii
 from datetime import datetime
+from application.packages.utils import generate_token
 
 
 class User:
   def __init__(self, id, loc, browser_id, admin ):
 
     self.id = id
-    self.token = self.generate_token()
+    self.token = generate_token(20)
     self.browser_id = browser_id
 
     self.last_connection = datetime.now()
@@ -21,8 +22,6 @@ class User:
   def is_admin(self):
     self.admin = True
 
-  def generate_token(self):
-    return binascii.hexlify(os.urandom(20)).decode()  
   
   def verify_permision(self, token):
     if token == self.token:

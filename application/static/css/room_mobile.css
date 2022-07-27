@@ -522,48 +522,36 @@ font-size: 20px;
   color: red;
 }
 
-@media screen and (max-width: 800px) {
-  .product {
-    max-width: 350px;
-  }
 
-  #modal-laser-container {
-    width: 90%;
-  }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* *********************************************** COMPUTER RESPONSIVNESS ************************* */
 
 
 @media only screen and (pointer: fine) {
+  .list-container {
+    width: 99%;
+    grid-template-columns: repeat(auto-fit,minmax(500px, 1fr)) ;
+  }
+
   .product {
-    min-width: 450px;
+    min-width: 470px;
+    margin-left: 5px;
+    margin-right: 5px;
   }
 }
-
-
-@media screen and (min-width: 1000px) {
-  .list-container {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  #modal-laser-container {
-    width: 70%;
-  }
-}
-
-@media screen and (min-width: 1500px) {
-  .list-container {
-    grid-template-columns: minmax(500px,1fr) minmax(500px,1fr) minmax(500px,1fr);
-  }
-
-  #modal-laser-container {
-    width: 50%;
-  }
-}
-
-
-
-
-
 
 
 
