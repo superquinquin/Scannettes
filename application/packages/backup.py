@@ -32,7 +32,7 @@ class Data(object):
               'lobby': {'rooms': {},
                         'users': {'admin': {}}}
               } 
-      data['config'] = config
+    data['config'] = config
 
     return data
     
