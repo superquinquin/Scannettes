@@ -9,6 +9,9 @@ roomID, suffix = get_suffix(currentLoc)
 const socket = io.connect(config.ADDRESS);
 
 const adminClose = document.getElementById('admin-close');
+const closing = document.getElementById('closing-room');
+const aucdiv = document.getElementById('all-user-close');
+const suspBlock = document.getElementById('suspension-block');
 const suspender = document.getElementById('room-suspension');
 const verifier = document.getElementById('admin-validation');
 const recharger = document.getElementById('room-recharge');
@@ -87,14 +90,29 @@ socket.on('load_existing_room', function(context) {
 });
 
 
+
 socket.on('grant_permission', () => {
   console.log('grant permission')
   admin = true;
-  delQueue.hidden = false;
-  adminClose.hidden = false;
-  suspender.disabled = false;
-  verifier.disabled = false;
-  recharger.disabled = false;
+  if (get_state()== 'open') {
+    delQueue.hidden = false;
+    adminClose.hidden = false;
+    suspender.disabled = false;
+    verifier.disabled = false;
+    recharger.disabled = false;
+  } else {
+    delQueue.hidden = false;
+    adminClose.hidden = false;
+
+    closing.disabled = true;
+    aucdiv.hidden = true;
+
+    suspBlock.hidden = true;
+    
+    verifier.disabled = false;
+    recharger.disabled = false;
+  }
+
   socket.emit('join_room', roomID);
 });
 
@@ -105,6 +123,7 @@ socket.on('denied_permission', () => {
 socket.on('no_access_redirection', (context) => {
   window.location = context.url
 });
+
 
 
 
@@ -583,6 +602,17 @@ function get_suffix(url) {
   }
   return roomID, suffix;
 }
+
+function get_state() {
+  let state = 'open';
+  for (const s of suffix.split('%26')) {
+    if (s.split('%3D')[0] == 'state') {
+      state = s.split('%3D')[1].split('?')[0];
+    }
+  }
+  return state
+}
+
 
 function emptyPlaceholder(tableID) {
   console.log('get placeholder')

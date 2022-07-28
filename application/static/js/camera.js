@@ -215,7 +215,7 @@ laserOutput.addEventListener('keypress', function(e) {
       setTimeout(() => {
         errorBox.style.border = "0";
         errorText.innerHTML = "";
-      }, 3000);                       
+      }, 1500);                       
     }
     laserOutput.value = "";
   }
@@ -246,3 +246,15 @@ function laserOutputAutoClearance() {
     }
   }, 1000); 
 }
+
+
+socket.on('already-scanned-alert', function(context) {
+  let errorBox = document.getElementById('errorBox');
+  let errorText = document.getElementById('errorText');
+  errorBox.style.border = "solid 3px red";
+  errorText.innerHTML = `<strong>Produit déjà scanné!</strong>`;
+  setTimeout(() => {
+    errorBox.style.border = "0";
+    errorText.innerHTML = "";
+  }, 3000);
+});

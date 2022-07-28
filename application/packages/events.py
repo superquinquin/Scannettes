@@ -56,6 +56,8 @@ def verify_logger(context):
   if roomID:
     room = data['lobby']['rooms'][roomID]
     room_state = room.status
+  else:
+    room_state = 'open'
 
   if user_id in data['lobby']['users']['admin'].keys():
     user = data['lobby']['users']['admin'][user_id]
@@ -257,7 +259,10 @@ def laser(data_laser):
     join_room(room_id)
     emit('move_product_to_queue', context, broadcast=True, include_self=True, to=room_id)
     emit('modify_scanned_laser_item', context, broadcast=False, include_self=True, to=room_id)
-
+    
+  if context['state'] == 2:
+    join_room(room_id)
+    emit('already-scanned-alert', context, broadcast=False, include_self=True, to=room_id)
 
 
 
