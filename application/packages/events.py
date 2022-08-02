@@ -2,6 +2,7 @@ from flask import url_for
 from flask_socketio import emit, join_room
 from .. import socketio, data, odoo, lobby
 from .utils import get_passer, get_task_permission
+from .pdf import PDF
 
 
 def task_permission_redirector(data, context) -> bool:
@@ -219,6 +220,20 @@ def reset_room(id):
 
   lobby.reset_room(id, data)
 
+
+@socketio.on('generate-qrcode-pdf')
+def generate_qrcode_pdf(context):
+  global data, lobby
+
+  content = lobby.qrcode_iterator(context, data)
+  pdf = PDF('P', 'mm', 'A4')
+  output = pdf.generate_pdf(content['qrcodes'],
+                   content['captions'])
+  
+  emit('get-qrcode-pdf',{'pdf': output})
+  
+  
+  
 
 
 @socketio.on('image')

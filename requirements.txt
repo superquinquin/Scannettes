@@ -11,3 +11,6 @@ python-dateutil
 ERPpeek
 uwsgi
 importlib-metadata
+fpdf2
+Pillow
+qrcode

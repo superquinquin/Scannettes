@@ -36,6 +36,11 @@
     <button id="create-btn" class="mngmnt-btn">Créer</button>
     <button id="del-btn" class="mngmnt-btn">Supprimer</button>
     <button id="reset-btn" class="mngmnt-btn">Réinitialiser</button>
+    <button id="qrcode-btn" class="mngmnt-btn">QR-code</button>
+  </div>
+
+  <div id="errorBox">
+    <p id="errorText"></p>
   </div>
 
   <div id="creation-modal">
@@ -74,6 +79,22 @@
       </tr>
     </table>
   </div>
+
+  <div id="historic">
+    <h3>Historic (Une semaine)</h3>
+    <table id="room-historic">
+      <tr>
+        <th>Select</th>
+        <th>Nom</th>
+        <th>Commande</th>
+        <th>Status</th>
+        <th>Date de création</th>
+        <th>Mot de passe</th>
+        <th>Rejoindre</th>
+      </tr>
+    </table>
+  </div>
+
 
   <script type="text/javascript" src="/static/js/config.js"></script>
   <script type="text/javascript" src="/static/js/global_functions.js"></script> 

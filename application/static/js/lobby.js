@@ -1,6 +1,7 @@
 
 var browser = get_browser_id();
 var suffix;
+var charged = false;
 const currentLoc = window.location.href;
 suffix = get_suffix(currentLoc);
 
@@ -21,9 +22,13 @@ reset_btn.disabled = true;
 
 const room_list = document.getElementById('room-listing');
 const room_to_verify_list = document.getElementById('room-verify-listing');
+const room_historic = document.getElementById('room-historic');
 
-const verifySection = document.getElementById('room-to-verify')
+const verifySection = document.getElementById('room-to-verify');
 verifySection.hidden = true;
+
+const historicSection = document.getElementById('historic');
+historicSection.hidden = true;
 //modal
 const roomName = document.getElementById('room-name');
 const roomPassword = document.getElementById('room-password')
@@ -39,9 +44,13 @@ socket.on('connect', function() {
   console.log('has connected');
 
   socket.emit('message', 'Connection to lobby');
-  socket.emit('join_lobby');
-  if (suffix != 'lobby') {
-    socket.emit('verify_connection', {'suffix': suffix, 'browser_id': browser})
+  if (charged == false) {
+    socket.emit('join_lobby');
+    charged = true;
+
+    if (suffix != 'lobby') {
+      socket.emit('verify_connection', {'suffix': suffix, 'browser_id': browser})
+    }
   }
 });
 
@@ -49,11 +58,14 @@ socket.on('load_existing_lobby', function(context) {
 
   empty_table('room-listing');
   empty_table('room-verify-listing');
+  empty_table('room-historic');
   for (var row of context.room) {
     if (row[3] == 'open') {
       add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-listing');
-    } else {
+    } else if (row[3] == 'close') {
       add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-verify-listing');
+    } else {
+      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-historic');
     }
   }
   
@@ -65,6 +77,7 @@ socket.on('load_existing_lobby', function(context) {
 socket.on('grant_permission', () => {
   console.log('grant permission')
   verifySection.hidden = false;
+  historicSection.hidden = false;
   roomManagement.hidden = false;
   create_btn.disabled = false;
   del_btn.disabled = false;
@@ -86,22 +99,49 @@ del_btn.onclick = function() {
       ids.push(id);
     }
   }
-  for (var i = index.length - 1; i >= 0; i--) {
-    room_list.deleteRow(index[i]);
-    socket.emit('del_room', ids[i]);
-  }
 
-  check_empty_table('room-listing')
+  if (index.length > 0) {
+    for (var i = index.length - 1; i >= 0; i--) {
+      room_list.deleteRow(index[i]);
+      socket.emit('del_room', ids[i]);
+    }
+    check_empty_table('room-listing')
+
+  } else {
+    let errorBox = document.getElementById('errorBox');
+    let errorText = document.getElementById('errorText');
+    errorBox.style.border = "solid 3px red";
+    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
+    setTimeout(() => {
+      errorBox.style.border = "0";
+      errorText.innerHTML = "";
+    }, 1500); 
+  }
 }
 
 reset_btn.onclick = function() {
-  let box = Array.from(document.getElementsByClassName('check'));
+  let table = document.getElementById('room-listing');
+  let box = Array.from(table.getElementsByClassName('check'));
+  let active = false;
   for (const [i, b] of box.entries()) {
     if (b.checked) {
-      const id = room_list.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).id;
+      b.checked = false;
+      active = true;
+      const id = table.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).id;
       socket.emit('reset_room', id);
     }
-  }       
+  }
+  
+  if (active == false) {
+    let errorBox = document.getElementById('errorBox');
+    let errorText = document.getElementById('errorText');
+    errorBox.style.border = "solid 3px red";
+    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
+    setTimeout(() => {
+      errorBox.style.border = "0";
+      errorText.innerHTML = "";
+    }, 1500); 
+  }
 }
 
 create_btn.onclick = function() {
@@ -129,16 +169,52 @@ createRoom.onclick = function() {
   let name = roomName.value;
   let password = roomPassword.value;
   let pur = parseInt(purchase.options[purchase.selectedIndex].value);
+  let purchase_name = purchase.options[purchase.selectedIndex].innerHTML;
   let ray = parseInt(rayon.options[rayon.selectedIndex].value);
   let id;
   id = give_room_id()
+  
+  if (isNaN(pur)) {
+    creationModal.style.display = 'none';
+    roomName.value = '';
+    roomPassword.value = '';
+    purchase.selectedIndex = 0;
+    rayon.selectedIndex = 0;
 
-  socket.emit('create_room', {'name': name, 'password':password, 'pur': pur, 'ray': ray, 'id': id});
-  creationModal.style.display = 'none';
-  roomName.value = '';
-  roomPassword.value = '';
-  purchase.selectedIndex = 0;
-  rayon.selectedIndex = 0;
+    let errorBox = document.getElementById('errorBox');
+    let errorText = document.getElementById('errorText');
+    errorBox.style.border = "solid 3px red";
+    errorText.innerHTML = `<strong>Il faut lier une commande au salon que vous créez</strong>`;
+    setTimeout(() => {
+      errorBox.style.border = "0";
+      errorText.innerHTML = "";
+    }, 1500);   
+
+  } else if (check_existence(purchase_name)) {
+    creationModal.style.display = 'none';
+    roomName.value = '';
+    roomPassword.value = '';
+    purchase.selectedIndex = 0;
+    rayon.selectedIndex = 0;
+
+    let errorBox = document.getElementById('errorBox');
+    let errorText = document.getElementById('errorText');
+    errorBox.style.border = "solid 3px red";
+    errorText.innerHTML = `<strong>Cette commande est déjà liée à un salon</strong>`;
+    setTimeout(() => {
+      errorBox.style.border = "0";
+      errorText.innerHTML = "";
+    }, 1500);  
+
+
+  } else {
+    socket.emit('create_room', {'name': name, 'password':password, 'pur': pur, 'ray': ray, 'id': id});
+    creationModal.style.display = 'none';
+    roomName.value = '';
+    roomPassword.value = '';
+    purchase.selectedIndex = 0;
+    rayon.selectedIndex = 0;
+  }
 }
    
 socket.on('add_room', (context) => {
@@ -213,6 +289,26 @@ socket.on('broacasted_finish', function(context) {
 
 // FUNCTIONS
 
+function check_existence(purchase) {
+  let check =  false;
+  let open = document.getElementById('room-listing');
+  let close = document.getElementById('room-verify-listing');
+
+  let all_ar = Array.from(open.getElementsByClassName('check'))
+                .concat(Array.from(close.getElementsByClassName('check')));
+                
+
+
+  for (const [i, b] of all_ar.entries()) {
+    var existing_purchase = room_list.rows[i + 1].cells[2].innerHTML;
+    if (purchase.split('-')[0] == existing_purchase.split('-')[0]) {
+      check = true;
+    }
+  }
+
+  return check
+}
+
 function get_suffix(url) {
   let array = url.split('%26id%3D');
   if (array.length > 1) {
@@ -235,8 +331,10 @@ function add_purchase_selector(input) {
 function give_room_id() {
   let openRooms = room_list.getElementsByTagName("button");
   let closeRooms = room_to_verify_list.getElementsByTagName("button");
-  let activeRooms = openRooms.length + closeRooms.length
-  let activeRoomsID = Array.from(openRooms).concat(Array.from(closeRooms)) 
+  let historicRoom = room_historic.getElementsByTagName("button");
+  let activeRooms = openRooms.length + closeRooms.length + historicRoom.length;
+  let activeRoomsID = Array.from(openRooms).concat(Array.from(closeRooms));
+  activeRoomsID = activeRoomsID.concat(Array.from(historicRoom));
 
   if (activeRooms == 0) {
     var id = 'room'+ activeRooms;
@@ -271,7 +369,7 @@ function add_room_btn(input, tableID) {
   }
 
   if (typeof(input.pur) == 'number') {
-    input.pur = "PO" + input.pur.toString()
+    input.pur = "PO0" + input.pur.toString()
   }
 
   if (input.pur == null || input.pur.slice(0,3) == 'spo') {
@@ -369,7 +467,60 @@ function remove_empty_table_placeholder(tableID) {
 
 
 
+//// QRCODE /////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
+const qCodeBtn = document.getElementById('qrcode-btn');
+
+qCodeBtn.addEventListener('click', () => {
+  let table = document.getElementById('room-listing');
+  let domain = window.location.origin;
+  let ArID = [];
+
+  if (table.rows[1].cells[4].innerHTML === 'Aucun salon Ouvert') {
+    let errorBox = document.getElementById('errorBox');
+    let errorText = document.getElementById('errorText');
+    errorBox.style.border = "solid 3px red";
+    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
+    setTimeout(() => {
+      errorBox.style.border = "0";
+      errorText.innerHTML = "";
+    }, 1500); 
+
+  } else {
+    let box = Array.from(table.getElementsByClassName('check'));
+    for (const [i, b] of box.entries()) {
+      if (b.checked) {
+        b.checked = false;
+        const id = table.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).id;
+        ArID.push(id);
+      }
+    }
+    if (ArID.length > 0) {
+      socket.emit('generate-qrcode-pdf', {'origin': domain, 
+                  'room_ids': ArID});
+    } else {
+      let errorBox = document.getElementById('errorBox');
+      let errorText = document.getElementById('errorText');
+      errorBox.style.border = "solid 3px red";
+      errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
+      setTimeout(() => {
+        errorBox.style.border = "0";
+        errorText.innerHTML = "";
+      }, 1500); 
+    }
+  }
+});
+
+
+socket.on('get-qrcode-pdf', (context) => {
+  let buffer = context.pdf;
+  let pdfWindow = window.open("")
+  pdfWindow.document.write(
+      "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+      encodeURI(buffer) + "'></iframe>"
+  )
+});
 
 
 

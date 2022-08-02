@@ -12,16 +12,18 @@ const adminClose = document.getElementById('admin-close');
 const closing = document.getElementById('closing-room');
 const aucdiv = document.getElementById('all-user-close');
 const suspBlock = document.getElementById('suspension-block');
+const verifBlock = document.getElementById('verif-block');
+const rechargeBlock = document.getElementById('recharge-block');
 const suspender = document.getElementById('room-suspension');
 const verifier = document.getElementById('admin-validation');
 const recharger = document.getElementById('room-recharge');
+verifBlock.hidden = true;
 adminClose.hidden = true;
 verifier.disabled = true;
 recharger.disabled = true;
 suspender.disabled = true;
 
 const delQueue = document.getElementById('del-from-queue');
-const unlockQueue = document.getElementById('unlock-from-queue');
 
 //  ON SOCKET CONNECTION
 socket.on("connection", (socket) => {
@@ -87,6 +89,8 @@ socket.on('load_existing_room', function(context) {
     product.mod = context.mod;
     CreateProductBubble(product, 'verified-list', admin);
   }
+
+  updateRemainingProdcutToScan()
 });
 
 
@@ -98,9 +102,16 @@ socket.on('grant_permission', () => {
     delQueue.hidden = false;
     adminClose.hidden = false;
     suspender.disabled = false;
-    verifier.disabled = false;
     recharger.disabled = false;
-  } else {
+  } else if (get_state()== 'close') {
+
+    for (container of document.getElementsByClassName('container')) {
+      container.style.display = 'flex';
+      container.parentElement
+              .getElementsByClassName('collaps-block')[0]
+              .classList.toggle('active')
+    }
+
     delQueue.hidden = false;
     adminClose.hidden = false;
 
@@ -108,9 +119,30 @@ socket.on('grant_permission', () => {
     aucdiv.hidden = true;
 
     suspBlock.hidden = true;
+    verifBlock.hidden = false;
     
     verifier.disabled = false;
     recharger.disabled = false;
+
+  } else {
+    for (container of document.getElementsByClassName('container')) {
+      container.style.display = 'flex';
+      container.parentElement
+              .getElementsByClassName('collaps-block')[0]
+              .classList.toggle('active')
+    }
+    delQueue.hidden = true;
+    adminClose.hidden = true;
+
+    closing.disabled = true;
+    aucdiv.hidden = true;
+
+    suspBlock.hidden = true;
+    verifBlock.hidden = true;
+    
+    verifier.disabled = true;
+    recharger.disabled = true;
+
   }
 
   socket.emit('join_room', roomID);
@@ -137,19 +169,16 @@ for (var i = 0; i < collapser.length; i++) {
     this.classList.toggle("active");
     var content = this.nextElementSibling;
     var delBtn = content.nextElementSibling;
-    var unlockBtn = delBtn.nextElementSibling;
     if (content.style.display == 'flex'){
       content.style.display = 'none';
       if (admin) {
         delBtn.hidden = true;
-        unlockBtn.hidden = true;
       }
 
     } else {
       content.style.display = 'flex';
       if (admin) {
         delBtn.hidden = false;
-        unlockBtn.hidden = false;
       }
     } 
   });
@@ -225,109 +254,108 @@ function CreateProductBubble(context, tableID, admin) {
 
   product.append(qtyData);
 
-  let panel = document.createElement('div');
-  panel.classList.add('panel');
-
-  let questionName = document.createElement('div');
-  questionName.classList.add('panel-question-name');
-  if (tableID == 'verified-list') {
-    questionName.setAttribute('style', 'display: none;');
-  } else if (tableID == 'purchased-list' & admin){
-    questionName.setAttribute('style', 'display: flex;');
-  } else if (tableID == 'scanned-list') {
-    questionName.setAttribute('style', 'display: flex;');
-  } else if(tableID == 'scanned-item-modal') {
-    questionName.setAttribute('style', 'display: flex;');
-  } else if (tableID == 'scanned-laser-list') {
-    questionName.setAttribute('style', 'display: flex;');
-  } else {
-    questionName.setAttribute('style', 'display: none;');
+  if (get_state() != 'done') {
+    let panel = document.createElement('div');
+    panel.classList.add('panel');
+  
+    let questionName = document.createElement('div');
+    questionName.classList.add('panel-question-name');
+    if (tableID == 'verified-list') {
+      questionName.setAttribute('style', 'display: none;');
+    } else if (tableID == 'purchased-list' & admin){
+      questionName.setAttribute('style', 'display: flex;');
+    } else if (tableID == 'scanned-list') {
+      questionName.setAttribute('style', 'display: flex;');
+    } else if(tableID == 'scanned-item-modal') {
+      questionName.setAttribute('style', 'display: flex;');
+    } else if (tableID == 'scanned-laser-list') {
+      questionName.setAttribute('style', 'display: flex;');
+    } else {
+      questionName.setAttribute('style', 'display: none;');
+    }
+    
+    
+    let nameQ = document.createElement('p');
+    nameQ.innerHTML = '<strong>Est-ce le bon produit ?</strong>';
+    questionName.appendChild(nameQ);
+  
+    let nameYBtn = document.createElement('button');
+    nameYBtn.classList.add('panel-btn');
+    nameYBtn.setAttribute('onclick',"NameVerificationY(this)");
+    nameYBtn.innerHTML = 'Oui'
+    questionName.appendChild(nameYBtn);
+  
+    let nameNBtn = document.createElement('button');
+    nameNBtn.classList.add('panel-btn');
+    nameNBtn.setAttribute('onclick',"WrongProductConfirmation(this)");
+    nameNBtn.innerHTML = 'Non'
+    questionName.appendChild(nameNBtn);
+  
+    panel.appendChild(questionName);
+  
+  
+    let questionQTY = document.createElement('div');
+    questionQTY.classList.add('panel-question-qty');
+    if (tableID == 'verified-list') {
+      questionQTY.setAttribute('style', 'display: flex;');
+    } else {
+      questionQTY.setAttribute('style', 'display: none;');
+    }
+    
+    let QTYQ = document.createElement('p');
+    QTYQ.innerHTML = '<strong>La quantité reçue est-elle correcte ?</strong>';
+    questionQTY.appendChild(QTYQ);
+    
+    let QTYYBtn = document.createElement('button');
+    QTYYBtn.classList.add('panel-btn');
+    QTYYBtn.setAttribute('onclick',"QtyVerificationY(this)");
+    if (tableID == 'verified-list') {QTYYBtn.setAttribute('style','visibility: hidden')};
+    QTYYBtn.innerHTML = 'Oui';
+    questionQTY.appendChild(QTYYBtn);
+  
+    let QTYNBtn = document.createElement('button');
+    QTYNBtn.classList.add('panel-btn');
+    QTYNBtn.setAttribute('onclick',"QtyVerificationN(this)");
+    QTYNBtn.innerHTML = 'Modifier';
+    questionQTY.appendChild(QTYNBtn);
+    panel.appendChild(questionQTY);
+    product.appendChild(panel);
+  
+  
+  
+    let inputMod = document.createElement('div');
+    inputMod.classList.add('mod-input-block');
+    inputMod.setAttribute('style', 'display: none;');
+  
+    let inpBlock = document.createElement('div');
+    inpBlock.classList.add('input-block');
+  
+    let labelInput = document.createElement('label');
+    labelInput.setAttribute('for', 'mod-input');
+    labelInput.innerHTML = '<strong>Nouvelle quantité reçue : </strong>';
+    inpBlock.appendChild(labelInput);
+  
+    let inp = document.createElement('input');
+    inp.classList.add('mod-input');
+    inp.setAttribute('type', 'text');
+    inp.setAttribute('onkeydown', 'acceptModFromKey(this)')
+    inpBlock.appendChild(inp);
+    inputMod.appendChild(inpBlock)
+  
+    let modBtn = document.createElement('div');
+    modBtn.classList.add('mod-btn');
+  
+    let modAcceptBtn = document.createElement('button');
+    modAcceptBtn.classList.add('modAccept');
+    modAcceptBtn.setAttribute('onclick',"acceptMod(this)");
+    modAcceptBtn.innerHTML = 'Confirmer';
+    modBtn.appendChild(modAcceptBtn)
+  
+    inputMod.appendChild(modBtn)
+  
+    product.append(inputMod)
   }
-  
-  
-  let nameQ = document.createElement('p');
-  nameQ.innerHTML = '<strong>Est-ce le bon produit ?</strong>';
-  questionName.appendChild(nameQ);
 
-  let nameYBtn = document.createElement('button');
-  nameYBtn.classList.add('panel-btn');
-  nameYBtn.setAttribute('onclick',"NameVerificationY(this)");
-  nameYBtn.innerHTML = 'Oui'
-  questionName.appendChild(nameYBtn);
-
-  let nameNBtn = document.createElement('button');
-  nameNBtn.classList.add('panel-btn');
-  nameNBtn.setAttribute('onclick',"WrongProductConfirmation(this)");
-  nameNBtn.innerHTML = 'Non'
-  questionName.appendChild(nameNBtn);
-
-  panel.appendChild(questionName);
-
-
-  let questionQTY = document.createElement('div');
-  questionQTY.classList.add('panel-question-qty');
-  if (tableID == 'verified-list') {
-    questionQTY.setAttribute('style', 'display: flex;');
-  } else {
-    questionQTY.setAttribute('style', 'display: none;');
-  }
-  
-  let QTYQ = document.createElement('p');
-  QTYQ.innerHTML = '<strong>La quantitée reçue est-elle correcte ?</strong>';
-  questionQTY.appendChild(QTYQ);
-  
-  let QTYYBtn = document.createElement('button');
-  QTYYBtn.classList.add('panel-btn');
-  QTYYBtn.setAttribute('onclick',"QtyVerificationY(this)");
-  if (tableID == 'verified-list') {QTYYBtn.setAttribute('style','visibility: hidden')};
-  QTYYBtn.innerHTML = 'Oui';
-  questionQTY.appendChild(QTYYBtn);
-
-  let QTYNBtn = document.createElement('button');
-  QTYNBtn.classList.add('panel-btn');
-  QTYNBtn.setAttribute('onclick',"QtyVerificationN(this)");
-  QTYNBtn.innerHTML = 'Modifier';
-  questionQTY.appendChild(QTYNBtn);
-  panel.appendChild(questionQTY);
-  product.appendChild(panel);
-
-
-
-  let inputMod = document.createElement('div');
-  inputMod.classList.add('mod-input-block');
-  inputMod.setAttribute('style', 'display: none;');
-
-  let inpBlock = document.createElement('div');
-  inpBlock.classList.add('input-block');
-
-  let labelInput = document.createElement('label');
-  labelInput.setAttribute('for', 'mod-input');
-  labelInput.innerHTML = '<strong>Nouvelle quantité reçue : </strong>';
-  inpBlock.appendChild(labelInput);
-
-  let inp = document.createElement('input');
-  inp.classList.add('mod-input');
-  inp.setAttribute('type', 'text');
-  inp.setAttribute('onkeydown', 'acceptModFromKey(this)')
-  inpBlock.appendChild(inp);
-  inputMod.appendChild(inpBlock)
-
-  let modBtn = document.createElement('div');
-  modBtn.classList.add('mod-btn');
-
-  let modAcceptBtn = document.createElement('button');
-  modAcceptBtn.classList.add('modAccept');
-  modAcceptBtn.setAttribute('onclick',"acceptMod(this)");
-  modAcceptBtn.innerHTML = 'Confirmer';
-  modBtn.appendChild(modAcceptBtn)
-
-  // let modCancelBtn = document.createElement('button');
-  // modCancelBtn.classList.add('modCancel');
-  // modCancelBtn.innerHTML = 'Annuler';
-  // modBtn.appendChild(modCancelBtn)
-  inputMod.appendChild(modBtn)
-
-  product.append(inputMod)
   container.appendChild(product)
 }
 
@@ -446,6 +474,7 @@ socket.on('broadcast_update_table_on_edit', function(context) {
       RemoveFromScannerContainer('scanned-laser-list', productData.barcode, productData.product_id);
       RemoveFromScannerContainer('scanned-item-modal', productData.barcode, productData.product_id);
 
+      updateRemainingProdcutToScan()
     } else {
       product.setAttribute('style','background-color: #ff9f40;')
       product.getElementsByClassName('mod-input-block')[0].style.display = 'none';
@@ -525,9 +554,11 @@ function QtyVerificationN(element) {
   let product = element.parentElement.parentElement.parentElement;
   let modInp = product.getElementsByClassName('mod-input-block')[0];
   if (modInp.style.display == 'none') {
+    element.classList.toggle('active-btn'); 
     modInp.style.display = 'flex';
   } else if (modInp.style.display == 'flex') {
     modInp.style.display = 'none';
+    element.classList.remove('active-btn'); 
   }
 }
 
@@ -951,7 +982,9 @@ socket.on('broadcasted_deleted_item', function(context) {
       console.log(index[i])
       items[index[i]].remove()
     }
+    updateRemainingProdcutToScan()
   }
+
 });
 
 
@@ -991,3 +1024,62 @@ function scrolltop() {
 
 
 
+
+
+
+
+
+// search verified item
+function searchVerifiedItem(e) {
+  if (e.key == 'Enter') {
+    document.getElementById('search-product').blur()
+  } else {
+    let container = document.getElementById('verified-list');
+    let search = document.getElementById('search-product').value.toLowerCase();
+  
+    if (search == '') {
+      for (product of container.getElementsByClassName('product')) {
+        product.hidden = false;
+      }
+  
+    } else {
+      for (product of container.getElementsByClassName('product')) {
+        let name = product.getElementsByClassName('product-name')[0].innerHTML.toLowerCase();
+        let barcode =  product.getElementsByClassName('code-barre')[0].innerHTML.toLowerCase();
+  
+        if (name.includes(search) || barcode.includes(search)) {
+          product.hidden = false;
+        } else {
+          product.hidden = true;
+        }
+      } 
+    }
+  }
+}
+
+function resetVerifiedSearch() {
+  document.getElementById('search-product').value = '';
+  searchVerifiedItem({key: ''});
+  document.getElementById('search-product').blur()
+}
+
+
+// stats block
+
+function updateRemainingProdcutToScan() {
+  let container = document.getElementById('purchased-list');
+  let products = container.getElementsByClassName('product');
+  document.getElementById('nb').innerHTML = '<strong>'+products.length.toString()+'</strong>';
+
+  // var scale = 40;
+  // const scaler = setInterval(() => {
+  //   document.getElementById('nb').style.fontSize = scale.toString()+'px';
+  //   console.log(scale)
+  //   if (scale > 16) {
+  //     scale -= 1;
+  //   } else {
+  //     document.getElementById('nb').style.fontSize = '16px';
+  //     clearInterval(scaler)
+  //   }
+  // }, 10)
+}

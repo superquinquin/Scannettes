@@ -18,7 +18,7 @@ class Room:
     self.name = name
     self.password = password
     self.token = generate_token(10)
-    self.status = 'open' # [open, close]
+    self.status = 'open' # [open, close, done]
     self.oppening_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     self.closing_date = None
     self.users = 0
@@ -334,7 +334,7 @@ class Room:
     status = self.purchase.status
     self.purchase.status = 'received'
     self.purchase.process_status = 'verified'
-    self.status = 'close'
+    self.status = 'done'
     self.closing_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     room_id = self.id
@@ -345,4 +345,5 @@ class Room:
       data['odoo']['purchases']['received'].pop(purchase_id)
     elif status == 'incoming':
       data['odoo']['purchases']['incoming'].pop(purchase_id)
-    data['lobby']['rooms'].pop(room_id)
+      
+      

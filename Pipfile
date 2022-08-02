@@ -16,6 +16,9 @@ python-engineio = "==3.13.2"
 importlib-metadata = "*"
 uwsgi = "*"
 gevent = "*"
+fpdf2 = "*"
+pillow = "*"
+qrcode = "*"
 
 [dev-packages]
 

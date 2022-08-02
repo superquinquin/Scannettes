@@ -183,3 +183,16 @@ tr:hover {background-color: #ddd;}
   cursor: pointer;
   background-color: #fef84c;
 }
+
+
+#errorBox {
+  margin: auto;
+  width: 80%;
+  text-align: center;
+  border-radius: 5px;
+  color: red;
+}
+
+#historic {
+  margin-top: 70px;
+}

@@ -16,7 +16,7 @@ Log(config)
 sys.excepthook = Hook().exception_hook
 sys.stderr = ErrLogFlush(config)
 
-Update(odoo).UPDATE_RUNNER(config)
+Update(odoo, lobby).UPDATE_RUNNER(config)
 BackUp().BACKUP_RUNNER(config)
 
 

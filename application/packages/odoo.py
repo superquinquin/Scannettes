@@ -457,12 +457,14 @@ class Odoo:
     elif purchase_state == 'cancel' or picking_state == 'cancel':
       # remove from data dict
       if id in list(data['odoo']['purchases']['incoming'].keys()):
-        data['odoo']['purchases']['incoming'].pip(id)
+        data['odoo']['purchases']['incoming'].pop(id)
 
       elif id in list(data['odoo']['purchases']['received'].keys()):
-        data['odoo']['purchases']['received'].pip(id)
+        data['odoo']['purchases']['received'].pop(id)
     
 
+  def delete_purchase (self, id, data):
+    data['odoo']['purchases']['done'].pop(id)
 
   def get_inventory(self):
     pass
