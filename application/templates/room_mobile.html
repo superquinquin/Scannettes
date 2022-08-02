@@ -79,7 +79,10 @@
   </div>  
 
   <div id="stats-block">
-    <p>Il reste <strong>XX</strong> produits à scanner</p>
+    <!-- <p>Il reste <strong>XX</strong> produits à scanner</p> -->
+    <p>Il reste </p>
+    <p id="nb"><strong>XX</strong></p>
+    <p> produits à scanner</p>
   </div>
 
   <div id="scanned-block" class="list-block">
@@ -89,7 +92,6 @@
       <div id="scanned-list" class="list-container"></div>      
     </div>
     <button id="del-from-queue" class="btn" onclick="GenerateDelConfimartion('scanned-list')" hidden>Supprimer</button>
-    <button id="unlock-from-queue" class="btn" hidden>Débloquer</button>
   </div>
 
   
@@ -100,17 +102,23 @@
       <div id="purchased-list" class="list-container"></div>  
     </div>
     <button id="del-from-purchased" class="btn" onclick="GenerateDelConfimartion('purchased-list')" hidden>Supprimer</button>
-    <button id="unlock-from-purchased" class="btn" hidden>Débloquer</button>
   </div>
 
   <div id="verified-block" class="list-block">
     <button class="collaps-block">Produits vérifiés</button>
     <div class="container">
-      <p id="verified-situation" class="situation">Aucun produit</p>
-      <div id="verified-list" class="list-container"></div>
+      <div id="sub-container">
+        <div id="verified-search">
+          <input id="search-product" type="text" placeholder="Rechercher nom/code barre de produit" onkeyup="searchVerifiedItem(event)">
+          <button id="reset-product-search" onclick="resetVerifiedSearch()">&#10006</button>
+        </div>
+        <div>
+          <p id="verified-situation" class="situation">Aucun produit</p>
+          <div id="verified-list" class="list-container"></div>
+        </div>
+      </div>
     </div>
     <button id="del-from-verfied" class="btn" onclick="GenerateDelConfimartion('verified-list')" hidden>Supprimer</button>
-    <button id="unlock-from-verfied" class="btn" hidden>Débloquer</button>
   </div>
 
   <div id="closing-option">
@@ -120,9 +128,12 @@
     <div id="admin-close">
       <div id="suspension-block">
         <button id="room-suspension" class="closing-btn"> Suspendre la réception</button>
-      </div>
+      </div id="recharge-block">
       <button id="room-recharge" class="closing-btn">Recharger</button>
-      <button id="admin-validation" class="closing-btn">Validation</button>
+      </div>
+      <div id="verif-block">
+        <button id="admin-validation" class="closing-btn">Validation</button>
+      </div>
     </div>
   </div>
   

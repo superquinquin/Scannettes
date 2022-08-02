@@ -82,8 +82,9 @@ class BackUp:
 
 class Update:
   
-  def __init__(self, odoo) -> None:
+  def __init__(self, odoo, lobby) -> None:
     self.odoo = odoo
+    self.lobby = lobby
   
   def UPDATE_RUNNER(self, config):
     """THREADING and schedulding update every XXXX hours
@@ -100,6 +101,7 @@ class Update:
     while True:
       try:
         data = self.odoo.get_purchase(data['config'].DELTA_SEARCH_PURCHASE, data)
+        data = self.lobby.remove_historic_room(self.odoo, data)
         self.odoo.get_inventory()
         self.UPDATE_RUNNER(data['config'])
         break

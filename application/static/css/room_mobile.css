@@ -8,6 +8,7 @@ img {
   height: 50px;
 }
 
+
 #room-header {
   width: 101%;
   height: 90px;
@@ -50,9 +51,16 @@ img {
 /* STAT BLOCK */
 
 #stats-block {
-  margin-top: 40px;
+  margin-top: 20px;
+  margin-bottom: 30px;
   color: #3C312E;
 }
+
+#stats-block p {
+  display: inline;
+}
+
+
 
 /* TOTOP */
 #toTop {
@@ -225,14 +233,16 @@ img {
 
 /* panel */
 
-.panel p {
+.panel-question-name, .panel-question-qty {
   white-space: pre-line;
 }
+
 
 .panel-btn {
   position: relative;
   top: 10px;
-  /* width: 65px; */
+  width: 80px;
+  padding: auto;
   background-color: #3C312E;
   color: #fef84c;
   border-radius: 5px;
@@ -240,7 +250,7 @@ img {
   height: 25px;
 }
 
-.panel-btn:hover {
+.panel-btn:hover, .active-btn {
   cursor: pointer;
   background-color: #fef84c;
   color: #3C312E;
@@ -249,16 +259,17 @@ img {
 /* mod input  */
 
 .input-block{
-  width: 200px;
+  width: 300px;
 }
 
 .mod-input {
   border-radius: 5px;
+  height: 20px;
   width: 150px;
   margin-left: 10px;
   margin-top: 10px;
   margin-bottom: 10px;
-  font-size: 30px;
+  font-size: 16px;
 }
 
 .mod-btn {
@@ -271,8 +282,9 @@ img {
   background-color: #3C312E;
   color: #fef84c;
   border-radius: 5px;
-  width: 80px;
-  margin-left: 90px;
+  padding: auto;
+  width: 90px;
+  margin-left: 70px;
   margin-top: 5px;
   margin-bottom: 5px;
   height: 25px;
@@ -283,6 +295,7 @@ img {
   background-color: #fef84c;
   color: #3C312E;
 }
+
 
 
 /* CLOSING ROOM */
@@ -433,7 +446,7 @@ font-size: 20px;
   background-color: #3C312E;
   width: 100%;
   height: 100%;
-  margin-top: 20px;
+  margin-top: 40px;
   padding: 20px 10px 20px 10px;
   border-radius: 10px;
 }
@@ -491,7 +504,7 @@ font-size: 20px;
   background-color: #3C312E;
   width: 100%;
   height: 100%;
-  margin-top: 20px;
+  margin-top: 40px;
   padding: 20px 10px 20px 10px;
   border-radius: 10px;
 }
@@ -522,14 +535,44 @@ font-size: 20px;
   color: red;
 }
 
+#sub-container {
+  display: block;
+  width: 99%;
+}
 
+#verified-search {
+  margin: 5px 0px 10px 5px;
+}
 
+#search-product {
+  width: 300px;
+  height: 30px;
+  border: solid 3px #3C312E;
+  border-radius: 5px;
+  color: #3C312E;
+  outline: none;
+}
 
+#reset-product-search {
+  width: 35px;
+  height: 38px;
+  margin-left: -10px;
+  background-color: #3C312E;
+  color:#fef84c ;
+  border: solid 3px #3C312E;
+  border-radius: 5px;
+  font-size: 20px;
+  padding-top: 2px;
+  padding-bottom: 7px;
+}
 
-
-
-
-
+#reset-product-search:hover {
+  cursor: pointer;
+  background-color: #ff4d4d;
+  border: solid 3px #ff4d4d;
+  color: #3C312E;
+  font-size: 20px;
+}
 
 
 
@@ -619,7 +662,8 @@ font-size: 20px;
   /* STATS */
 
   #stats-block {
-    margin-top: 200px;
+    margin-top: 130px;
+    margin-bottom: 60px;
     color: #3C312E;
     font-size: 30px;
   }
@@ -780,11 +824,26 @@ font-size: 20px;
 
   /* panel */
 
-  .panel p {
+  /* .panel p {
     white-space: pre-line;
     font-size: 30px;
-    min-width: 63%;
+    min-width: 70%;
+  } */
+
+  .panel-question-name p {
+    white-space: pre-line;
+    font-size: 30px;
+    width: 80%;
   }
+
+  .panel-question-qty p {
+    white-space: pre-line;
+    font-size: 30px;
+    width: 50%;
+    margin-right: 100px;
+  }
+
+
 
   .panel-btn {
     position: relative;
@@ -792,6 +851,7 @@ font-size: 20px;
     background-color: #3C312E;
     color: #fef84c;
     border-radius: 15px;
+    /* margin-left: -20px; */
     margin-left: 20px;
     margin-right: 10px;
     height: 70px;
@@ -813,8 +873,9 @@ font-size: 20px;
 
   .mod-input {
     border-radius: 15px;
-    width: 300px;
-    height: 30px;
+    width: 200px;
+    height: 50px;
+    font-size: 30px;
     margin-left: 10px;
     margin-bottom: 10px;
     margin-right: -100px;
@@ -830,8 +891,9 @@ font-size: 20px;
     margin-top: 40px;
     margin-bottom: 5px;
     margin-left: 20px;
+    margin-right: 10px;
     height: 70px;
-    width: 150px;
+    width: 200px;
     font-size: 30px;
   }
 
@@ -975,7 +1037,7 @@ font-size: 20px;
     background-color: #3C312E;
     width: 100%;
     height: 100%;
-    margin-top: 140px;
+    margin-top: 165px;
     padding: 20px 10px 20px 10px;
     border-radius: 10px;
   }
@@ -1031,7 +1093,7 @@ font-size: 20px;
     background-color: #3C312E;
     width: 100%;
     height: 100%;
-    margin-top: 140px;
+    margin-top: 165px;
     padding: 20px 10px 20px 10px;
     border-radius: 10px;
   }
@@ -1058,6 +1120,30 @@ font-size: 20px;
     border-radius: 15px;
     font-size: 30px;
     color: red;
+  }
+
+
+
+
+  /* #verified-search {
+    margin: 5px 0px 10px 5px;
+  } */
+  
+  #search-product {
+    width: 500px;
+    height: 50px;
+    border-radius: 15px;
+    font-size: 26px;
+  }
+  
+  #reset-product-search {
+    width: 55px;
+    height: 58px;
+    margin-left: -17px;
+    border-radius: 15px;
+    font-size: 32px;
+    padding-top: 5px;
+    padding-bottom: 7px;
   }
 
 }

@@ -73,6 +73,16 @@ def get_ceiling_date(timeDelta: list, data: dict, key: str) -> str:
   return date_ceiling
 
 
+def is_too_old(date, ceiling):
+  now = datetime.now()
+  delta = int((now - datetime.strptime(date, '%Y-%m-%d %H:%M:%S')).total_seconds())
+  
+  if delta > ceiling:
+    return True
+  else:
+    return False
+  
+
 
 def get_task_permission(data: Dict, suffix: str) -> bool:
   permission = False
