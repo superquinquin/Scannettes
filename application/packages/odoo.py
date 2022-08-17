@@ -410,7 +410,7 @@ class Odoo:
       return False
 
     uom = product.product_tmpl_id.uom_id.id
-    name, price = self.product_supplier_data(self, purchase, product)
+    name, price = self.product_supplier_data(purchase, product)
 
     new_item = {'order_id': purchase_id,
                 'product_uom': uom,
