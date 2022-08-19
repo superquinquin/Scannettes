@@ -342,8 +342,8 @@ class Room:
 
     data['odoo']['purchases']['done'][purchase_id] = self.purchase
     if status == 'received':
-      data['odoo']['purchases']['received'].pop(purchase_id)
+      data['odoo']['purchases']['received'].pop(purchase_id, None)
     elif status == 'incoming':
-      data['odoo']['purchases']['incoming'].pop(purchase_id)
+      data['odoo']['purchases']['incoming'].pop(purchase_id, None)
       
       
