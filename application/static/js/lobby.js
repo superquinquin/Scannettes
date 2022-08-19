@@ -300,7 +300,7 @@ function check_existence(purchase) {
 
 
   for (const [i, b] of all_ar.entries()) {
-    var existing_purchase = room_list.rows[i + 1].cells[2].innerHTML;
+    var existing_purchase = b.parentElement.parentElement.cells[2].innerHTML;
     if (purchase.split('-')[0] == existing_purchase.split('-')[0]) {
       check = true;
     }
