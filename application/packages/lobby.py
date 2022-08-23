@@ -95,9 +95,10 @@ class Lobby:
     for k in keys:
       room = data['lobby']['rooms'][k]
       room_id = room.id
+      room_status = room.status
       purchase_id = room.purchase.id
       closing_date = room.closing_date
-      if is_too_old(closing_date, 604800):
+      if room_status == 'done' and is_too_old(closing_date, 604800):
         self.delete_room(room_id, data)
         odoo.delete_purchase(purchase_id, data)
     
