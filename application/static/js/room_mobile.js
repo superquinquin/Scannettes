@@ -104,6 +104,8 @@ socket.on('grant_permission', () => {
     suspender.disabled = false;
     recharger.disabled = false;
   } else if (get_state()== 'close') {
+    let purchaseDEL = document.getElementById('del-from-purchased')
+    let verifiedDEL = document.getElementById('del-from-verfied')
 
     for (container of document.getElementsByClassName('container')) {
       container.style.display = 'flex';
@@ -123,6 +125,9 @@ socket.on('grant_permission', () => {
     
     verifier.disabled = false;
     recharger.disabled = false;
+
+    purchaseDEL.hidden = false;
+    verifiedDEL.hidden = false;
 
   } else {
     for (container of document.getElementsByClassName('container')) {
@@ -759,6 +764,9 @@ socket.on('modify_scanned_laser_item', function(context) {
 function CloseCModal() {
   document.getElementById('confirmation-hub-modal').style.display = 'none';
   document.getElementById('html').style.overflowY = 'visible';
+  document.getElementById('cancel-confirmation').hidden = false;
+  document.getElementById('accept-confirmation').hidden = false;
+  RemoveAutoVal()
 }
 
 
@@ -820,7 +828,42 @@ socket.on('broacasted_suspension', function(context) {
 });
 
 
+function autoValidation() {
+  let container = document.getElementById('confirmation-container-content');
+  
+  let content = document.createElement('div');
+  content.classList.add('auto-switch');
 
+  let text = document.createElement('p');
+  text.innerHTML = "Auto-validation:";
+
+
+  let switcher = document.createElement('label');
+  switcher.classList.add('switch');
+  let inp = document.createElement('input');
+  inp.setAttribute('type','checkbox');
+  inp.classList.add('autoswitch');
+  let sp = document.createElement('span');
+  sp.classList.add('slider');
+  sp.classList.add('round');
+  switcher.appendChild(inp);
+  switcher.appendChild(sp);
+
+  content.appendChild(text);
+  content.appendChild(switcher);
+
+  container.appendChild(content);
+
+  // deactivating for now
+  document.getElementsByClassName('autoswitch')[0].disabled = true;
+}
+
+function RemoveAutoVal() {
+  let container = document.getElementsByClassName('auto-switch')[0];
+  if (container) {
+    container.remove();
+  }
+}
 
 verifier.onclick = function () {
   window.scrollTo(0, window.scrollY); 
@@ -829,6 +872,7 @@ verifier.onclick = function () {
   document.getElementById('html').style.overflowY = 'hidden';
   document.getElementById('heading-message').innerHTML = 'Validation de la réception';
   document.getElementById('content-message').innerHTML = "Confirmer l'envoie des données vers ODOO";
+  autoValidation()
 
   document.getElementById('accept-confirmation').setAttribute('onclick','ValidatingRoom()')
 }
@@ -836,28 +880,31 @@ verifier.onclick = function () {
 function ValidatingRoom() {
   context = {'roomID': roomID, 'suffix': suffix}
   console.log('Validation')
-  CloseCModal()
+  document.getElementById('content-message').innerHTML = "Envoie des données en cours...";
+  document.getElementsByClassName('autoswitch')[0].disabled = true;
+  document.getElementById('cancel-confirmation').hidden = true;
+  document.getElementById('accept-confirmation').hidden = true;
 
   socket.emit('validation-purchase', context)
 }
 
 socket.on('close-room-on-validation', function(context) {
   if (roomID == context.roomID) {
-    CloseCModal()
-    window.location = context.url
+    RemoveAutoVal();
+    CloseCModal();
+    window.location = context.url;
   }
 });
 
 socket.on('close-test-fail-error-window', function(context) {
   if (roomID == context.roomID) {
-    let state = context.post_state
-    let test_name = state.failed
-    let item_list = state.string_list
+    let state = context.post_state;
+    let test_name = state.failed;
+    let item_list = state.string_list;
 
-    window.scrollTo(0, window.scrollY); 
-    document.getElementById('confirmation-hub-modal').style.top = (window.scrollY - 5).toString() + 'px';
-    document.getElementById('confirmation-hub-modal').style.display = 'flex';
-    document.getElementById('html').style.overflowY = 'hidden';
+    RemoveAutoVal();
+    document.getElementById('cancel-confirmation').hidden = false;
+    document.getElementById('accept-confirmation').hidden = false;
 
     if (test_name  == 'odoo_exist') {
       document.getElementById('heading-message').innerHTML = 'Odoo: Produit inexistant';
@@ -889,6 +936,8 @@ function rechargingRoom() {
   console.log('recharging')
   socket.emit('recharging_room', context)
   document.getElementById('content-message').innerHTML = "Chargement en cours...";
+  document.getElementById('cancel-confirmation').hidden = true;
+  document.getElementById('accept-confirmation').hidden = true;
 }
 
 socket.on('reload-on-recharge', function(context) {
@@ -926,27 +975,34 @@ function UncheckBox(tableID) {
 }
 
 function GenerateDelConfimartion(tableID) {
-  let productArray = [];
-  let nameArray = [];
-  let container = document.getElementById(tableID);
-  let items = container.getElementsByClassName('product');
-
-  for (const product of items) {
-    let box = product.getElementsByClassName('check');
-    if (box[0].checked) {
-      let productData = getRecordData(product)
-      productArray.push(productData)
-      nameArray.push(productData.name)
+  if (admin) {
+    let productArray = [];
+    let nameArray = [];
+    let container = document.getElementById(tableID);
+    let items = container.getElementsByClassName('product');
+  
+    for (const product of items) {
+      let box = product.getElementsByClassName('check');
+      if (box[0].checked) {
+        let productData = getRecordData(product)
+        productArray.push(productData)
+        nameArray.push(productData.name)
+      }
+    }
+    window.scrollTo(0, window.scrollY); 
+    document.getElementById('confirmation-hub-modal').style.top = (window.scrollY - 5).toString() + 'px';
+    document.getElementById('confirmation-hub-modal').style.display = 'flex';
+    document.getElementById('html').style.overflowY = 'hidden';
+    document.getElementById('heading-message').innerHTML = 'Suppression de Produits';
+    
+    if (productArray.length == 0) {
+      document.getElementById('content-message').innerHTML = "Veuillez selectionner des produits.";  
+      document.getElementById('accept-confirmation').setAttribute('onclick',"CloseCModal()")
+    } else {
+      document.getElementById('content-message').innerHTML = "Voulez vous supprimer: <strong>" + nameArray.toString() + "</strong>";
+      document.getElementById('accept-confirmation').setAttribute('onclick',"DelRequest('" + tableID + "')")
     }
   }
-  window.scrollTo(0, window.scrollY); 
-  document.getElementById('confirmation-hub-modal').style.top = (window.scrollY - 5).toString() + 'px';
-  document.getElementById('confirmation-hub-modal').style.display = 'flex';
-  document.getElementById('html').style.overflowY = 'hidden';
-  document.getElementById('heading-message').innerHTML = 'Suppression de Produits';
-  document.getElementById('content-message').innerHTML = "Voulez vous supprimer: <strong>" + nameArray.toString() + "</strong>";
-
-  document.getElementById('accept-confirmation').setAttribute('onclick',"DelRequest('" + tableID + "')")
 }
 
 function DelRequest(tableID) {

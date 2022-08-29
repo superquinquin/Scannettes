@@ -65,7 +65,7 @@ socket.on('load_existing_lobby', function(context) {
     } else if (row[3] == 'close') {
       add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-verify-listing');
     } else {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-historic');
+      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[6], 'supplier': row[5]}, 'room-historic');
     }
   }
   
