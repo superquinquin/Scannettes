@@ -141,8 +141,9 @@ def join_lobby():
     date = data['lobby']['rooms'][k].oppening_date
     purchase_name = data['lobby']['rooms'][k].purchase.name
     purchase_supplier = data['lobby']['rooms'][k].purchase.supplier_name
+    date_closing = data['lobby']['rooms'][k].closing_date
 
-    context['room'].append([id, name, purchase_name, status, date, purchase_supplier])
+    context['room'].append([id, name, purchase_name, status, date, purchase_supplier, date_closing])
   
   for k in data['odoo']['purchases']['incoming'].keys():
     id = data['odoo']['purchases']['incoming'][k].id
@@ -154,6 +155,10 @@ def join_lobby():
 
     else:
       context['selector'].append(tuple((id, name)))
+      
+  context['selector'] = sorted(context['selector'],
+                              key=lambda x: int(x[0]),
+                              reverse=True)
   
   emit('load_existing_lobby', context, include_self=True)
 
