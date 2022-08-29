@@ -12,7 +12,7 @@ docker-compose up --build
 <br>[ ] add type hint.
 <br>[ ] add documentation.
 <br>[ ] lobby secu to increase.
-<br>[ ] small adjustment to room ( waiting modal on validation ) 
+<br>[x] small adjustment to room ( waiting modal on validation ) 
 <br>[ ] solve image scanner problem.
 <br>[ ] add inventory possibility ( with possibility of merging 2 inventory room together ).
 <br>[ ] stock checking page.
