@@ -341,7 +341,7 @@ function give_room_id() {
   } else {
     let ids = [];
     for (var i = 0, len = activeRooms ; i < len; i++) {
-      let roomID = parseInt(activeRoomsID[i].id.slice(-1));
+      let roomID = parseInt(activeRoomsID[i].id.split('room')[1]);
       ids.push(roomID);
     }
     ids.sort(function(a, b) {return a - b});
