@@ -257,9 +257,16 @@ class Odoo:
       item_id = item[1]
       item_name = item[2]
 
-      from_id = self.search_product_from_id(item_id)
-      from_ean = self.search_product_from_ean(item_barcode)
-      from_ean_alt = self.search_alternative_ean(item_barcode)
+      try:
+        from_id = self.search_product_from_id(item_id)
+        from_ean = self.search_product_from_ean(item_barcode)
+        from_ean_alt = self.search_alternative_ean(item_barcode)
+      except ValueError:
+        # Odoo database problem where a product barcode refer to multiple products...
+        item_validity = False
+        validity = False
+        item_list.append(item_barcode)
+        continue
 
       print('____')
       if from_id:

@@ -907,8 +907,8 @@ socket.on('close-test-fail-error-window', function(context) {
     document.getElementById('accept-confirmation').hidden = false;
 
     if (test_name  == 'odoo_exist') {
-      document.getElementById('heading-message').innerHTML = 'Odoo: Produit inexistant';
-      document.getElementById('content-message').innerHTML = "Veuillez rajouter les produits suivants dans Odoo, puis dans la commande associée: " + item_list;
+      document.getElementById('heading-message').innerHTML = 'Oups Odoo pose problème...';
+      document.getElementById('content-message').innerHTML = "Produits inexistants sur odoo, ou erreur de code barre multiple: " + item_list;
 
     } else if (test_name == 'purchase_exist') {
       document.getElementById('heading-message').innerHTML = 'Commande: Produit inexistant';
