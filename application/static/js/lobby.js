@@ -20,6 +20,9 @@ del_btn.disabled = true;
 const reset_btn = document.getElementById('reset-btn');
 reset_btn.disabled = true;
 
+const asmbl_btn = document.getElementById('asmbl-btn');
+asmbl_btn.disabled = true;
+
 const room_list = document.getElementById('room-listing');
 const room_to_verify_list = document.getElementById('room-verify-listing');
 const room_historic = document.getElementById('room-historic');
@@ -35,6 +38,7 @@ const roomPassword = document.getElementById('room-password')
 const purchase = document.getElementById('purchases');
 const rayon = document.getElementById('rayons');
 const creationModal = document.getElementById('creation-modal');
+const ptype = document.getElementById('pType-check');
 const createRoom = document.getElementById('createRoom');
 const CancelCreationRoom = document.getElementById('CancelRoom');
 
@@ -144,9 +148,46 @@ reset_btn.onclick = function() {
   }
 }
 
+const checkAll = document.getElementById('checkAll');
+checkAll.onclick = function() {
+  let table =  document.getElementById('room-listing');
+  let rows = table.getElementsByTagName('tr');
+  let allChecked = checkTheBox(rows, false);
+  if (allChecked == true) {
+    checkTheBox(rows, true);
+  }
+}
+
+function checkTheBox(rows, remove) {
+  let allChecked = true;
+  for (const row of rows) {
+    let cell = row.getElementsByTagName('td');
+    if (cell['0'] && cell['0'].innerHTML != "") {
+      let check = cell['0'].children['0'].checked;
+
+      if (remove == true) {
+        cell['0'].children['0'].checked = false;
+
+      } else if (!remove && !check) {
+        allChecked = false;
+        cell['0'].children['0'].checked = true;
+      }
+    }
+  }
+  return allChecked
+}
+
+
 create_btn.onclick = function() {
+  const purContainer = document.getElementById('purchase-container');
+  const invContainer = document.getElementById('inv-container');
   if (creationModal.style.display != 'flex') {
+    window.scrollTo(0, window.scrollY); 
+    document.getElementById('creation-modal').style.top = (window.scrollY - 5).toString() + 'px';
     creationModal.style.display = 'flex';
+    purContainer.style.display = 'flex';
+    invContainer.style.display = 'none';
+    document.getElementById('html').style.overflowY = 'hidden';
   } else {
     creationModal.style.display = 'none';
     roomName.value = '';
@@ -156,6 +197,19 @@ create_btn.onclick = function() {
   }
 }
 
+ptype.onclick = function() {
+  const purContainer = document.getElementById('purchase-container');
+  const invContainer = document.getElementById('inv-container');
+  if (ptype.checked) {
+    purContainer.style.display = 'none';
+    invContainer.style.display = 'flex';
+  } else {
+    purContainer.style.display = 'flex';
+    invContainer.style.display = 'none';
+  }
+}
+
+
 /// MODAL BTN
 CancelCreationRoom.onclick = function() {
   creationModal.style.display = 'none';
@@ -163,6 +217,7 @@ CancelCreationRoom.onclick = function() {
   roomPassword.value = '';
   purchase.selectedIndex = 0;
   rayon.selectedIndex = 0;
+  document.getElementById('html').style.overflowY = 'visible';
 }
 
 createRoom.onclick = function() {
@@ -171,8 +226,8 @@ createRoom.onclick = function() {
   let pur = parseInt(purchase.options[purchase.selectedIndex].value);
   let purchase_name = purchase.options[purchase.selectedIndex].innerHTML;
   let ray = parseInt(rayon.options[rayon.selectedIndex].value);
-  let id;
-  id = give_room_id()
+  let id = give_room_id()
+  document.getElementById('html').style.overflowY = 'visible';
   
   if (isNaN(pur)) {
     creationModal.style.display = 'none';
@@ -329,13 +384,12 @@ function add_purchase_selector(input) {
 }
 
 function give_room_id() {
-  let openRooms = room_list.getElementsByTagName("button");
-  let closeRooms = room_to_verify_list.getElementsByTagName("button");
-  let historicRoom = room_historic.getElementsByTagName("button");
+  let openRooms = room_list.getElementsByClassName("join-btn");
+  let closeRooms = room_to_verify_list.getElementsByClassName("join-btn");
+  let historicRoom = room_historic.getElementsByClassName("join-btn");
   let activeRooms = openRooms.length + closeRooms.length + historicRoom.length;
   let activeRoomsID = Array.from(openRooms).concat(Array.from(closeRooms));
   activeRoomsID = activeRoomsID.concat(Array.from(historicRoom));
-
   if (activeRooms == 0) {
     var id = 'room'+ activeRooms;
   } else {
@@ -351,6 +405,30 @@ function give_room_id() {
   return id
 }
 
+function europeanDate(date) {
+  let seq = date.split(' ');
+  let eH = seq[1].split(':').slice(0,2).join(':');
+
+  let splD = seq[0].split('-');
+  let eDate = [splD[2], splD[1], splD[0]].join('/');
+
+  correctedDate = eDate + ' ' + eH;
+
+  return correctedDate
+}
+
+function translateStatus(status) {
+  if (status == 'open') {
+    status = 'ouvert';
+  } else if (status == 'close') {
+    status = 'fermé';
+  } else {
+    status = 'terminé'
+  }
+
+  return status
+}
+
 
 // Table functions
 function add_room_btn(input, tableID) {
@@ -359,8 +437,9 @@ function add_room_btn(input, tableID) {
   remove_empty_table_placeholder(tableID)
 
   let id = input.id;
-  let status = input.status;
-  let date = input.creation_date
+  let status = translateStatus(input.status);
+  let date = europeanDate(input.creation_date)
+  
 
   if (input.name == '') {
     var name = id;
