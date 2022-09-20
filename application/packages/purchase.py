@@ -173,3 +173,7 @@ class Purchase:
       table.reset_index(drop=True)
 
     return passed
+
+  def change_status(self, status:str, process_status:str):
+    self.status = status
+    self.process_status = process_status

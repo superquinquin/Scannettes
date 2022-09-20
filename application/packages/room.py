@@ -347,3 +347,8 @@ class Room:
       data['odoo']['purchases']['incoming'].pop(purchase_id, None)
       
       
+  def change_status(self, status:str):
+    self.status = status
+    
+    if status == 'done':
+      self.closing_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

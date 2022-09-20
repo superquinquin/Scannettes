@@ -296,16 +296,32 @@ function CreateProductBubble(context, tableID, admin) {
     nameNBtn.innerHTML = 'Non'
     questionName.appendChild(nameNBtn);
   
-    panel.appendChild(questionName);
+    // panel.appendChild(questionName);
   
   
     let questionQTY = document.createElement('div');
     questionQTY.classList.add('panel-question-qty');
+    /////// if NOT QUESTION NAME
     if (tableID == 'verified-list') {
+      questionQTY.setAttribute('style', 'display: flex;');
+    } else if (tableID == 'purchased-list' & admin){
+      questionQTY.setAttribute('style', 'display: flex;');
+    } else if (tableID == 'scanned-list') {
+      questionQTY.setAttribute('style', 'display: flex;');
+    } else if(tableID == 'scanned-item-modal') {
+      questionQTY.setAttribute('style', 'display: flex;');
+    } else if (tableID == 'scanned-laser-list') {
       questionQTY.setAttribute('style', 'display: flex;');
     } else {
       questionQTY.setAttribute('style', 'display: none;');
     }
+
+    /////// IF QUESTION NAME
+    // if (tableID == 'verified-list') {
+    //   questionQTY.setAttribute('style', 'display: flex;');
+    // } else {
+    //   questionQTY.setAttribute('style', 'display: none;');
+    // }
     
     let QTYQ = document.createElement('p');
     QTYQ.innerHTML = '<strong>La quantité reçue est-elle correcte ?</strong>';
@@ -913,7 +929,11 @@ socket.on('close-test-fail-error-window', function(context) {
     } else if (test_name == 'purchase_exist') {
       document.getElementById('heading-message').innerHTML = 'Commande: Produit inexistant';
       document.getElementById('content-message').innerHTML = "Veuillez rajouter les produits suivants dans la commande associée : " + item_list;
+    } else if (test_name == 'validation_exist') {
+      document.getElementById('heading-message').innerHTML = 'Commande déjà validée...';
+      document.getElementById('content-message').innerHTML = "Il semble que la commande soit déjà validée. Vous n'avez rien a faire, le salon disparaitra lors de la prochaine mise à jour";
     }
+
     document.getElementById('accept-confirmation').setAttribute('onclick','CloseCModal()')
   }
 });

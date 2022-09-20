@@ -1,12 +1,12 @@
 import re
 import time
+from typing import Dict, List
 import erppeek
 import pandas as pd
 from datetime import datetime
-# from threading import Timer
 
-# from application import data
 from application.packages.purchase import Purchase
+from application.packages.lobby import Lobby
 from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
 
 pd.options.mode.chained_assignment = None
@@ -40,7 +40,13 @@ class Odoo:
         time.sleep(60)
 
 
-
+  def get(self, model: str, cond:List):
+    result = self.client.model(model).get(cond)
+    return result
+  
+  def browse(self, model:str, cond:List):
+    result = self.client.model(model).browse(cond)
+    return result
 
   def search_product_from_id(self, product_id):
     return self.client.model('product.product').get([('id', '=', product_id)])
@@ -182,48 +188,40 @@ class Odoo:
       create_date = pur.create_date                             # date purchase is created in odoo
       added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S") # date purchase is added in here
 
-      if purchase_state == 'purchase' and id not in done:
+      if purchase_state == 'purchase' and id not in done: 
         print(name,'-', create_date)
 
         picking_state = self.get_picking_state(name) # ['assigned, cancel, done']
-
+        
         if picking_state == 'cancel':
           # then remove the purchase
-          if id in incoming:
-            data['odoo']['purchases']['incoming'].pop(id)
-          
-          elif id in received:
-            data['odoo']['purchases']['received'].pop(id)
-
-          elif id in done:
-            data['odoo']['purchases']['done'].pop(id)
-            
+          Lobby().remove_room_associated_to_purchase(data, id)
+          self.remove_purchase(data, id)
 
         elif picking_state == 'done':
           # then pass it to done dict adn remove it from previous dict
-          if id in incoming:
-            data['odoo']['purchases']['done'][id] = data['odoo']['purchases']['incoming'][id]
-            data['odoo']['purchases']['incoming'].pop(id)
+          exist = Lobby().update_room_associated_to_purchase(data, id, 'done')
+          if exist:
+            # room associated  exist, update purchase
+            self.move_purchase(data, id, 'done')
+            data['odoo']['purchases']['done'][id].change_status('received','verified')
+            
+          else:
+            # room not exist, then no need to keep purchase
+            self.remove_purchase(data, id)
           
-          elif id in received:
-            data['odoo']['purchases']['done'][id] = data['odoo']['purchases']['received'][id]
-            data['odoo']['purchases']['received'].pop(id)              
-
         elif picking_state == 'assigned':
           if id not in incoming + received:
             # add purchase to dict
             moves = self.client.model('stock.move').browse([('origin', '=', name)])
             for item in moves:
-
               if item.state == 'assigned':   
-                item_name = re.sub('\[.*?\]', '', item.name).strip()
-                item_id = item.product_id.id
-                item_barcode = item.product_id.barcode
-                item_qty = item.product_qty
-                item_qty_packaqe = item.product_qty_package
-                item_qty_received = 0  
-
-                items.append([item_barcode, item_id, item_name, item_qty, item_qty_packaqe, item_qty_received])
+                items.append([self.get_barcode(item), # item.product_id.barcode
+                              item.product_id.id, 
+                              re.sub('\[.*?\]', '', item.name).strip(), 
+                              item.product_qty, 
+                              item.product_qty_package, 
+                              0])
 
             table = pd.DataFrame(items, columns=['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
             data['odoo']['purchases']['incoming'][id] = Purchase(id, name, supplier, True, 'purchase', create_date, added_date, 'incoming', table)
@@ -246,76 +244,126 @@ class Odoo:
     return data
 
 
+  def remove_purchase(self,data:Dict, id:int):
+    if id in list(data['odoo']['purchases']['incoming'].keys()):
+      data['odoo']['purchases']['incoming'].pop(id)
+    
+    elif id in list(data['odoo']['purchases']['received'].keys()):
+      data['odoo']['purchases']['received'].pop(id)
+      
+    elif id in list(data['odoo']['purchases']['done'].keys()):
+      data['odoo']['purchases']['done'].pop(id)
+      
+
+  def move_purchase(self, data:Dict, id:int, dest:str):
+    if (id in list(data['odoo']['purchases']['incoming'].keys())
+        and dest != 'incoming'):
+      data['odoo']['purchases'][dest][id] = data['odoo']['purchases']['incoming'][id]
+      data['odoo']['purchases']['incoming'].pop(id)
+      
+    elif (id in list(data['odoo']['purchases']['received'].keys())
+          and dest != 'received'):
+      data['odoo']['purchases'][dest][id] = data['odoo']['purchases']['received'][id]
+      data['odoo']['purchases']['received'].pop(id) 
+
+    elif (id in list(data['odoo']['purchases']['done'].keys())
+          and dest != 'done'):
+      data['odoo']['purchases'][dest][id] = data['odoo']['purchases']['done'][id]
+      data['odoo']['purchases']['done'].pop(id)  
+
+  def get_barcode(self, item) -> int:
+    barcode = item.product_id.barcode
+    alt = self.browse('product.multi.barcode', [('product_id','=',item.product_id.id)])
+
+    if (barcode == False
+        and alt):
+      for p in alt:
+        if p.barcode:
+          barcode = p.barcode
+          break
+    return barcode
+  
+  
+  def check_item_alt_integrity(self, item) -> Dict:
+
+    item_barcode, item_id = item[0], item[1]
+    main = self.get('product.product', [('id','=', item_id)])
+    alts = self.browse('product.multi.barcode', [('barcode','=', item_barcode)])
+    
+    def check_alt():
+      # verify if all ids are same
+      # verify if all barcodes are the same
+
+      if not main:
+        check_i, check_b = alts[0].product_id.id, alts[0].barcode
+      else:
+        check_i, check_b = main.id, main.barcode
+        
+      for alt in alts:
+        barcode = alt.barcode
+        id = alt.product_id.id
+        if check_i != id or check_b != barcode:
+          return False
+      return True
+
+
+    if not item_barcode or not main:
+      ## no product has barcode
+      return {'item_validity': False, 'alt': None, 'has_main': False}
+    
+    elif not main.barcode and alts:
+      # main product has no barcode, barcode is on alt
+      # but multiple alts
+      return {'item_validity': check_alt(), 'alt': alts[0], 'has_main': False}
+
+    
+    elif main.barcode and alts:
+      return {'item_validity': check_alt(), 'alt': alts[0], 'has_main': True}
+
+    else:
+      # only main
+      return {'item_validity': True, 'alt': None, 'has_main': True}
+
+      
+      
 
   def check_item_odoo_existence(self, table: pd.DataFrame) -> dict:
     item_list = []
     validity = True
 
     for item in table.values.tolist():
-      item_validity = True
+      print('__', item[0], '-', item[1] )
+      result = self.check_item_alt_integrity(item)
       item_barcode = item[0]
-      item_id = item[1]
-      item_name = item[2]
-
-      try:
-        from_id = self.search_product_from_id(item_id)
-        from_ean = self.search_product_from_ean(item_barcode)
-        from_ean_alt = self.search_alternative_ean(item_barcode)
-      except ValueError:
+      item_id = item[1]     
+      
+      item_validity = result['item_validity']
+      print('valid__', item_validity)
+      if item_validity:
+        odoo_alt = result['alt']
+        if not result['has_main']:
+          odoo_barcode = odoo_alt.barcode
+          odoo_id = odoo_alt.product_id.id
+        else:
+          odoo_barcode = self.get('product.product', [('id','=',item_id)]).barcode
+          odoo_id = self.get('product.product', [('barcode','=',item_barcode)]).id
+        
+        if item_id != odoo_id or item_barcode != odoo_barcode:
+          print('_',odoo_barcode, 'has a problem')
+          item_validity = False
+          validity = False
+          item_list.append(item_barcode)
+          continue
+      
+      else:
         # Odoo database problem where a product barcode refer to multiple products...
+        print('odoo database duplicate problem...')
+        print('__', item_barcode, '__')
         item_validity = False
         validity = False
         item_list.append(item_barcode)
         continue
-
-      print('____')
-      if from_id:
-        print('id_',from_id.id, from_id.barcode)
-      if from_ean:
-        print('ean_',from_ean.id, from_ean.barcode)
-      if from_ean_alt:
-        print('alt_',from_ean_alt.id, from_ean_alt.barcode)
-      print('____')
-
-      if from_ean_alt:
-        # replace alternate barcode to main one in oder to cross validate id and barcode
-        # barcode from id is always the main barcode, then block if the scanned barcode is an alt
-        item_barcode = from_ean_alt.barcode
-
-      if from_id is None:
-        print('from_id is none')
-        item_validity = False
-        validity = False
       
-      if (item_barcode and 
-          (from_ean is None and from_ean_alt is None)):
-        print('from ean is none')
-        item_validity = False
-        validity = False
-
-      if item_barcode:
-        # Cross validation
-        if (from_id and 
-            from_id.barcode != item_barcode):
-          print('wrong barcode from id')
-          item_validity = False
-          validity = False
-        
-        if (from_ean and
-            from_ean.id != item_id):
-          print('wrong id')
-          item_validity = False
-          validity = False     
-
-        if (from_ean_alt and 
-            from_ean_alt.id != item_id):
-          print('wrong alt id')
-          item_validity = False
-          validity = False 
-        
-        if item_validity == False:
-          item_list.append(item_barcode)
-
     return {'validity': validity, 'item_list': item_list}
 
 
@@ -354,6 +402,12 @@ class Odoo:
     name = purchase.name
     new_items = purchase.new_items
     table = purchase.table_done
+    
+    # ====> verify that the purchase is not already validated
+    picking_state = self.get_picking_state(name)
+    if picking_state == 'done':
+      # already odoo validated, msg this information and block data transfer
+      return {'validity': False, 'failed': 'validation_exist', 'item_list': ['']} 
     
     # ====> purchase_item exist in ODOO
     odoo_exist = self.check_item_odoo_existence(table)
@@ -454,7 +508,7 @@ class Odoo:
       for item in moves:
         # if item.state == 'assigned':   
         productData = {'item_id': item.product_id.id,
-                      'item_barcode': item.product_id.barcode,
+                      'item_barcode': self.get_barcode(item), #item.product_id.barcode
                       'item_name': re.sub('\[.*?\]', '', item.name).strip(),
                       'item_qty': item.product_qty,
                       'item_qty_packaqe': item.product_qty_package,

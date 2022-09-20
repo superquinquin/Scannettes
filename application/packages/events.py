@@ -1,5 +1,8 @@
 from flask import url_for
 from flask_socketio import emit, join_room
+
+from application.packages.lobby import Lobby
+from application.packages.odoo import Odoo
 from .. import socketio, data, odoo, lobby
 from .utils import get_passer, get_task_permission
 from .pdf import PDF
@@ -197,10 +200,9 @@ def joining_room(room):
 
 @socketio.on('create_room')
 def create_room(input):
-  global data, lobby
+  global data
   print('create room')
-
-  room = lobby.create_room(input, data)
+  room = Lobby().create_room(input, data)
 
   input['status'] = room.status
   input['users'] = room.users
@@ -215,22 +217,23 @@ def create_room(input):
 
 @socketio.on('del_room')
 def del_room(id):
-  global lobby
-  lobby.delete_room(id, data)
+  global data
+  
+  Lobby().delete_room(id, data)
 
 
 @socketio.on('reset_room')
 def reset_room(id):
-  global lobby
+  global data
 
-  lobby.reset_room(id, data)
+  Lobby().reset_room(id, data)
 
 
 @socketio.on('generate-qrcode-pdf')
 def generate_qrcode_pdf(context):
-  global data, lobby
+  global data
 
-  content = lobby.qrcode_iterator(context, data)
+  content = Lobby().qrcode_iterator(context, data)
   pdf = PDF('P', 'mm', 'A4')
   output = pdf.generate_pdf(content['qrcodes'],
                    content['captions'])
@@ -243,11 +246,18 @@ def generate_qrcode_pdf(context):
 
 @socketio.on('image')
 def image(data_image):
-  global data, odoo
+  global data
   
   # temporaly tracking fluidity of the flux 
   # flux won't be further optimized, however frame interval each package is send can be modified
-
+  config = data['config']
+  odoo = Odoo()
+  odoo.connect(config.API_URL, 
+                  config.SERVICE_ACCOUNT_LOGGIN, 
+                  config.SERVICE_ACCOUNT_PASSWORD, 
+                  config.API_DB, 
+                  config.API_VERBOSE)
+  
   imageData = data_image['image']
   room_id = data_image['id']
   room = data['lobby']['rooms'][room_id]
@@ -268,7 +278,15 @@ def image(data_image):
 
 @socketio.on('laser')
 def laser(data_laser):
-  global data, odoo
+  global data
+  
+  config = data['config']
+  odoo = Odoo()
+  odoo.connect(config.API_URL, 
+                  config.SERVICE_ACCOUNT_LOGGIN, 
+                  config.SERVICE_ACCOUNT_PASSWORD, 
+                  config.API_DB, 
+                  config.API_VERBOSE)
 
   room_id = data_laser['id']
   barcode = data_laser['barcode']
@@ -360,7 +378,7 @@ def get_mod_item(context):
 
 @socketio.on('suspending_room')
 def suspend_room(context):
-  global data, lobby
+  global data
   
   permission = task_permission_redirector(data, context)
   
@@ -379,7 +397,7 @@ def suspend_room(context):
       url = url_for('index_admin', id= user_id, token= token)
 
 
-    lobby.delete_room(room_id, data)
+    Lobby().delete_room(room_id, data)
 
     context['url'] = url
     emit('broacasted_suspension', context, broadcast=True, include_self=True)
@@ -387,7 +405,7 @@ def suspend_room(context):
 
 @socketio.on('finishing_room')
 def finish_room(context):
-  global data, lobby
+  global data
 
   room_id = context['roomID']
   suffix = context['suffix']
@@ -412,9 +430,16 @@ def finish_room(context):
 
 @socketio.on('recharging_room')
 def recharge_room(context):
-  global data, odoo
+  global data
 
   permission = task_permission_redirector(data, context)
+  config = data['config']
+  odoo = Odoo()
+  odoo.connect(config.API_URL, 
+                  config.SERVICE_ACCOUNT_LOGGIN, 
+                  config.SERVICE_ACCOUNT_PASSWORD, 
+                  config.API_DB, 
+                  config.API_VERBOSE)
   
   if permission:
     room_id = context['roomID']
@@ -427,9 +452,16 @@ def recharge_room(context):
 
 @socketio.on('validation-purchase')
 def validate_purchase(context):
-  global data, odoo, lobby
+  global data
   
   permission = task_permission_redirector(data, context)
+  config = data['config']
+  odoo = Odoo()
+  odoo.connect(config.API_URL, 
+                  config.SERVICE_ACCOUNT_LOGGIN, 
+                  config.SERVICE_ACCOUNT_PASSWORD, 
+                  config.API_DB, 
+                  config.API_VERBOSE)
   
   if permission:
     print('____validation process______')
@@ -454,7 +486,7 @@ def validate_purchase(context):
         context['url'] = url
         emit('close-room-on-validation', context)
     
-    else:
-      state['string_list'] = ', '.join(state['item_list'])
+    else: 
+      state['string_list'] = ', '.join(list(filter(lambda x: type(x) != bool, state['item_list'])))
       context['post_state'] = state
       emit('close-test-fail-error-window', context)

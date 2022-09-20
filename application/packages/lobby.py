@@ -1,3 +1,4 @@
+from typing import Dict
 import qrcode
 import PIL
 
@@ -30,8 +31,10 @@ class Lobby:
 
   def delete_room(self, id, data):
     data['lobby']['rooms'].pop(id)
-  
-
+    
+  def update_status(self, id, data, dest):
+    data['lobby']['rooms'].pop(id)
+    
   # Lobby Users
   def create_user(self, context, data):
 
@@ -103,3 +106,36 @@ class Lobby:
         odoo.delete_purchase(purchase_id, data)
     
     return data
+  
+  
+  def remove_room_associated_to_purchase(self, data:Dict, purchase_id:int):
+    """search room associated to a purchase. if delete = true, fully delete room
+      else move it to done.
+
+    Args:
+        purchase_id (int): id of the purchase we are looking at.
+        purchase_id (Dict): Data dict.
+    """
+    rooms = list(data['lobby']['rooms'].keys())
+    
+    for key in rooms:
+      room = data['lobby']['rooms'][key]
+      room_id = room.id
+      room_purchase_id = room.purchase.id
+      if room_purchase_id == purchase_id:
+        self.delete_room(room_id, data)
+
+
+  def update_room_associated_to_purchase(self, data:Dict, purchase_id:int, status:str) -> bool:
+    updated = False
+    rooms = list(data['lobby']['rooms'].keys())
+    
+    for key in rooms:
+      room = data['lobby']['rooms'][key]
+      room_purchase_id = room.purchase.id
+      if room_purchase_id == purchase_id:
+        updated = True
+        room.change_status(status)
+        
+    return updated
+      
