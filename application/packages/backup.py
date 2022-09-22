@@ -106,10 +106,11 @@ class Update:
         self.UPDATE_RUNNER(data['config'])
         break
       
-      except ProtocolError as pe:
-        time.sleep(60)
-
-      except KeyError as ke:
+      except KeyError as e:
+        print('__ BUILD UPDATE KEY ERROR\n', e)
         self.UPDATE_RUNNER(data['config'])
         break
+      except Exception as e:
+        print('__ BUILD UPDATE EXCEPTION\n', e)
+        time.sleep(60)
         
