@@ -18,9 +18,9 @@ class Lobby:
     id = input['id']
     name = input['name']
     password = input['password']
-    purchase_id = input['pur']
-    rayon_id = input['ray']
-    data['lobby']['rooms'][id] = Room(id, name, password, purchase_id, rayon_id, data)
+    type = input['type']
+    object_id = input['object_id']
+    data['lobby']['rooms'][id] = Room(id, name, password, object_id, type, data)
 
     return data['lobby']['rooms'][id]
   

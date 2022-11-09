@@ -12,22 +12,27 @@ from application.packages.utils import generate_token
 
 class Room:
   
-  def __init__(self, id, name, password, purchase_id, rayon_id, data):
+  def __init__(self, id, name, password, object_id, type, data):
     # status
     self.id = id
     self.name = name
     self.password = password
     self.token = generate_token(10)
+    self.type = type
     self.status = 'open' # [open, close, done]
     self.oppening_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     self.closing_date = None
     self.users = 0
 
-    if purchase_id != None:
-      self.purchase = data['odoo']['purchases']['incoming'][purchase_id]
-      
-    else:
+    if not object_id:
       self.purchase = self.generate_pseaudo_purchase(data, id)
+    
+    elif object_id and type == 'inventory':
+      self.purchase = data['odoo']['inventory']['ongoing'][object_id]
+    
+    elif object_id and type == 'purchase':
+      self.purchase = data['odoo']['purchases']['incoming'][object_id]
+
 
 
 

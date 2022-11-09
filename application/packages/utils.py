@@ -146,3 +146,24 @@ def update_item_auto_table_selector(purchase, productData: dict, state: Union[No
 
       passed = purchase.delete_item('queue', 'id', productData['item_id'], passed)
       passed = purchase.delete_item('queue', 'barcode', productData['item_barcode'], passed)
+
+
+
+
+def standart_name(name: str, id:str) -> str:
+  if name == '':
+    return id
+  else:
+    return name
+  
+def standart_object_name(id: Union[str, int, None], supplier: str) -> str:
+  if type(id) == int:
+    id = f'PO0{str(id)}'
+  if not id or 'spo' in id:
+    id = 'aucune'
+  else:
+    id = f'{str(id)} - {supplier}'
+    
+  return id
+    
+  

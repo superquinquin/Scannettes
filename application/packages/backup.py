@@ -1,7 +1,6 @@
 import time
 from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
-from xmlrpc.client import ProtocolError
 
 from application.packages.utils import get_delay
 
@@ -19,18 +18,25 @@ class Data(object):
       data = {'config': config,
               
               'odoo':  {'history':{'update_purchase': [],
-                                    'update_inventory': []},
+                                    'update_inventory': []
+                                    },
 
                         'purchases': {'incoming':{},
                                       'received': {},
                                       'done': {},
                                       'draft': {},
-                                      'pseudo-purchase': {}},
+                                      'pseudo-purchase': {}
+                                      },
 
-                          'inventory': {}},
+                        'inventory': {'type': {}, # all type of inventory, for selection purpose.
+                                      'ongoing': {},
+                                      'done': {}
+                                      }
+                        },
               
               'lobby': {'rooms': {},
-                        'users': {'admin': {}}}
+                        'users': {'admin': {}}
+                        }
               } 
     data['config'] = config
 

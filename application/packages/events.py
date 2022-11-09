@@ -4,7 +4,7 @@ from flask_socketio import emit, join_room
 from application.packages.lobby import Lobby
 from application.packages.odoo import Odoo
 from .. import socketio, data, odoo, lobby
-from .utils import get_passer, get_task_permission
+from .utils import get_passer, get_task_permission, standart_name, standart_object_name
 from .pdf import PDF
 
 
@@ -135,19 +135,23 @@ def join_lobby():
   print('joining lobby')
 
   context = {'room': [],
-             'selector': []}
+             'selector': [],
+             'selector_inv': data['odoo']['inventory']['type']
+             }
 
   for k in data['lobby']['rooms'].keys():
-    id = data['lobby']['rooms'][k].id
-    name = data['lobby']['rooms'][k].name
-    status = data['lobby']['rooms'][k].status
-    date = data['lobby']['rooms'][k].oppening_date
-    purchase_name = data['lobby']['rooms'][k].purchase.name
-    purchase_supplier = data['lobby']['rooms'][k].purchase.supplier_name
-    date_closing = data['lobby']['rooms'][k].closing_date
-
-    context['room'].append([id, name, purchase_name, status, date, purchase_supplier, date_closing])
-  
+    record = data['lobby']['rooms'][k]
+    context['room'].append(
+      {'id': record.id,
+       'name': standart_name(record.name, record.id),
+       'status': record.status,
+       'object_name': standart_object_name(record.purchase.name, record.purchase.supplier_name),
+       'object_type': record.purchase.pType,
+       'object_supplier': record.purchase.supplier_name,
+       'date_oppening': record.oppening_date,
+       'date_closing': record.closing_date
+       })
+    
   for k in data['odoo']['purchases']['incoming'].keys():
     id = data['odoo']['purchases']['incoming'][k].id
     name = data['odoo']['purchases']['incoming'][k].name
@@ -202,12 +206,27 @@ def joining_room(room):
 def create_room(input):
   global data
   print('create room')
-  room = Lobby().create_room(input, data)
 
+  if input['type'] == 'inventory':
+    # if envetory create inventory object
+    config = data['config']
+    api = Odoo()
+    api.connect(config.API_URL, 
+                    config.SERVICE_ACCOUNT_LOGGIN, 
+                    config.SERVICE_ACCOUNT_PASSWORD, 
+                    config.API_DB, 
+                    config.API_VERBOSE)
+    table = api.generate_inv_product_table(input['object_id'])
+    input['object_id'] = api.create_inventory(input, data, table)
+    
+  
+  room = Lobby().create_room(input, data)
   input['status'] = room.status
   input['users'] = room.users
-  input['creation_date'] = room.oppening_date
+  input['date_oppening'] = room.oppening_date
   input['supplier'] = room.purchase.supplier_name
+  input['name'] = standart_name(input['name'], input['id'])
+  input['object_name'] = standart_object_name(room.purchase.name, room.purchase.supplier_name)
 
   if room.purchase.process_status == None:
     room.purchase.build_process_tables()

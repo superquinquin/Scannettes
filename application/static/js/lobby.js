@@ -34,9 +34,9 @@ const historicSection = document.getElementById('historic');
 historicSection.hidden = true;
 //modal
 const roomName = document.getElementById('room-name');
-const roomPassword = document.getElementById('room-password')
+const roomPassword = document.getElementById('room-password');
 const purchase = document.getElementById('purchases');
-const rayon = document.getElementById('rayons');
+const inventory = document.getElementById('rayons');
 const creationModal = document.getElementById('creation-modal');
 const ptype = document.getElementById('pType-check');
 const createRoom = document.getElementById('createRoom');
@@ -64,18 +64,27 @@ socket.on('load_existing_lobby', function(context) {
   empty_table('room-verify-listing');
   empty_table('room-historic');
   for (var row of context.room) {
-    if (row[3] == 'open') {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-listing');
-    } else if (row[3] == 'close') {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-verify-listing');
+    if (row.status == 'open') {
+      add_room_btn(row, 'room-listing');
+    } else if (row.status == 'close') {
+      add_room_btn(row, 'room-verify-listing');
     } else {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[6], 'supplier': row[5]}, 'room-historic');
+      add_room_btn(row, 'room-historic');
     }
   }
   
   for (var option of context.selector) {
-    add_purchase_selector({'id': option[0], 'name': option[1]})
+    add_selector({'id': option[0], 
+                  'name': option[1]}, 
+                  'purchases')
   }
+
+  for (var option of context.selector_inv) {
+    add_selector({'id': option[1], 
+                  'name': option[0]}, 
+                  'rayons')
+  }
+
 });  
 
 socket.on('grant_permission', () => {
@@ -193,7 +202,7 @@ create_btn.onclick = function() {
     roomName.value = '';
     roomPassword.value = '';
     purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    inventory.selectedIndex = 0;
   }
 }
 
@@ -216,25 +225,41 @@ CancelCreationRoom.onclick = function() {
   roomName.value = '';
   roomPassword.value = '';
   purchase.selectedIndex = 0;
-  rayon.selectedIndex = 0;
+  inventory.selectedIndex = 0;
+  ptype.checked = false
   document.getElementById('html').style.overflowY = 'visible';
 }
 
 createRoom.onclick = function() {
+  // let pur = parseInt(purchase.options[purchase.selectedIndex].value);
+  // let purchase_name = purchase.options[purchase.selectedIndex].innerHTML;
+  // let inventory_cat_id = parseInt(inventory.options[inventory.selectedIndex].value);
+  // let inventory_cat_name = inventory.options[inventory.selectedIndex].innerHTML;
+
+  let type = getPType();
+  let id = give_room_id();
   let name = roomName.value;
   let password = roomPassword.value;
-  let pur = parseInt(purchase.options[purchase.selectedIndex].value);
-  let purchase_name = purchase.options[purchase.selectedIndex].innerHTML;
-  let ray = parseInt(rayon.options[rayon.selectedIndex].value);
-  let id = give_room_id()
+  let object_id;
+  let object_name;
+  if (type == 'purchase') {
+    object_id = parseInt(purchase.options[purchase.selectedIndex].value);
+    object_name = purchase.options[purchase.selectedIndex].innerHTML;
+  } else {
+    object_id = parseInt(inventory.options[inventory.selectedIndex].value);
+    object_name = inventory.options[inventory.selectedIndex].innerHTML;
+  }
   document.getElementById('html').style.overflowY = 'visible';
-  
-  if (isNaN(pur)) {
+
+
+  if ((isNaN(object_id))) {
+    // block empty pseudo purchase &  pseudo inventory
     creationModal.style.display = 'none';
     roomName.value = '';
     roomPassword.value = '';
     purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    inventory.selectedIndex = 0;
+    ptype.checked = false
 
     let errorBox = document.getElementById('errorBox');
     let errorText = document.getElementById('errorText');
@@ -245,12 +270,14 @@ createRoom.onclick = function() {
       errorText.innerHTML = "";
     }, 1500);   
 
-  } else if (check_existence(purchase_name)) {
+
+  } else if (check_existence(object_name) && type == 'purchase') {
     creationModal.style.display = 'none';
     roomName.value = '';
     roomPassword.value = '';
     purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    inventory.selectedIndex = 0;
+    ptype.checked = false
 
     let errorBox = document.getElementById('errorBox');
     let errorText = document.getElementById('errorText');
@@ -263,21 +290,42 @@ createRoom.onclick = function() {
 
 
   } else {
-    socket.emit('create_room', {'name': name, 'password':password, 'pur': pur, 'ray': ray, 'id': id});
-    creationModal.style.display = 'none';
-    roomName.value = '';
-    roomPassword.value = '';
-    purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    socket.emit('create_room', {'id': id, 
+                                'name': name, 
+                                'password':password,
+                                'type': type,
+                                'object_id': object_id});
+    document.getElementById('creation-info').innerHTML = "<strong>Création en cours...</strong>";
+    createRoom.disabled = true;
+    CancelCreationRoom.disabled = true;
   }
 }
    
 socket.on('add_room', (context) => {
   add_room_btn(context, 'room-listing');
+  creationModal.style.display = 'none';
+  roomName.value = '';
+  roomPassword.value = '';
+  purchase.selectedIndex = 0;
+  inventory.selectedIndex = 0;
+  ptype.checked = false;
+  document.getElementById('creation-info').innerHTML = "";
+  createRoom.disabled = false;
+  CancelCreationRoom.disabled = false;
 });      
 
 
 
+function getPType() {
+  var pType;
+  let check =  document.getElementById('pType-check').checked
+  if (check) {
+    pType = 'inventory'
+  } else {
+    pType = 'purchase'
+  }
+  return pType
+}
 
 
 
@@ -374,13 +422,15 @@ function get_suffix(url) {
   return suffix;
 }
 
-function add_purchase_selector(input) {
+function add_selector(input, object) {
+  const selector = document.getElementById(object);
+
   let id = input.id;
   let name = input.name;
   let option = document.createElement('option')
   option.value = id.toString();
   option.text = name.toString();
-  purchase.add(option, null);
+  selector.add(option, null);
 }
 
 function give_room_id() {
@@ -435,30 +485,7 @@ function add_room_btn(input, tableID) {
 
   let table = document.getElementById(tableID)
   remove_empty_table_placeholder(tableID)
-
-  let id = input.id;
-  let status = translateStatus(input.status);
-  let date = europeanDate(input.creation_date)
-  
-
-  if (input.name == '') {
-    var name = id;
-  } else {
-    var name = input.name;
-  }
-
-  if (typeof(input.pur) == 'number') {
-    input.pur = "PO0" + input.pur.toString()
-  }
-
-  if (input.pur == null || input.pur.slice(0,3) == 'spo') {
-    var purchase = 'Aucune';
-  } else {
-    var supplier = input.supplier
-    var purchase = input.pur + ' - ' + supplier;
-  }
-
-
+  console.log(input.date_oppening)
   let row = document.createElement('tr');
 
   let col0 = document.createElement('td');
@@ -469,23 +496,23 @@ function add_room_btn(input, tableID) {
   row.appendChild(col0);
 
   let col1 = document.createElement('td');
-  col1.innerHTML = name;
+  col1.innerHTML = input.name;
   row.appendChild(col1);
 
   let col2 = document.createElement('td');
-  if (typeof purchase == 'number') {
-    col2.innerHTML = 'PO0'+purchase.toString()
-  } else {
-    col2.innerHTML = purchase;
-  }
+  col2.innerHTML = input.object_name
   row.appendChild(col2);
 
   let col3 = document.createElement('td');
-  col3.innerHTML = status;
+  col3.innerHTML = input.status;
   row.appendChild(col3);
 
   let col4 = document.createElement('td');
-  col4.innerHTML = date;
+  if (input.status == 'done') {
+    col4.innerHTML = europeanDate(input.date_closing);
+  } else {
+    col4.innerHTML = europeanDate(input.date_oppening);
+  }
   row.appendChild(col4);
 
   let col5 = document.createElement('td');
@@ -497,7 +524,7 @@ function add_room_btn(input, tableID) {
 
   let col6 = document.createElement('td');
   let btn = document.createElement("button");
-  btn.setAttribute('id',id);
+  btn.setAttribute('id',input.id);
   btn.setAttribute('class', 'join-btn');
   btn.setAttribute('onclick',"redirect(this.id, get_parent_id(this, 2, 'i'), get_parent_id(this, 3, 'id'))");
   btn.appendChild(document.createTextNode('Rejoindre'));
