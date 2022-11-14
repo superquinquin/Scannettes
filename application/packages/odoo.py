@@ -75,8 +75,8 @@ class Odoo:
 
 
   def apply_purchase_record_change(self, move_id, received_qty):
-      move = self.client.model('stock.move.line').get([('move_id.id','=', move_id)])
-      move.qty_done = received_qty
+    move = self.client.model('stock.move.line').get([('move_id.id','=', move_id)])
+    move.qty_done = received_qty
     
 
 
@@ -525,8 +525,11 @@ class Odoo:
         data['odoo']['purchases']['received'].pop(id)
     
 
-  def delete_purchase (self, id, data):
-    data['odoo']['purchases']['done'].pop(id)
+  def delete_purchase(self, id, data, object_type):
+    if object_type == 'purchase':
+      data['odoo']['purchases']['done'].pop(id)
+    else:
+      data['odoo']['inventory']['done'].pop(id)
   
   
   
@@ -585,7 +588,8 @@ class Odoo:
     
     # name, barcode or multiple barcode, theoric qty, real quantity
     product_list = []
-    products = self.browse('product.template', [(['categ_id', '=', cat_id])])
+    products = self.browse('product.template', [('categ_id', '=', cat_id),
+                                                ('active', '=', True)])
     for pt in products:
       tmpl_id = pt.id
       irt = self.browse('ir.translation', [('res_id','=', tmpl_id)])
@@ -632,13 +636,68 @@ class Odoo:
  
 
 
+  def post_inventory(self, inventory:Purchase, data:Dict) -> bool:
+    """_summary_
 
-  def get_inventory(self):
-    pass
-  
+    Args:
+        inventory (Purchase): purchase object containing related inventory data
+        data (Dict): global data dict 
 
-  def post_inventory(self):
-    pass
+    Returns:
+        bool: _description_
+    """
+    
+    ## CREATE A STOCK.INVENTORY ROW
+    ## CREATE STOCK.INVENTORY.LINE FOR THE CREATED INVENTORY
+    ### WITH CHECK ON ODOO PRODUCT EXISTENCE
+    ### WITH INVENTORED QTY
+
+    ## SHOULD ALLLOW AUTO VALIDATION PROCESS..
+    print('in post inventory')
+    odoo_exist = self.check_item_odoo_existence(inventory.table_done)
+    if odoo_exist['validity'] == False:
+      # DATA VALIDITY IS TO BE PASSED TO ODOO
+      return {'validity': False, 'failed': 'odoo_exist', 'item_list': odoo_exist['item_list']}
+    
+    print('test1 passed')
+    c = self.create_stock_inventory_row(inventory)
+    self.create_stock_inventory_line_row(inventory, c)
+    
+    return {'validity': True, 'failed': 'none', 'item_list': []}
+
+
+
+  def create_stock_inventory_row(self,inventory:Purchase):
+    date = datetime.now().strftime("%d-%m-%Y")
+    name = f'{inventory.name} {date}'
+    
+    return self.client.model('stock.inventory').create(
+                                                      {'name': name,
+                                                      'filter': 'categories',
+                                                      'location_id': 12
+                                                      })
+
+  def create_stock_inventory_line_row(self, inventory:Purchase, container):
+    _,_,records = inventory.get_table_records()
+    for r in records:
+      product = self.client.model('product.product').get([('id', '=', r['id'])])
+      uom = product.product_tmpl_id.uom_id.id
+      
+      self.client.model('stock.inventory.line').create(
+        {
+          'product_qty': r['qty_received'],
+          'product_id': r['id'],
+          'product_uom_id': uom,
+          'location_id': 12,
+          'inventory_id': container.id,
+        })
+
+
+
+
+
+
+
 
 
   def build(self, data, url, login, password, db, verbose, timeDelta):
@@ -647,7 +706,6 @@ class Odoo:
     self.connect(url, login, password, db, verbose)
     data = self.get_purchase(timeDelta, data)
     data = self.get_product_categories(data)
-    self.get_inventory()
 
     self.builded = True
 

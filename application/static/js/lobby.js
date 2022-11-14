@@ -121,14 +121,11 @@ del_btn.onclick = function() {
     check_empty_table('room-listing')
 
   } else {
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500); 
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner un/des salons</strong>`,
+                1500);
   }
 }
 
@@ -146,14 +143,11 @@ reset_btn.onclick = function() {
   }
   
   if (active == false) {
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500); 
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner un/des salons</strong>`,
+                1500);
   }
 }
 
@@ -261,16 +255,13 @@ createRoom.onclick = function() {
     inventory.selectedIndex = 0;
     ptype.checked = false
 
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Il faut lier une commande au salon que vous créez</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500);   
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Il faut lier une commande au salon que vous créez</strong>`,
+                1500);
 
-
+ 
   } else if (check_existence(object_name) && type == 'purchase') {
     creationModal.style.display = 'none';
     roomName.value = '';
@@ -279,21 +270,17 @@ createRoom.onclick = function() {
     inventory.selectedIndex = 0;
     ptype.checked = false
 
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Cette commande est déjà liée à un salon</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500);  
-
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Cette commande est déjà liée à un salon</strong>`,
+                1500);
 
   } else {
     socket.emit('create_room', {'id': id, 
                                 'name': name, 
                                 'password':password,
-                                'type': type,
+                                'object_type': type,
                                 'object_id': object_id});
     document.getElementById('creation-info').innerHTML = "<strong>Création en cours...</strong>";
     createRoom.disabled = true;
@@ -317,12 +304,11 @@ socket.on('add_room', (context) => {
 
 
 function getPType() {
-  var pType;
-  let check =  document.getElementById('pType-check').checked
+  let check =  document.getElementById('pType-check').checked;
   if (check) {
-    pType = 'inventory'
+    var pType = 'inventory';
   } else {
-    pType = 'purchase'
+    var pType = 'purchase';
   }
   return pType
 }
@@ -331,12 +317,36 @@ function getPType() {
 
 // ROOM REDIRECTION
 
-function redirect(id, index, tableID) {
+function redirect_purchase(object) {
+  let type = 'purchase';
+  let id = object.id;
+  let tableID = get_parent(object, 3, 'id');
+  let password = get_parent(object, 
+                            2, 
+                            'object').cells[5].getElementsByClassName('password').item(0).value;
+  let index = get_parent(object, 2, 'i');
+  let winWidth = window.innerWidth;
 
-  let table = document.getElementById(tableID)
-  let password = table.rows[index].cells[5].getElementsByClassName('password').item(0).value;
-  let winWidth = window.innerWidth 
-  socket.emit('redirect', {'id': id, 'tableID': tableID, 'password': password, 'index': index, 'suffix': suffix, 'browser_id': browser, 'winWidth': winWidth});
+  socket.emit('redirect', 
+              {'id': id, 'tableID': tableID, 'password': password, 
+              'index': index, 'type': type, 'suffix': suffix, 
+              'browser_id': browser, 'winWidth': winWidth});
+}
+
+function redirect_inventory(object) {
+  let type = 'inventory';
+  let id = object.id;
+  let tableID = get_parent(object, 3, 'id');
+  let password = get_parent(object, 
+                            2, 
+                            'object').cells[5].getElementsByClassName('password').item(0).value;
+  let index = get_parent(object, 2, 'i');
+  let winWidth = window.innerWidth;
+
+  socket.emit('redirect', 
+              {'id': id, 'tableID': tableID, 'password': password, 
+              'index': index, 'type': type, 'suffix': suffix, 
+              'browser_id': browser, 'winWidth': winWidth});
 }
 
 socket.on('go_to_room', (data) => {
@@ -482,7 +492,7 @@ function translateStatus(status) {
 
 // Table functions
 function add_room_btn(input, tableID) {
-
+  console.log(input.object_type)
   let table = document.getElementById(tableID)
   remove_empty_table_placeholder(tableID)
   console.log(input.date_oppening)
@@ -526,7 +536,14 @@ function add_room_btn(input, tableID) {
   let btn = document.createElement("button");
   btn.setAttribute('id',input.id);
   btn.setAttribute('class', 'join-btn');
-  btn.setAttribute('onclick',"redirect(this.id, get_parent_id(this, 2, 'i'), get_parent_id(this, 3, 'id'))");
+  if (input.object_type == 'purchase') {
+    console.log('pur')
+    btn.setAttribute('onclick',"redirect_purchase(this)");
+  } else {
+    console.log('inv')
+    btn.setAttribute('onclick',"redirect_inventory(this)");
+  }
+
   btn.appendChild(document.createTextNode('Rejoindre'));
   col6.appendChild(btn);
   row.appendChild(col6);
@@ -584,16 +601,14 @@ qCodeBtn.addEventListener('click', () => {
   let ArID = [];
 
   if (table.rows[1].cells[4].innerHTML === 'Aucun salon Ouvert') {
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500); 
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner un/des salons</strong>`, 
+                1500)
 
   } else {
+
     let box = Array.from(table.getElementsByClassName('check'));
     for (const [i, b] of box.entries()) {
       if (b.checked) {
@@ -606,14 +621,11 @@ qCodeBtn.addEventListener('click', () => {
       socket.emit('generate-qrcode-pdf', {'origin': domain, 
                   'room_ids': ArID});
     } else {
-      let errorBox = document.getElementById('errorBox');
-      let errorText = document.getElementById('errorText');
-      errorBox.style.border = "solid 3px red";
-      errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-      setTimeout(() => {
-        errorBox.style.border = "0";
-        errorText.innerHTML = "";
-      }, 1500); 
+      getErrorBox('errorBox', 
+                  'errorText', 
+                  'solid 3px red', 
+                  `<strong>Vous devez selectionner un/des salons</strong>`, 
+                  1500)
     }
   }
 });
@@ -621,12 +633,30 @@ qCodeBtn.addEventListener('click', () => {
 
 socket.on('get-qrcode-pdf', (context) => {
   let buffer = context.pdf;
-  let pdfWindow = window.open("")
+  let pdfWindow = window.open("");
   pdfWindow.document.write(
       "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
       encodeURI(buffer) + "'></iframe>"
-  )
+  );
 });
 
+
+
+
+
+
+
+
+
+function getErrorBox(box, txt_container, bd_style, txt, time) {
+  let errorBox = document.getElementById(box);
+  let errorText = document.getElementById(txt_container);
+  errorBox.style.border = bd_style;
+  errorText.innerHTML = txt;
+  setTimeout(() => {
+    errorBox.style.border = "0";
+    errorText.innerHTML = "";
+  }, time);
+}
 
 

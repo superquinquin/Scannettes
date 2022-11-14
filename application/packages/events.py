@@ -93,6 +93,7 @@ def redirect(context):
   global data
 
   id = context['id']
+  atype = context['type']
   password = context['password']
   browser = context['browser_id']
   winWidth = context['winWidth']
@@ -102,30 +103,60 @@ def redirect(context):
   room = data['lobby']['rooms'][id]
   room_token = room.token
 
-  if password == room.password:
+  ## bypass pw bugged currently
+  # if password == room.password:
+  # else:
+  #   emit('access_denied', context,include_self=True)
 
-    if suffix == 'lobby':
-      emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
 
-    else:
-      user_id = passer.get('id',None)
-
-      if user_id in data['lobby']['users']['admin'].keys():
-        user = data['lobby']['users']['admin'][user_id]
-        token = passer.get('token',None)
-
-        if user.token == token and user.browser_id == browser:
-            emit('go_to_room', {'url': url_for('get_room_admin', id= id, room_token= room_token, user_id= user_id, 
-                                                                token= token, state= room.status, winWidth=winWidth)})
-        
-        else:
-          emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
-      
-      else:
-        emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
+  if suffix == 'lobby' and atype == 'purchase':
+    # not admin purchase room
+    emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
+    
+  elif suffix == 'lobby' and atype == 'inventory':
+    # not admin inventory room
+    emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
 
   else:
-    emit('access_denied', context,include_self=True)
+    # is admin
+    user_id = passer.get('id',None)
+    
+    if user_id in data['lobby']['users']['admin']:
+      # check if user is active
+      user = data['lobby']['users']['admin'][user_id]
+      token = passer.get('token',None)
+    else:
+      user = None
+
+    if (user and 
+        user.token == token and 
+        user.browser_id == browser and 
+        atype == 'purchase'):
+      # OK go to purchase
+      emit('go_to_room', {'url': url_for('get_purchase_room_admin', 
+                                        id= id, room_token= room_token, user_id= user_id, 
+                                        token= token, state= room.status, winWidth=winWidth)})
+      
+    elif (user and
+          user.token == token and 
+          user.browser_id == browser and 
+          atype == 'inventory'):
+      # OK go to iventory 
+      emit('go_to_room', {'url': url_for('get_inventory_room_admin', 
+                                        id= id, room_token= room_token, user_id= user_id, 
+                                        token= token, state= room.status, winWidth=winWidth)})
+
+    else:
+      # no user or not OK credentials, redirect non admin room
+      if atype == 'purchase':
+        emit('go_to_room', {'url': url_for('get_purchase_room', 
+                                          id=id, room_token= room_token)})
+        
+      else:
+        emit('go_to_room', {'url': url_for('get_inventory_room',
+                                          id=id, room_token= room_token)})
+      
+
 
 
 @socketio.on('join_lobby')
@@ -207,7 +238,7 @@ def create_room(input):
   global data
   print('create room')
 
-  if input['type'] == 'inventory':
+  if input['object_type'] == 'inventory':
     # if envetory create inventory object
     config = data['config']
     api = Odoo()
@@ -432,6 +463,7 @@ def finish_room(context):
   passer = get_passer(suffix)
   user_id = passer.get('id',None)
   token = passer.get('token',None)
+  atype = passer.get('type', None)
   
   if not user_id or not token:
     url =  url_for('index')
@@ -441,7 +473,7 @@ def finish_room(context):
 
 
   room = data['lobby']['rooms'][room_id]
-  room.update_status_to_received(data)
+  room.update_status_to_received(data, atype)
 
   context['url'] = url
   emit('broacasted_finish', context, broadcast=True, include_self=True)
@@ -481,29 +513,33 @@ def validate_purchase(context):
                   config.SERVICE_ACCOUNT_PASSWORD, 
                   config.API_DB, 
                   config.API_VERBOSE)
-  
+
   if permission:
     print('____validation process______')
-    room_id = context['roomID']
-    suffix = context['suffix']
-    room = data['lobby']['rooms'][room_id]
+    
+    passer = get_passer(context['suffix'])
+    room = data['lobby']['rooms'][context['roomID']]
     purchase = room.purchase
-    state = odoo.post_purchase(purchase, data)
-    if state['validity']:
-      room.update_status_to_verified(data)
+    object_type = passer.get('type',None)
+    
+    if object_type == 'purchase':
+      state = odoo.post_purchase(purchase, data)
       
-      passer = get_passer(suffix)
+    else:
+      state = odoo.post_inventory(purchase, data)
+      
+    if state['validity']:
+      room.update_status_to_verified(data, object_type)
       user_id = passer.get('id',None)
       token = passer.get('token',None)
       
       if not user_id or not token:
-        url =  url_for('index')
+        context['url'] =  url_for('index')
         
       else:
-        url = url_for('index_admin', id= user_id, token= token)      
+        context['url'] = url_for('index_admin', id= user_id, token= token)      
 
-        context['url'] = url
-        emit('close-room-on-validation', context)
+      emit('close-room-on-validation', context)
     
     else: 
       state['string_list'] = ', '.join(list(filter(lambda x: type(x) != bool, state['item_list'])))

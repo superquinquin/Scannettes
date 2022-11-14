@@ -18,7 +18,7 @@ class Lobby:
     id = input['id']
     name = input['name']
     password = input['password']
-    type = input['type']
+    type = input['object_type']
     object_id = input['object_id']
     data['lobby']['rooms'][id] = Room(id, name, password, object_id, type, data)
 
@@ -100,10 +100,11 @@ class Lobby:
       room_id = room.id
       room_status = room.status
       purchase_id = room.purchase.id
+      purchase_type = room.purchase.pType
       closing_date = room.closing_date
       if room_status == 'done' and is_too_old(closing_date, 604800):
         self.delete_room(room_id, data)
-        odoo.delete_purchase(purchase_id, data)
+        odoo.delete_purchase(purchase_id, data, purchase_type)
     
     return data
   

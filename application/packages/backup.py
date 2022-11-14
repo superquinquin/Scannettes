@@ -30,6 +30,7 @@ class Data(object):
 
                         'inventory': {'type': {}, # all type of inventory, for selection purpose.
                                       'ongoing': {},
+                                      'processed': {},
                                       'done': {}
                                       }
                         },
@@ -108,7 +109,6 @@ class Update:
       try:
         data = self.odoo.get_purchase(data['config'].DELTA_SEARCH_PURCHASE, data)
         data = self.lobby.remove_historic_room(self.odoo, data)
-        self.odoo.get_inventory()
         self.UPDATE_RUNNER(data['config'])
         break
       
