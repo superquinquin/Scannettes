@@ -20,7 +20,7 @@ function get_browser_id() {
   return browser
 }
 
-function get_parent_id(element, level, type) {
+function get_parent(element, level, type) {
   while (level-- > 0) {
     element = element.parentElement;
   }
@@ -28,6 +28,8 @@ function get_parent_id(element, level, type) {
     return element.rowIndex;
   } else if (type == 'id') {
     return element.id;
+  } else if (type == 'object') {
+    return element
   }
 }
 

@@ -8,3 +8,4 @@ volume/
 *.pyc
 .venv
 docker-compose.yml
+test.py

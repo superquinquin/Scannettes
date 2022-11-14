@@ -1,11 +1,11 @@
 import re
 import time
-from typing import Dict, List
+from typing import Dict, List, Tuple, Union
 import erppeek
 import pandas as pd
 from datetime import datetime
 
-from application.packages.purchase import Purchase
+from application.packages.purchase import Purchase, Supplier
 from application.packages.lobby import Lobby
 from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
 
@@ -75,8 +75,8 @@ class Odoo:
 
 
   def apply_purchase_record_change(self, move_id, received_qty):
-      move = self.client.model('stock.move.line').get([('move_id.id','=', move_id)])
-      move.qty_done = received_qty
+    move = self.client.model('stock.move.line').get([('move_id.id','=', move_id)])
+    move.qty_done = received_qty
     
 
 
@@ -270,6 +270,7 @@ class Odoo:
           and dest != 'done'):
       data['odoo']['purchases'][dest][id] = data['odoo']['purchases']['done'][id]
       data['odoo']['purchases']['done'].pop(id)  
+
 
   def get_barcode(self, item) -> int:
     barcode = item.product_id.barcode
@@ -524,15 +525,179 @@ class Odoo:
         data['odoo']['purchases']['received'].pop(id)
     
 
-  def delete_purchase (self, id, data):
-    data['odoo']['purchases']['done'].pop(id)
-
-  def get_inventory(self):
-    pass
+  def delete_purchase(self, id, data, object_type):
+    if object_type == 'purchase':
+      data['odoo']['purchases']['done'].pop(id)
+    else:
+      data['odoo']['inventory']['done'].pop(id)
   
+  
+  
+  def get_product_categories(self, data:Dict) -> List[Tuple[str, int]]:
+    """Generate list of product categories existing in odoo. sort it by lexicographic order
+    
+    place the data into the data dict: data['odoo']['inventory']['type']
 
-  def post_inventory(self):
-    pass
+    Returns:
+        List[Tuple[str, int]]: list of tuple name and id of product categories.
+    """
+
+    categories = self.browse('product.category', [(['create_date','>','1900-01-01 01:01:01'])]) # api does not work without conditions
+    cat = sorted([(c.complete_name, c.id) for c in categories],                                 # setup obvious cond. as turn around
+                  key=lambda x: x[0],
+                  reverse=False)
+    
+    data['odoo']['inventory']['type'] = cat
+    
+    return data   
+
+
+
+  def generate_inv_product_table(self, cat_id:int) -> pd.DataFrame:
+    """takes a category id as input, generate list of product records from this categ
+        products records are : pp id, pt name, pp or pmb barcode, pt stock qty
+
+    Args:
+        cat_id (int): reference to a category
+
+    Returns:
+        List: list of all products records with input cat id.
+    """
+    
+    def get_barcode() -> Union[str,bool]:
+      barcode = pp.barcode   
+      if (not barcode and pmb):
+        for p in pmb:
+          if p.barcode:
+            barcode = p.barcode
+            break 
+
+      return barcode
+    
+    def get_name_translation() -> str:
+      name = None
+      for t in irt:
+        if t.name == 'product.template,name':
+          name = t.value
+          break
+      
+      if not name:
+        name = pt.name
+
+      return name
+    
+    # name, barcode or multiple barcode, theoric qty, real quantity
+    product_list = []
+    products = self.browse('product.template', [('categ_id', '=', cat_id),
+                                                ('active', '=', True)])
+    for pt in products:
+      tmpl_id = pt.id
+      irt = self.browse('ir.translation', [('res_id','=', tmpl_id)])
+      pp = self.get('product.product', [(['product_tmpl_id', '=', tmpl_id])])
+      pmb = self.browse('product.multi.barcode', [(['product_id','=', pp.id])])    
+      name = get_name_translation()
+      
+      qty = pt.qty_available
+      virtual = pt.virtual_available
+                      
+      id = pp.id
+      barcode = get_barcode()
+
+      product_list.append([barcode, id, name, qty, virtual])  
+    
+    return pd.DataFrame(product_list, columns=['barcode', 'id', 'name', 'qty', 'virtual_qty'])
+
+
+
+  def create_inventory(self, input:Dict, data: Dict, table: pd.DataFrame) -> int:
+    #generate Purchase object for inventory
+    def get_id() -> int:
+      ongoing = list(data['odoo']['inventory']['ongoing'].keys())
+      done = list(data['odoo']['inventory']['done'].keys())
+      m = max(ongoing + done, default=0)
+      return m + 1     
+    
+    inv_id = get_id()
+    cat_id = input['object_id']
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    inventory = Purchase(inv_id,
+                         [x[0] for x in data['odoo']['inventory']['type'] if x[1] == cat_id][0],
+                         Supplier(None, 'inventaire'),
+                         True,
+                         'inventory',
+                         now,
+                         now,
+                         'incoming',
+                         table)
+    print(cat_id)
+    print(inventory, inventory.id, inventory.name)
+    data['odoo']['inventory']['ongoing'][inv_id] = inventory
+    return inv_id
+ 
+
+
+  def post_inventory(self, inventory:Purchase, data:Dict) -> bool:
+    """_summary_
+
+    Args:
+        inventory (Purchase): purchase object containing related inventory data
+        data (Dict): global data dict 
+
+    Returns:
+        bool: _description_
+    """
+    
+    ## CREATE A STOCK.INVENTORY ROW
+    ## CREATE STOCK.INVENTORY.LINE FOR THE CREATED INVENTORY
+    ### WITH CHECK ON ODOO PRODUCT EXISTENCE
+    ### WITH INVENTORED QTY
+
+    ## SHOULD ALLLOW AUTO VALIDATION PROCESS..
+    print('in post inventory')
+    odoo_exist = self.check_item_odoo_existence(inventory.table_done)
+    if odoo_exist['validity'] == False:
+      # DATA VALIDITY IS TO BE PASSED TO ODOO
+      return {'validity': False, 'failed': 'odoo_exist', 'item_list': odoo_exist['item_list']}
+    
+    print('test1 passed')
+    c = self.create_stock_inventory_row(inventory)
+    self.create_stock_inventory_line_row(inventory, c)
+    
+    return {'validity': True, 'failed': 'none', 'item_list': []}
+
+
+
+  def create_stock_inventory_row(self,inventory:Purchase):
+    date = datetime.now().strftime("%d-%m-%Y")
+    name = f'{inventory.name} {date}'
+    
+    return self.client.model('stock.inventory').create(
+                                                      {'name': name,
+                                                      'filter': 'categories',
+                                                      'location_id': 12
+                                                      })
+
+  def create_stock_inventory_line_row(self, inventory:Purchase, container):
+    _,_,records = inventory.get_table_records()
+    for r in records:
+      product = self.client.model('product.product').get([('id', '=', r['id'])])
+      uom = product.product_tmpl_id.uom_id.id
+      
+      self.client.model('stock.inventory.line').create(
+        {
+          'product_qty': r['qty_received'],
+          'product_id': r['id'],
+          'product_uom_id': uom,
+          'location_id': 12,
+          'inventory_id': container.id,
+        })
+
+
+
+
+
+
+
 
 
   def build(self, data, url, login, password, db, verbose, timeDelta):
@@ -540,7 +705,7 @@ class Odoo:
     activate only on first activation of the server"""
     self.connect(url, login, password, db, verbose)
     data = self.get_purchase(timeDelta, data)
-    self.get_inventory()
+    data = self.get_product_categories(data)
 
     self.builded = True
 

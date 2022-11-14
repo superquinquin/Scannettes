@@ -12,22 +12,27 @@ from application.packages.utils import generate_token
 
 class Room:
   
-  def __init__(self, id, name, password, purchase_id, rayon_id, data):
+  def __init__(self, id, name, password, object_id, type, data):
     # status
     self.id = id
     self.name = name
     self.password = password
     self.token = generate_token(10)
+    self.type = type
     self.status = 'open' # [open, close, done]
     self.oppening_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     self.closing_date = None
     self.users = 0
 
-    if purchase_id != None:
-      self.purchase = data['odoo']['purchases']['incoming'][purchase_id]
-      
-    else:
+    if not object_id:
       self.purchase = self.generate_pseaudo_purchase(data, id)
+    
+    elif object_id and type == 'inventory':
+      self.purchase = data['odoo']['inventory']['ongoing'][object_id]
+    
+    elif object_id and type == 'purchase':
+      self.purchase = data['odoo']['purchases']['incoming'][object_id]
+
 
 
 
@@ -315,21 +320,24 @@ class Room:
 
 
 
-  def update_status_to_received(self, data):
+  def update_status_to_received(self, data, object_type):
 
     self.purchase.status = 'received'
     self.purchase.process_status = 'finished'
     self.status = 'close'
 
     room_id = self.id
-    purchase_id = self.purchase.id
-    data['odoo']['purchases']['received'][purchase_id] = data['odoo']['purchases']['incoming'][purchase_id]
-    data['lobby']['rooms'][room_id].purchase = data['odoo']['purchases']['received'][purchase_id]
-    data['odoo']['purchases']['incoming'].pop(purchase_id)
+    object_id = self.purchase.id
+    if object_type == 'purchase':
+      data['odoo']['purchases']['received'][object_id] = data['odoo']['purchases']['incoming'][object_id]
+      data['lobby']['rooms'][room_id].purchase = data['odoo']['purchases']['received'][object_id]
+      data['odoo']['purchases']['incoming'].pop(object_id)
+    else:
+      data['odoo']['inventory']['processed'][object_id] = data['odoo']['inventory']['ongoing'][object_id]
+      data['lobby']['rooms'][room_id].purchase = data['odoo']['inventory']['processed'][object_id]
+      data['odoo']['inventory']['ongoing'].pop(object_id)
 
-
-
-  def update_status_to_verified(self, data):
+  def update_status_to_verified(self, data, object_type):
     
     status = self.purchase.status
     self.purchase.status = 'received'
@@ -340,11 +348,15 @@ class Room:
     room_id = self.id
     purchase_id = self.purchase.id
 
-    data['odoo']['purchases']['done'][purchase_id] = self.purchase
-    if status == 'received':
-      data['odoo']['purchases']['received'].pop(purchase_id, None)
-    elif status == 'incoming':
-      data['odoo']['purchases']['incoming'].pop(purchase_id, None)
+    if object_type == 'purchase':
+      data['odoo']['purchases']['done'][purchase_id] = self.purchase
+      if status == 'received':
+        data['odoo']['purchases']['received'].pop(purchase_id, None)
+      elif status == 'incoming':
+        data['odoo']['purchases']['incoming'].pop(purchase_id, None)
+    else:
+      data['odoo']['inventory']['done'][purchase_id] = self.purchase
+      data['odoo']['purchases']['processed'].pop(purchase_id, None)
       
       
   def change_status(self, status:str):

@@ -34,9 +34,9 @@ const historicSection = document.getElementById('historic');
 historicSection.hidden = true;
 //modal
 const roomName = document.getElementById('room-name');
-const roomPassword = document.getElementById('room-password')
+const roomPassword = document.getElementById('room-password');
 const purchase = document.getElementById('purchases');
-const rayon = document.getElementById('rayons');
+const inventory = document.getElementById('rayons');
 const creationModal = document.getElementById('creation-modal');
 const ptype = document.getElementById('pType-check');
 const createRoom = document.getElementById('createRoom');
@@ -64,18 +64,27 @@ socket.on('load_existing_lobby', function(context) {
   empty_table('room-verify-listing');
   empty_table('room-historic');
   for (var row of context.room) {
-    if (row[3] == 'open') {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-listing');
-    } else if (row[3] == 'close') {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[4], 'supplier': row[5]}, 'room-verify-listing');
+    if (row.status == 'open') {
+      add_room_btn(row, 'room-listing');
+    } else if (row.status == 'close') {
+      add_room_btn(row, 'room-verify-listing');
     } else {
-      add_room_btn({'id': row[0], 'name': row[1], 'pur': row[2], 'status': row[3], 'creation_date': row[6], 'supplier': row[5]}, 'room-historic');
+      add_room_btn(row, 'room-historic');
     }
   }
   
   for (var option of context.selector) {
-    add_purchase_selector({'id': option[0], 'name': option[1]})
+    add_selector({'id': option[0], 
+                  'name': option[1]}, 
+                  'purchases')
   }
+
+  for (var option of context.selector_inv) {
+    add_selector({'id': option[1], 
+                  'name': option[0]}, 
+                  'rayons')
+  }
+
 });  
 
 socket.on('grant_permission', () => {
@@ -112,14 +121,11 @@ del_btn.onclick = function() {
     check_empty_table('room-listing')
 
   } else {
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500); 
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner un/des salons</strong>`,
+                1500);
   }
 }
 
@@ -137,14 +143,11 @@ reset_btn.onclick = function() {
   }
   
   if (active == false) {
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500); 
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner un/des salons</strong>`,
+                1500);
   }
 }
 
@@ -193,7 +196,7 @@ create_btn.onclick = function() {
     roomName.value = '';
     roomPassword.value = '';
     purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    inventory.selectedIndex = 0;
   }
 }
 
@@ -216,79 +219,134 @@ CancelCreationRoom.onclick = function() {
   roomName.value = '';
   roomPassword.value = '';
   purchase.selectedIndex = 0;
-  rayon.selectedIndex = 0;
+  inventory.selectedIndex = 0;
+  ptype.checked = false
   document.getElementById('html').style.overflowY = 'visible';
 }
 
 createRoom.onclick = function() {
+  // let pur = parseInt(purchase.options[purchase.selectedIndex].value);
+  // let purchase_name = purchase.options[purchase.selectedIndex].innerHTML;
+  // let inventory_cat_id = parseInt(inventory.options[inventory.selectedIndex].value);
+  // let inventory_cat_name = inventory.options[inventory.selectedIndex].innerHTML;
+
+  let type = getPType();
+  let id = give_room_id();
   let name = roomName.value;
   let password = roomPassword.value;
-  let pur = parseInt(purchase.options[purchase.selectedIndex].value);
-  let purchase_name = purchase.options[purchase.selectedIndex].innerHTML;
-  let ray = parseInt(rayon.options[rayon.selectedIndex].value);
-  let id = give_room_id()
+  let object_id;
+  let object_name;
+  if (type == 'purchase') {
+    object_id = parseInt(purchase.options[purchase.selectedIndex].value);
+    object_name = purchase.options[purchase.selectedIndex].innerHTML;
+  } else {
+    object_id = parseInt(inventory.options[inventory.selectedIndex].value);
+    object_name = inventory.options[inventory.selectedIndex].innerHTML;
+  }
   document.getElementById('html').style.overflowY = 'visible';
-  
-  if (isNaN(pur)) {
+
+
+  if ((isNaN(object_id))) {
+    // block empty pseudo purchase &  pseudo inventory
     creationModal.style.display = 'none';
     roomName.value = '';
     roomPassword.value = '';
     purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    inventory.selectedIndex = 0;
+    ptype.checked = false
 
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Il faut lier une commande au salon que vous créez</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500);   
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Il faut lier une commande au salon que vous créez</strong>`,
+                1500);
 
-  } else if (check_existence(purchase_name)) {
+ 
+  } else if (check_existence(object_name) && type == 'purchase') {
     creationModal.style.display = 'none';
     roomName.value = '';
     roomPassword.value = '';
     purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    inventory.selectedIndex = 0;
+    ptype.checked = false
 
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Cette commande est déjà liée à un salon</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500);  
-
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Cette commande est déjà liée à un salon</strong>`,
+                1500);
 
   } else {
-    socket.emit('create_room', {'name': name, 'password':password, 'pur': pur, 'ray': ray, 'id': id});
-    creationModal.style.display = 'none';
-    roomName.value = '';
-    roomPassword.value = '';
-    purchase.selectedIndex = 0;
-    rayon.selectedIndex = 0;
+    socket.emit('create_room', {'id': id, 
+                                'name': name, 
+                                'password':password,
+                                'object_type': type,
+                                'object_id': object_id});
+    document.getElementById('creation-info').innerHTML = "<strong>Création en cours...</strong>";
+    createRoom.disabled = true;
+    CancelCreationRoom.disabled = true;
   }
 }
    
 socket.on('add_room', (context) => {
   add_room_btn(context, 'room-listing');
+  creationModal.style.display = 'none';
+  roomName.value = '';
+  roomPassword.value = '';
+  purchase.selectedIndex = 0;
+  inventory.selectedIndex = 0;
+  ptype.checked = false;
+  document.getElementById('creation-info').innerHTML = "";
+  createRoom.disabled = false;
+  CancelCreationRoom.disabled = false;
 });      
 
 
 
+function getPType() {
+  let check =  document.getElementById('pType-check').checked;
+  if (check) {
+    var pType = 'inventory';
+  } else {
+    var pType = 'purchase';
+  }
+  return pType
+}
 
 
 
 // ROOM REDIRECTION
 
-function redirect(id, index, tableID) {
+function redirect_purchase(object) {
+  let type = 'purchase';
+  let id = object.id;
+  let tableID = get_parent(object, 3, 'id');
+  let password = get_parent(object, 
+                            2, 
+                            'object').cells[5].getElementsByClassName('password').item(0).value;
+  let index = get_parent(object, 2, 'i');
+  let winWidth = window.innerWidth;
 
-  let table = document.getElementById(tableID)
-  let password = table.rows[index].cells[5].getElementsByClassName('password').item(0).value;
-  let winWidth = window.innerWidth 
-  socket.emit('redirect', {'id': id, 'tableID': tableID, 'password': password, 'index': index, 'suffix': suffix, 'browser_id': browser, 'winWidth': winWidth});
+  socket.emit('redirect', 
+              {'id': id, 'tableID': tableID, 'password': password, 
+              'index': index, 'type': type, 'suffix': suffix, 
+              'browser_id': browser, 'winWidth': winWidth});
+}
+
+function redirect_inventory(object) {
+  let type = 'inventory';
+  let id = object.id;
+  let tableID = get_parent(object, 3, 'id');
+  let password = get_parent(object, 
+                            2, 
+                            'object').cells[5].getElementsByClassName('password').item(0).value;
+  let index = get_parent(object, 2, 'i');
+  let winWidth = window.innerWidth;
+
+  socket.emit('redirect', 
+              {'id': id, 'tableID': tableID, 'password': password, 
+              'index': index, 'type': type, 'suffix': suffix, 
+              'browser_id': browser, 'winWidth': winWidth});
 }
 
 socket.on('go_to_room', (data) => {
@@ -374,13 +432,15 @@ function get_suffix(url) {
   return suffix;
 }
 
-function add_purchase_selector(input) {
+function add_selector(input, object) {
+  const selector = document.getElementById(object);
+
   let id = input.id;
   let name = input.name;
   let option = document.createElement('option')
   option.value = id.toString();
   option.text = name.toString();
-  purchase.add(option, null);
+  selector.add(option, null);
 }
 
 function give_room_id() {
@@ -432,33 +492,10 @@ function translateStatus(status) {
 
 // Table functions
 function add_room_btn(input, tableID) {
-
+  console.log(input.object_type)
   let table = document.getElementById(tableID)
   remove_empty_table_placeholder(tableID)
-
-  let id = input.id;
-  let status = translateStatus(input.status);
-  let date = europeanDate(input.creation_date)
-  
-
-  if (input.name == '') {
-    var name = id;
-  } else {
-    var name = input.name;
-  }
-
-  if (typeof(input.pur) == 'number') {
-    input.pur = "PO0" + input.pur.toString()
-  }
-
-  if (input.pur == null || input.pur.slice(0,3) == 'spo') {
-    var purchase = 'Aucune';
-  } else {
-    var supplier = input.supplier
-    var purchase = input.pur + ' - ' + supplier;
-  }
-
-
+  console.log(input.date_oppening)
   let row = document.createElement('tr');
 
   let col0 = document.createElement('td');
@@ -469,23 +506,23 @@ function add_room_btn(input, tableID) {
   row.appendChild(col0);
 
   let col1 = document.createElement('td');
-  col1.innerHTML = name;
+  col1.innerHTML = input.name;
   row.appendChild(col1);
 
   let col2 = document.createElement('td');
-  if (typeof purchase == 'number') {
-    col2.innerHTML = 'PO0'+purchase.toString()
-  } else {
-    col2.innerHTML = purchase;
-  }
+  col2.innerHTML = input.object_name
   row.appendChild(col2);
 
   let col3 = document.createElement('td');
-  col3.innerHTML = status;
+  col3.innerHTML = input.status;
   row.appendChild(col3);
 
   let col4 = document.createElement('td');
-  col4.innerHTML = date;
+  if (input.status == 'done') {
+    col4.innerHTML = europeanDate(input.date_closing);
+  } else {
+    col4.innerHTML = europeanDate(input.date_oppening);
+  }
   row.appendChild(col4);
 
   let col5 = document.createElement('td');
@@ -497,9 +534,16 @@ function add_room_btn(input, tableID) {
 
   let col6 = document.createElement('td');
   let btn = document.createElement("button");
-  btn.setAttribute('id',id);
+  btn.setAttribute('id',input.id);
   btn.setAttribute('class', 'join-btn');
-  btn.setAttribute('onclick',"redirect(this.id, get_parent_id(this, 2, 'i'), get_parent_id(this, 3, 'id'))");
+  if (input.object_type == 'purchase') {
+    console.log('pur')
+    btn.setAttribute('onclick',"redirect_purchase(this)");
+  } else {
+    console.log('inv')
+    btn.setAttribute('onclick',"redirect_inventory(this)");
+  }
+
   btn.appendChild(document.createTextNode('Rejoindre'));
   col6.appendChild(btn);
   row.appendChild(col6);
@@ -557,16 +601,14 @@ qCodeBtn.addEventListener('click', () => {
   let ArID = [];
 
   if (table.rows[1].cells[4].innerHTML === 'Aucun salon Ouvert') {
-    let errorBox = document.getElementById('errorBox');
-    let errorText = document.getElementById('errorText');
-    errorBox.style.border = "solid 3px red";
-    errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-    setTimeout(() => {
-      errorBox.style.border = "0";
-      errorText.innerHTML = "";
-    }, 1500); 
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner un/des salons</strong>`, 
+                1500)
 
   } else {
+
     let box = Array.from(table.getElementsByClassName('check'));
     for (const [i, b] of box.entries()) {
       if (b.checked) {
@@ -579,14 +621,11 @@ qCodeBtn.addEventListener('click', () => {
       socket.emit('generate-qrcode-pdf', {'origin': domain, 
                   'room_ids': ArID});
     } else {
-      let errorBox = document.getElementById('errorBox');
-      let errorText = document.getElementById('errorText');
-      errorBox.style.border = "solid 3px red";
-      errorText.innerHTML = `<strong>Vous devez selectionner un/des salons</strong>`;
-      setTimeout(() => {
-        errorBox.style.border = "0";
-        errorText.innerHTML = "";
-      }, 1500); 
+      getErrorBox('errorBox', 
+                  'errorText', 
+                  'solid 3px red', 
+                  `<strong>Vous devez selectionner un/des salons</strong>`, 
+                  1500)
     }
   }
 });
@@ -594,12 +633,30 @@ qCodeBtn.addEventListener('click', () => {
 
 socket.on('get-qrcode-pdf', (context) => {
   let buffer = context.pdf;
-  let pdfWindow = window.open("")
+  let pdfWindow = window.open("");
   pdfWindow.document.write(
       "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
       encodeURI(buffer) + "'></iframe>"
-  )
+  );
 });
 
+
+
+
+
+
+
+
+
+function getErrorBox(box, txt_container, bd_style, txt, time) {
+  let errorBox = document.getElementById(box);
+  let errorText = document.getElementById(txt_container);
+  errorBox.style.border = bd_style;
+  errorText.innerHTML = txt;
+  setTimeout(() => {
+    errorBox.style.border = "0";
+    errorText.innerHTML = "";
+  }, time);
+}
 
 
