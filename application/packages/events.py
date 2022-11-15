@@ -523,10 +523,10 @@ def validate_purchase(context):
     object_type = passer.get('type',None)
     
     if object_type == 'purchase':
-      state = odoo.post_purchase(purchase, data)
+      state = odoo.post_purchase(purchase, data, context['autoval'])
       
     else:
-      state = odoo.post_inventory(purchase, data)
+      state = odoo.post_inventory(purchase, data, context['autoval'])
       
     if state['validity']:
       room.update_status_to_verified(data, object_type)

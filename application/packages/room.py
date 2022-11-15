@@ -356,7 +356,7 @@ class Room:
         data['odoo']['purchases']['incoming'].pop(purchase_id, None)
     else:
       data['odoo']['inventory']['done'][purchase_id] = self.purchase
-      data['odoo']['purchases']['processed'].pop(purchase_id, None)
+      data['odoo']['inventory']['processed'].pop(purchase_id, None)
       
       
   def change_status(self, status:str):
