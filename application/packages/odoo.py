@@ -609,9 +609,9 @@ class Odoo:
       id = pp.id
       barcode = get_barcode()
 
-      product_list.append([barcode, id, name, qty, virtual])  
+      product_list.append([barcode, id, name, qty, virtual, qty])  
     
-    return pd.DataFrame(product_list, columns=['barcode', 'id', 'name', 'qty', 'virtual_qty'])
+    return pd.DataFrame(product_list, columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
 
 
 

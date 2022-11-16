@@ -183,4 +183,25 @@ class Purchase:
     oth_tb_done = other.table_done.to_dict('records')
 
     for record in oth_tb_done:
-      self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'] += record['qty_received']
+      exist = self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'].any()
+      if exist:
+        v = self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received']
+        self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'] = int(v) + int(record['qty_received'])
+      else:
+        
+        if self.table_entries.loc[self.table_entries['id'] == record['id'], 'qty_received'].any():
+          self.table_entries = self.table_entries.drop(self.table_entries.loc[self.table_entries['id'] == record['id'], 'qty_received'].index)
+          
+        if self.table_queue.loc[self.table_queue['id'] == record['id'], 'qty_received'].any():
+          self.table_queue = self.table_queue.drop(self.table_queue.loc[self.table_queue['id'] == record['id'], 'qty_received'].index)
+        
+        row = pd.DataFrame([[record['barcode'], 
+                             record['id'], 
+                             record['name'], 
+                             record['qty'], 
+                             record['virtual_qty'], 
+                             record['qty_received']]], 
+                           columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
+        self.table_done = pd.concat([self.table_done, row])
+
+    self.table_done.reset_index()

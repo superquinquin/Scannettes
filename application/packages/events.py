@@ -277,11 +277,6 @@ def assembler(context):
   Odoo().delete_purchase(r2.purchase.id, data, 'inventory', 'received')
   Lobby().delete_room(context['ids'][1], data)
   
-  
-  print(data['odoo']['inventory']['processed'])
-  print(data['lobby']['rooms'])
-  print(data['lobby']['rooms'][context['ids'][0]].purchase.table_done)
-  
   #emit to lobby, emit to room if anyone in
   emit('broadcast_room_assembler', {'keep': context['ids'][0], 
                                     'remove': context['ids'][1]},
