@@ -525,12 +525,18 @@ class Odoo:
         data['odoo']['purchases']['received'].pop(id)
     
 
-  def delete_purchase(self, id, data, object_type):
-    if object_type == 'purchase':
-      data['odoo']['purchases']['done'].pop(id)
-    else:
-      data['odoo']['inventory']['done'].pop(id)
-  
+  def delete_purchase(self, id, data, object_type, state):
+    if state == 'done':
+      if object_type == 'purchase':
+        data['odoo']['purchases']['done'].pop(id)
+      else:
+        data['odoo']['inventory']['done'].pop(id)
+        
+    elif state == 'received':
+      if object_type == 'purchase':
+        data['odoo']['purchases']['received'].pop(id)
+      else:
+        data['odoo']['inventory']['processed'].pop(id)
   
   
   def get_product_categories(self, data:Dict) -> List[Tuple[str, int]]:
@@ -663,7 +669,7 @@ class Odoo:
     c = self.create_stock_inventory_row(inventory)
     c = self.create_stock_inventory_line_row(inventory, c)
     c = self.propagate_start(c)
-    self.propagate_validate(c, True)
+    self.propagate_validate(c, autoval)
     
     return {'validity': True, 'failed': 'none', 'item_list': []}
 
@@ -705,7 +711,6 @@ class Odoo:
   def propagate_validate(self, container, autoval:bool):
     if autoval:
       try:
-        print('inside val')
         container.action_validate()
       except Exception:
         # catch marshall error & pass it

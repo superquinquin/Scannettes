@@ -177,3 +177,10 @@ class Purchase:
   def change_status(self, status:str, process_status:str):
     self.status = status
     self.process_status = process_status
+    
+    
+  def assembler(self, other):
+    oth_tb_done = other.table_done.to_dict('records')
+
+    for record in oth_tb_done:
+      self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'] += record['qty_received']

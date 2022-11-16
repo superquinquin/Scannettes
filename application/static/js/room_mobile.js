@@ -792,6 +792,12 @@ socket.on('broadcast-recharge', function(context) {
 });
 
 
+socket.on('update_on_assembler', function(context) {
+  if (roomID == context.id) {
+    window.location.reload()
+  }
+});
+
 // del table ITEM
 
 function UncheckBox(tableID) {

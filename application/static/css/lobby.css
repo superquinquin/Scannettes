@@ -242,7 +242,7 @@ img {
 }
 
 /* management buttons */
-#room-management {
+#room-management, #room-assembler {
   margin-left: 20px;
 }
 

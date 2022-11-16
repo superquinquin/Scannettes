@@ -107,55 +107,56 @@ def redirect(context):
   # if password == room.password:
   # else:
   #   emit('access_denied', context,include_self=True)
+  if password == room.password:
 
-
-  if suffix == 'lobby' and atype == 'purchase':
-    # not admin purchase room
-    emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
-    
-  elif suffix == 'lobby' and atype == 'inventory':
-    # not admin inventory room
-    emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
-
-  else:
-    # is admin
-    user_id = passer.get('id',None)
-    
-    if user_id in data['lobby']['users']['admin']:
-      # check if user is active
-      user = data['lobby']['users']['admin'][user_id]
-      token = passer.get('token',None)
-    else:
-      user = None
-
-    if (user and 
-        user.token == token and 
-        user.browser_id == browser and 
-        atype == 'purchase'):
-      # OK go to purchase
-      emit('go_to_room', {'url': url_for('get_purchase_room_admin', 
-                                        id= id, room_token= room_token, user_id= user_id, 
-                                        token= token, state= room.status, winWidth=winWidth)})
+    if suffix == 'lobby' and atype == 'purchase':
+      # not admin purchase room
+      emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
       
-    elif (user and
+    elif suffix == 'lobby' and atype == 'inventory':
+      # not admin inventory room
+      emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
+
+    else:
+      # is admin
+      user_id = passer.get('id',None)
+      
+      if user_id in data['lobby']['users']['admin']:
+        # check if user is active
+        user = data['lobby']['users']['admin'][user_id]
+        token = passer.get('token',None)
+      else:
+        user = None
+
+      if (user and 
           user.token == token and 
           user.browser_id == browser and 
-          atype == 'inventory'):
-      # OK go to iventory 
-      emit('go_to_room', {'url': url_for('get_inventory_room_admin', 
-                                        id= id, room_token= room_token, user_id= user_id, 
-                                        token= token, state= room.status, winWidth=winWidth)})
-
-    else:
-      # no user or not OK credentials, redirect non admin room
-      if atype == 'purchase':
-        emit('go_to_room', {'url': url_for('get_purchase_room', 
-                                          id=id, room_token= room_token)})
+          atype == 'purchase'):
+        # OK go to purchase
+        emit('go_to_room', {'url': url_for('get_purchase_room_admin', 
+                                          id= id, room_token= room_token, user_id= user_id, 
+                                          token= token, state= room.status, winWidth=winWidth)})
         
+      elif (user and
+            user.token == token and 
+            user.browser_id == browser and 
+            atype == 'inventory'):
+        # OK go to iventory 
+        emit('go_to_room', {'url': url_for('get_inventory_room_admin', 
+                                          id= id, room_token= room_token, user_id= user_id, 
+                                          token= token, state= room.status, winWidth=winWidth)})
+
       else:
-        emit('go_to_room', {'url': url_for('get_inventory_room',
-                                          id=id, room_token= room_token)})
-      
+        # no user or not OK credentials, redirect non admin room
+        if atype == 'purchase':
+          emit('go_to_room', {'url': url_for('get_purchase_room', 
+                                            id=id, room_token= room_token)})
+          
+        else:
+          emit('go_to_room', {'url': url_for('get_inventory_room',
+                                            id=id, room_token= room_token)})
+  else:
+    emit('access_denied', context,include_self=True) 
 
 
 
@@ -263,6 +264,31 @@ def create_room(input):
     room.purchase.build_process_tables()
 
   emit('add_room', input, broadcast=True, include_self=True)
+
+
+@socketio.on('room_assembler')
+def assembler(context):
+  global data
+
+  
+  r1 = data['lobby']['rooms'][context['ids'][0]]
+  r2 = data['lobby']['rooms'][context['ids'][1]]  
+  r = Lobby().room_assembler(r1, r2)
+  Odoo().delete_purchase(r2.purchase.id, data, 'inventory', 'received')
+  Lobby().delete_room(context['ids'][1], data)
+  
+  
+  print(data['odoo']['inventory']['processed'])
+  print(data['lobby']['rooms'])
+  print(data['lobby']['rooms'][context['ids'][0]].purchase.table_done)
+  
+  #emit to lobby, emit to room if anyone in
+  emit('broadcast_room_assembler', {'keep': context['ids'][0], 
+                                    'remove': context['ids'][1]},
+                                    broadcast=True, 
+                                    include_self=True)
+  emit('update_on_assembler', {'id': context['ids'][0]}, broadcast=True, include_self=False)
+  
 
 
 @socketio.on('del_room')
