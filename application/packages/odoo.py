@@ -396,7 +396,7 @@ class Odoo:
 
 
 
-  def post_purchase(self, purchase, data) -> dict:
+  def post_purchase(self, purchase, data, autoval) -> dict:
 
     purchase.process_status = 'verified'
     id = purchase.id
@@ -436,7 +436,7 @@ class Odoo:
       if move_state == 'assigned' and purchase.is_received(item_id):
         received_qty = purchase.get_item_received_qty(item_id)
         self.apply_purchase_record_change(move_id, received_qty)
-        
+    
     return {'validity': True, 'failed': 'none', 'item_list': []}
 
 
@@ -525,12 +525,18 @@ class Odoo:
         data['odoo']['purchases']['received'].pop(id)
     
 
-  def delete_purchase(self, id, data, object_type):
-    if object_type == 'purchase':
-      data['odoo']['purchases']['done'].pop(id)
-    else:
-      data['odoo']['inventory']['done'].pop(id)
-  
+  def delete_purchase(self, id, data, object_type, state):
+    if state == 'done':
+      if object_type == 'purchase':
+        data['odoo']['purchases']['done'].pop(id)
+      else:
+        data['odoo']['inventory']['done'].pop(id)
+        
+    elif state == 'received':
+      if object_type == 'purchase':
+        data['odoo']['purchases']['received'].pop(id)
+      else:
+        data['odoo']['inventory']['processed'].pop(id)
   
   
   def get_product_categories(self, data:Dict) -> List[Tuple[str, int]]:
@@ -552,7 +558,7 @@ class Odoo:
     return data   
 
 
-
+  ################ INVENTORY #########################
   def generate_inv_product_table(self, cat_id:int) -> pd.DataFrame:
     """takes a category id as input, generate list of product records from this categ
         products records are : pp id, pt name, pp or pmb barcode, pt stock qty
@@ -603,9 +609,9 @@ class Odoo:
       id = pp.id
       barcode = get_barcode()
 
-      product_list.append([barcode, id, name, qty, virtual])  
+      product_list.append([barcode, id, name, qty, virtual, qty])  
     
-    return pd.DataFrame(product_list, columns=['barcode', 'id', 'name', 'qty', 'virtual_qty'])
+    return pd.DataFrame(product_list, columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
 
 
 
@@ -636,7 +642,7 @@ class Odoo:
  
 
 
-  def post_inventory(self, inventory:Purchase, data:Dict) -> bool:
+  def post_inventory(self, inventory:Purchase, data:Dict, autoval:bool) -> bool:
     """_summary_
 
     Args:
@@ -661,7 +667,9 @@ class Odoo:
     
     print('test1 passed')
     c = self.create_stock_inventory_row(inventory)
-    self.create_stock_inventory_line_row(inventory, c)
+    c = self.create_stock_inventory_line_row(inventory, c)
+    c = self.propagate_start(c)
+    self.propagate_validate(c, autoval)
     
     return {'validity': True, 'failed': 'none', 'item_list': []}
 
@@ -677,6 +685,8 @@ class Odoo:
                                                       'location_id': 12
                                                       })
 
+
+
   def create_stock_inventory_line_row(self, inventory:Purchase, container):
     _,_,records = inventory.get_table_records()
     for r in records:
@@ -691,15 +701,26 @@ class Odoo:
           'location_id': 12,
           'inventory_id': container.id,
         })
+    
+    return container
+
+  def propagate_start(self, container):
+    container.action_start()
+    return container
+
+  def propagate_validate(self, container, autoval:bool):
+    if autoval:
+      try:
+        container.action_validate()
+      except Exception:
+        # catch marshall error & pass it
+        pass
 
 
 
 
 
-
-
-
-
+  #################### BUILD ##############################
   def build(self, data, url, login, password, db, verbose, timeDelta):
     """Building base dataset
     activate only on first activation of the server"""

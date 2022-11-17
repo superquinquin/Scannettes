@@ -9,7 +9,9 @@ const socket = io.connect(config.ADDRESS);
 
 // room main
 const roomManagement = document.getElementById('room-management');
+const roomAssembler = document.getElementById('room-assembler');
 roomManagement.hidden = true;
+roomAssembler.hidden = true;
 
 const create_btn = document.getElementById('create-btn');
 create_btn.disabled = true;
@@ -92,15 +94,81 @@ socket.on('grant_permission', () => {
   verifySection.hidden = false;
   historicSection.hidden = false;
   roomManagement.hidden = false;
+  roomAssembler.hidden = false;
   create_btn.disabled = false;
   del_btn.disabled = false;
   reset_btn.disabled = false;
-
+  asmbl_btn.disabled = false;
 });
 
 
 
 /// MAIN BTN
+
+asmbl_btn.onclick = function() {
+  let table = document.getElementById('room-verify-listing');
+  let box = Array.from(table.getElementsByClassName('check'));
+  let ids = [];
+  let active = false;
+  let is_inv = true;
+  for (const [i, b] of box.entries()) {
+    if (b.checked) {
+      b.checked = false;
+      active = true;
+      const id = table.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).id;
+      const type = table.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).onclick.toString().match('inventory');
+      ids.push(id)
+      if (!type) {
+        is_inv = false;
+      }
+    }
+  }
+  if (!active) {
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner un/des salons !</strong>`,
+                1500);
+  } else if (!is_inv && ids.length != 2) {
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner 2 inventaires. Les commandes ne sont pas acceptés !</strong>`,
+                1500);
+  } else if (!is_inv && ids.length == 2) {
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner uniquement des inventaires !</strong>`,
+                1500);
+  } else if (is_inv && ids.length != 2) {
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez selectionner 2 inventaires !</strong>`,
+                1500);
+  } else if (is_inv && ids.length == 2) {
+    // all good seding the ids to server
+    socket.emit('room_assembler', {'ids': ids});
+  }
+}
+
+socket.on('broadcast_room_assembler', (context) => {
+  let table = document.getElementById('room-verify-listing');
+  let box = Array.from(table.getElementsByClassName('check'));
+  for (const [i, b] of box.entries()) {
+    const id = table.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).id;
+    if (id == context.remove) {
+      table.deleteRow(i + 1);
+    }
+    if (id == context.keep) {
+      table.rows[i + 1].cells[1].innerHTML = ' assemblés'
+    }
+  }
+});   
+
+
+
 del_btn.onclick = function() {
   let index = [];
   let ids = [];
@@ -277,11 +345,26 @@ createRoom.onclick = function() {
                 1500);
 
   } else {
-    socket.emit('create_room', {'id': id, 
-                                'name': name, 
-                                'password':password,
-                                'object_type': type,
-                                'object_id': object_id});
+    let context = {'id': id, 
+                    'name': name, 
+                    'password':password,
+                    'object_type': type,
+                    'object_id': object_id};
+
+    if (type == 'inventory') {
+      // EMIT INVENTORY ROOM CREATION FOR BOTH STOCK & RAYON
+      context.name = name + ' rayon';
+      socket.emit('create_room', context);  
+
+      context.name = name + ' stock';
+      context.id = 'room' + (parseInt(id.split('room')[1]) + 1).toString();
+      socket.emit('create_room', context);
+
+    } else {
+      // EMIT PURCHASE ROOM CREATION
+      socket.emit('create_room', context);
+    }
+
     document.getElementById('creation-info').innerHTML = "<strong>Création en cours...</strong>";
     createRoom.disabled = true;
     CancelCreationRoom.disabled = true;

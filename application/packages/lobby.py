@@ -25,6 +25,23 @@ class Lobby:
     return data['lobby']['rooms'][id]
   
   
+  def room_assembler(self, r1: Room, r2: Room) -> Room:
+
+    r1_inv = r1.purchase
+    r2_inv = r2.purchase
+    r1_inv.assembler(r2_inv)
+    r1.name = 'assemblés'
+    return r1
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   def reset_room(self, id, data):
     data['lobby']['rooms'][id].purchase.build_process_tables()
 
@@ -104,7 +121,7 @@ class Lobby:
       closing_date = room.closing_date
       if room_status == 'done' and is_too_old(closing_date, 604800):
         self.delete_room(room_id, data)
-        odoo.delete_purchase(purchase_id, data, purchase_type)
+        odoo.delete_purchase(purchase_id, data, purchase_type, 'done')
     
     return data
   
