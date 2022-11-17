@@ -364,3 +364,4 @@ class Room:
     
     if status == 'done':
       self.closing_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+      

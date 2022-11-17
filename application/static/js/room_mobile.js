@@ -13,14 +13,15 @@ const closing = document.getElementById('closing-room');
 const aucdiv = document.getElementById('all-user-close');
 const suspBlock = document.getElementById('suspension-block');
 const verifBlock = document.getElementById('verif-block');
-const rechargeBlock = document.getElementById('recharge-block');
 const suspender = document.getElementById('room-suspension');
 const verifier = document.getElementById('admin-validation');
+
 const recharger = document.getElementById('room-recharge');
+recharger.disabled = true;
+
 verifBlock.hidden = true;
 adminClose.hidden = true;
-verifier.disabled = true;
-recharger.disabled = true;
+verifier.disabled = true
 suspender.disabled = true;
 
 const delQueue = document.getElementById('del-from-queue');
@@ -757,10 +758,19 @@ recharger.onclick = function () {
   document.getElementById('confirmation-hub-modal').style.top = (window.scrollY - 5).toString() + 'px';
   document.getElementById('confirmation-hub-modal').style.display = 'flex';
   document.getElementById('html').style.overflowY = 'hidden';
-  document.getElementById('heading-message').innerHTML = 'Rechargement des données';
-  document.getElementById('content-message').innerHTML = "Veuillez confirmer le rechargement des données";
+  if (suffix.match('type%3Dpurchase')) {
+    document.getElementById('heading-message').innerHTML = 'Rechargement des données';
+    document.getElementById('content-message').innerHTML = "Veuillez confirmer le rechargement des données";
+  
+    document.getElementById('accept-confirmation').setAttribute('onclick','rechargingRoom()')
 
-  document.getElementById('accept-confirmation').setAttribute('onclick','rechargingRoom()')
+  } else if (suffix.match('type%3Dinventory')) {
+    document.getElementById('heading-message').innerHTML = 'Nullification';
+    document.getElementById('content-message').innerHTML = "Souhaitez vous nullifier les quantités non validées?";
+  
+    document.getElementById('accept-confirmation').setAttribute('onclick','nullification()')  
+  }
+
 }
 
 function rechargingRoom() {
@@ -790,6 +800,46 @@ socket.on('broadcast-recharge', function(context) {
     document.getElementById('accept-confirmation').setAttribute('onclick','window.location.reload()')
   }
 });
+
+
+
+function nullification() {
+  context = {'roomID': roomID, 'suffix': suffix}
+  socket.emit('nullification', context)
+  document.getElementById('content-message').innerHTML = "Processus en cours...";
+  document.getElementById('cancel-confirmation').hidden = true;
+  document.getElementById('accept-confirmation').hidden = true;
+}
+
+socket.on('broadcast-nullification', function(context) {
+  if (roomID == context.roomID) {
+    const queue = document.getElementById('scanned-list');
+    let product_list = queue.getElementsByClassName('product');
+    for (const product of product_list) {
+      let record = getRecordData(product);
+      record.qty_received = 0;
+      record.new = context.new;
+      record.mod = context.mod;
+      CreateProductBubble(record, 'verified-list', admin)
+    }
+    queue.innerHTML = '';
+
+    const entries = document.getElementById('purchased-list');
+    product_list = entries.getElementsByClassName('product');
+    for (const product of product_list) {
+      let record = getRecordData(product);
+      record.qty_received = 0;
+      record.new = context.new;
+      record.mod = context.mod;
+      CreateProductBubble(record, 'verified-list', admin)
+    }
+    entries.innerHTML = '';
+    CloseCModal()
+  }
+});
+
+
+
 
 
 socket.on('update_on_assembler', function(context) {

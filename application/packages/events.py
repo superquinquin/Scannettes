@@ -522,6 +522,21 @@ def recharge_room(context):
 
 
 
+@socketio.on('nullification')
+def nullify(context):
+  global data
+  
+
+  room = data['lobby']['rooms'][context['roomID']]
+  room.purchase.nullifier()
+  
+  context['mod'] = room.purchase.modified_items
+  context['new'] = room.purchase.new_items
+  emit('broadcast-nullification', context, broadcast=True, include_self=True)
+  
+
+
+
 @socketio.on('validation-purchase')
 def validate_purchase(context):
   global data

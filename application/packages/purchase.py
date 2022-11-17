@@ -180,28 +180,58 @@ class Purchase:
     
     
   def assembler(self, other):
+    
+    def merge_list():
+      self.wrong_items = list(set(self.wrong_items + other.wrong_items))
+      self.scanned_barcodes = list(set(self.scanned_barcodes + other.scanned_barcodes))
+      self.new_items = list(set(self.new_items + other.new_items))
+      self.modified_items = list(set(self.modified_items + other.modified_items))
+    
+    def merge_qty():
+      v = self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received']
+      self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'] = int(v) + int(record['qty_received'])
+    
+    def drop_duplicate_row():
+      if self.table_entries.loc[self.table_entries['id'] == record['id'], 'qty_received'].any():
+        self.table_entries = self.table_entries.drop(self.table_entries.loc[self.table_entries['id'] == record['id'], 'qty_received'].index)
+        
+      if self.table_queue.loc[self.table_queue['id'] == record['id'], 'qty_received'].any():
+        self.table_queue = self.table_queue.drop(self.table_queue.loc[self.table_queue['id'] == record['id'], 'qty_received'].index)
+    
+    def concat_new_row():
+      row = pd.DataFrame([[record['barcode'], 
+                            record['id'], 
+                            record['name'], 
+                            record['qty'], 
+                            record['virtual_qty'], 
+                            record['qty_received']]], 
+                          columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
+      self.table_done = pd.concat([self.table_done, row])
+    ##########main
+    
     oth_tb_done = other.table_done.to_dict('records')
-
     for record in oth_tb_done:
-      exist = self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'].any()
-      if exist:
-        v = self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received']
-        self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'] = int(v) + int(record['qty_received'])
+      if self.table_done.loc[self.table_done['id'] == record['id'], 'qty_received'].any():
+        merge_qty()
       else:
+        drop_duplicate_row()
+        concat_new_row()
         
-        if self.table_entries.loc[self.table_entries['id'] == record['id'], 'qty_received'].any():
-          self.table_entries = self.table_entries.drop(self.table_entries.loc[self.table_entries['id'] == record['id'], 'qty_received'].index)
-          
-        if self.table_queue.loc[self.table_queue['id'] == record['id'], 'qty_received'].any():
-          self.table_queue = self.table_queue.drop(self.table_queue.loc[self.table_queue['id'] == record['id'], 'qty_received'].index)
-        
-        row = pd.DataFrame([[record['barcode'], 
-                             record['id'], 
-                             record['name'], 
-                             record['qty'], 
-                             record['virtual_qty'], 
-                             record['qty_received']]], 
-                           columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
-        self.table_done = pd.concat([self.table_done, row])
-
     self.table_done.reset_index()
+    merge_list()
+    
+    
+  def nullifier(self):
+    self.modified_items.extend(self.table_entries['barcode'].values.tolist())
+    self.modified_items.extend(self.table_queue['barcode'].values.tolist())
+    
+    self.table_entries = self.table_entries.assign(qty_received=0)
+    self.table_queue = self.table_queue.assign(qty_received=0)
+    
+    self.table_done = pd.concat([self.table_done, self.table_queue, self.table_entries])
+    self.table_entries = pd.DataFrame([])
+    self.table_queue = pd.DataFrame([])
+    
+
+
+    

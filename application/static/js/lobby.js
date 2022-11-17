@@ -162,7 +162,7 @@ socket.on('broadcast_room_assembler', (context) => {
       table.deleteRow(i + 1);
     }
     if (id == context.keep) {
-      table.rows[i + 1].cells[1].innerHTML = ' assemblé'
+      table.rows[i + 1].cells[1].innerHTML = ' assemblés'
     }
   }
 });   

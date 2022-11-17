@@ -30,7 +30,7 @@ class Lobby:
     r1_inv = r1.purchase
     r2_inv = r2.purchase
     r1_inv.assembler(r2_inv)
-    r1.name = 'assembled'
+    r1.name = 'assemblés'
     return r1
   
   
