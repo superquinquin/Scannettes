@@ -109,6 +109,7 @@ class Update:
       try:
         data = self.odoo.get_purchase(data['config'].DELTA_SEARCH_PURCHASE, data)
         data = self.lobby.remove_historic_room(self.odoo, data)
+        data = self.lobby.force_room_status_update(data)
         self.UPDATE_RUNNER(data['config'])
         break
       
