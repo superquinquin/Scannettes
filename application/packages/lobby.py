@@ -34,14 +34,7 @@ class Lobby:
     return r1
   
   
-  
-  
-  
-  
-  
-  
-  
-  
+
   def reset_room(self, id, data):
     data['lobby']['rooms'][id].purchase.build_process_tables()
 
@@ -156,4 +149,20 @@ class Lobby:
         room.change_status(status)
         
     return updated
+  
+  def force_room_status_update(self, data: Dict) -> Dict:
+    rooms = list(data['lobby']['rooms'].keys())
+    done = list(data['odoo']['purchases']['done'].keys())
+    
+    for k in rooms:
+      room = data['lobby']['rooms'][k]
+      status = room.status
+      purchase_id = room.purchase.id
+      
+      if (purchase_id in done and
+          status != 'done'):
+        
+        room.change_status('done')
+    
+    return data
       

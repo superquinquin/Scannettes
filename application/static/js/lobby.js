@@ -109,6 +109,10 @@ asmbl_btn.onclick = function() {
   let table = document.getElementById('room-verify-listing');
   let box = Array.from(table.getElementsByClassName('check'));
   let ids = [];
+  let places = [];
+  let names = [];
+  let is_same_name = false;
+  let is_diff_place = false;
   let active = false;
   let is_inv = true;
   for (const [i, b] of box.entries()) {
@@ -117,12 +121,27 @@ asmbl_btn.onclick = function() {
       active = true;
       const id = table.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).id;
       const type = table.rows[i + 1].cells[6].getElementsByClassName('join-btn').item(0).onclick.toString().match('inventory');
-      ids.push(id)
+      const place = table.rows[i + 1].cells[1].innerHTML.match('stock|rayon');
+      const name = table.rows[i + 1].cells[2].innerHTML;
+      names.push(name)
+      places.push(place);
+      ids.push(id);
       if (!type) {
         is_inv = false;
       }
-    }
+    }  
   }
+
+  if (names.length == 2 && names[0] == names[1]) {
+    is_same_name = true;
+  }
+  if (places.length == 2 &&
+      places[0] && places[1] &&
+      places[0].length == 1 &&
+      places[1].length == 1 &&
+      places[0][0] != places[1][0])
+    is_diff_place = true;
+
   if (!active) {
     getErrorBox('errorBox', 
                 'errorText', 
@@ -146,8 +165,24 @@ asmbl_btn.onclick = function() {
                 'errorText', 
                 'solid 3px red', 
                 `<strong>Vous devez selectionner 2 inventaires !</strong>`,
-                1500);
-  } else if (is_inv && ids.length == 2) {
+                1500); 
+  
+  } else if (!is_same_name) {
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Les inventaires doivent être lié à la même catégorie de produits!</strong>`,
+                1500); 
+  
+  } else if (!is_diff_place) {
+    getErrorBox('errorBox', 
+                'errorText', 
+                'solid 3px red', 
+                `<strong>Vous devez assembler un inventaire STOCK avec un inventaire RAYON!</strong>`,
+                1500); 
+
+  } else if (is_inv && ids.length == 2 && 
+            is_same_name && is_diff_place) {
     // all good seding the ids to server
     socket.emit('room_assembler', {'ids': ids});
   }
