@@ -216,8 +216,8 @@ class Purchase:
       else:
         drop_duplicate_row()
         concat_new_row()
-        
-    self.table_done.reset_index()
+
+    self.table_done = self.table_done.reset_index(drop=True)
     merge_list()
     
     
@@ -229,8 +229,11 @@ class Purchase:
     self.table_queue = self.table_queue.assign(qty_received=0)
     
     self.table_done = pd.concat([self.table_done, self.table_queue, self.table_entries])
+    self.table_done = self.table_done.reset_index(drop=True)
     self.table_entries = pd.DataFrame([])
     self.table_queue = pd.DataFrame([])
+
+
     
 
 
