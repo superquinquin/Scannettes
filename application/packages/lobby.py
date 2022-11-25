@@ -82,9 +82,8 @@ class Lobby:
 
 
   def generate_qrcode(self, origin, room):
-    room_id = room.id
-    room_token = room.token
-    link = f'{origin}/lobby/{room_id}%26roomtoken%3D{room_token}'
+    
+    link = f'{origin}/lobby/{room.id}%26type%3D{room.type}%26roomtoken%3D{room.token}'
     qrc = qrcode.make(link).convert('RGB')
     
     return qrc

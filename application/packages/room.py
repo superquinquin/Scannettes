@@ -18,7 +18,7 @@ class Room:
     self.name = name
     self.password = password
     self.token = generate_token(10)
-    self.type = type
+    self.type = type  # [purchase, inventory]
     self.status = 'open' # [open, close, done]
     self.oppening_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     self.closing_date = None
