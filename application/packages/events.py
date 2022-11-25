@@ -65,8 +65,6 @@ def verify_logger(context):
 
   if user_id in data['lobby']['users']['admin'].keys():
     user = data['lobby']['users']['admin'][user_id]
-    print(user.token, user.browser_id)
-    print(token, browser_id)
     if user.token == token and user.browser_id == browser_id:    
       permission = True
       emit('grant_permission', {'permission': permission})
@@ -111,11 +109,11 @@ def redirect(context):
 
     if suffix == 'lobby' and atype == 'purchase':
       # not admin purchase room
-      emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
+      emit('go_to_room', {'url': url_for('get_purchase_room', id=id, room_token= room_token)})
       
     elif suffix == 'lobby' and atype == 'inventory':
       # not admin inventory room
-      emit('go_to_room', {'url': url_for('get_room', id=id, room_token= room_token)})
+      emit('go_to_room', {'url': url_for('get_inventory_room', id=id, room_token= room_token)})
 
     else:
       # is admin
