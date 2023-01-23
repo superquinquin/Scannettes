@@ -619,15 +619,16 @@ class Odoo:
     #generate Purchase object for inventory
     def get_id() -> int:
       ongoing = list(data['odoo']['inventory']['ongoing'].keys())
+      processed = list(data['odoo']['inventory']['processed'].keys())
       done = list(data['odoo']['inventory']['done'].keys())
-      m = max(ongoing + done, default=0)
+      m = max(ongoing + processed + done, default=0)
       return m + 1     
     
     inv_id = get_id()
     cat_id = input['object_id']
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     inventory = Purchase(inv_id,
-                         [x[0] for x in data['odoo']['inventory']['type'] if x[1] == cat_id][0],
+                         [x[0] for x in data['odoo']['inventory']['type'] if x[1] == cat_id][0], #get name from the categ type list
                          Supplier(None, 'inventaire'),
                          True,
                          'inventory',
