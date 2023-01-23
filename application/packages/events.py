@@ -89,7 +89,7 @@ def verify_logger(context):
 @socketio.on('redirect')
 def redirect(context):
   global data
-
+    
   id = context['id']
   atype = context['type']
   password = context['password']
@@ -211,7 +211,6 @@ def joining_room(room):
   purchase = room.purchase.name
   purchase_supplier = room.purchase.supplier_name
 
-  html_ent, html_quet, html_dont = room.purchase.table_position_to_html()
   entry_records, queue_records, done_records = room.purchase.get_table_records()
 
 
@@ -219,9 +218,6 @@ def joining_room(room):
              'room_name': name,
              'purchase_name': purchase,
              'purchase_supplier': purchase_supplier,
-            #  'entries_table':html_ent,
-            #  'queue_table':html_quet,
-            #  'done_table':html_dont,
              'entries_records': entry_records,
              'queue_records': queue_records,
              'done_records': done_records,

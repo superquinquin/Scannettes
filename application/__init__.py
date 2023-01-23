@@ -12,9 +12,9 @@ socketio = SocketIO(async_mode='gevent') #
 data = Data.init_data(config)
 data, odoo, lobby = init_ext(data)
 
-Log(config)
-sys.excepthook = Hook().exception_hook
-sys.stderr = ErrLogFlush(config)
+# Log(config)
+# sys.excepthook = Hook().exception_hook
+# sys.stderr = ErrLogFlush(config)
 
 Update(odoo, lobby).UPDATE_RUNNER(config)
 BackUp().BACKUP_RUNNER(config)

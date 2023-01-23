@@ -41,3 +41,17 @@ function header_traduction(trad, tableID) {
     table.rows[0].cells[i].innerHTML = trad[i]
   }
 }
+
+function fadingRedFieldOnError(elm) {
+  elm.value = '';
+  var color = 255;
+  const colorFade = setInterval(() => {
+    var c = color.toString();
+    elm.style.borderColor = 'rgb('+c+',0,0)';
+    if (color == 150) {
+      elm.style.borderColor = '#fef84c';
+      clearInterval(colorFade);
+    }
+    color -= 5 ;
+  }, 150);
+}
