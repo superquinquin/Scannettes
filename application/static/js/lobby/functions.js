@@ -400,7 +400,7 @@ function redirect_purchase(object) {
   redirect(object, type);
 }
 
-function redirect_inventory(object, object) {
+function redirect_inventory(object) {
   let type = 'inventory';
   redirect(object, type);
 }
