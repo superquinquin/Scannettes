@@ -230,8 +230,8 @@ class Purchase:
     
     self.table_done = pd.concat([self.table_done, self.table_queue, self.table_entries])
     self.table_done = self.table_done.reset_index(drop=True)
-    self.table_entries = pd.DataFrame([])
-    self.table_queue = pd.DataFrame([])
+    self.table_entries = pd.DataFrame(columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
+    self.table_queue = pd.DataFrame(columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
 
 
     
