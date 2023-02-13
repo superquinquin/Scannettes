@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Union, Tuple, Type
+from typing import Union, Tuple, Type, List
 
 class Supplier:
   """supplier data to hold odoo supplier informations
@@ -136,6 +136,12 @@ class Purchase:
     return entry_records, queue_records, done_records
   
 
+  def active_tables(self) -> List[str]:
+    """return list of currently active tables"""
+    return [tb for tb in ['table_entries', 'table_queue', 'table_done'] 
+            if getattr(self, tb)]
+    
+
   def is_received(self, id):
     table = self.table_done
     return table[table['id'] == id]['id'].any()
@@ -186,8 +192,9 @@ class Purchase:
     Returns:
         Tuple[Union[None, int], Union[None, str]]: product row index if any, table name if any
     """
+    
     idx, loc = None, None
-    for tbname in ['table_entries', 'table_queue', 'table_done']:
+    for tbname in self.active_tables():
       table = getattr(self, tbname)
       p = table.loc[(table["barcode"] == product['barcode']) | (table["id"] == product['id'])]
       if not p.empty:
@@ -271,7 +278,6 @@ class Purchase:
     ### item to be found with barcode or id if no barcode
     ## APPLY UPDATE RELATED TO ITS STATUS
     if item_state == 'cancel':
-      print('delete row')
       # DELETE ROW
       if origin_idx != None:
         self.delete_item('table', origin_idx)
@@ -279,13 +285,19 @@ class Purchase:
         self.delete_item(loc, idx)
 
     elif item_state != 'cancel' and state:
-      if origin_idx == None:
+      if origin_idx == None and self.process_status == None:
         ## CREATE ROW IN TABLE AND LOC
+        self.create_item('table', product)
+        
+      elif origin_idx == None and self.process_status != None:
         self.create_item('table', product)
         self.create_item('table_entries', product)
       
-      elif origin_idx and idx and loc:
+      elif origin_idx and not idx:
         ## UPDATE ROW IN origin and loc
+        self.update_item('table', origin_idx, product)
+        
+      elif origin_idx and idx:
         self.update_item('table', origin_idx, product)
         self.update_item(loc, idx, product)
 
