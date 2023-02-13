@@ -139,7 +139,7 @@ class Purchase:
   def active_tables(self) -> List[str]:
     """return list of currently active tables"""
     return [tb for tb in ['table_entries', 'table_queue', 'table_done'] 
-            if getattr(self, tb)]
+            if getattr(self, tb) is not None]
     
 
   def is_received(self, id):
