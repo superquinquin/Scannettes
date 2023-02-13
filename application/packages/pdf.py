@@ -3,11 +3,23 @@ from fpdf import FPDF
 from copy import deepcopy
 
 class PDF(FPDF):
+  """ PDF BUILDER CLASS INHERITE FROM FPDF CLASS INSTANCE
+  GENERATE PDF WITH QRCODE AND ROOM INFORMATIONS
+  TRANSMIT PDF AS BASE64 STRING
+
+  ATTR
+  @width (int): width of a pdf page
+  @height (int): height of a pdf page
+  @font_size (int): font size of the pdf
+  """
+  
   width = 210
   height = 297
   font_size = 16
   
   def draw_qrcode_box(self, x:float, y:float, qrcode, caption):
+    """draw container of size x*y
+    contain QRCODE and supliers informations as caption"""
     self.rect(x, y, 170, 50, '')
     self.rect(x+2, y+2, 46, 46, '')
     self.image(qrcode, x+5, y+5, 40, 40, 'PNG')
@@ -20,6 +32,8 @@ class PDF(FPDF):
                     markdown=True) #
     
   def break_string(self,w, str):
+    """break caption string to fit long cation into container
+    return breaked caption"""
     line_break = int(round(w / 3, 0)) - 1
     
     spliter = True

@@ -373,18 +373,10 @@ def laser(data_laser):
 @socketio.on('update_table')
 def get_update_table(context):
   global data
-  from_table = context['table']
+
   room_id = context['roomID']
   room = data['lobby']['rooms'][room_id]
-
-  if from_table == 'dataframe entry_table':
-    context = room.update_table_on_edit(context)
-
-  elif from_table == 'dataframe queue_table':
-    context = room.update_table_on_edit(context)
-
-  else: # done table
-    context = room.update_table_on_edit(context)
+  context = room.purchase.update_table_on_edit(context)
   
   join_room(context['roomID'])
   emit('broadcast_update_table_on_edit', context, broadcast=True, include_self=True, to=context['roomID'])
@@ -398,47 +390,30 @@ def block_product(context):
   purchase = data['lobby']['rooms'][room_id].purchase
   purchase.append_new_items(barcode)
 
-  emit('broadcast-block-wrong-item', context, broadcast=True, include_self=True)
+  emit('broadcast-block-wrong-item', 
+       context, 
+       broadcast=True, 
+       include_self=True)
 
-
-
-
-@socketio.on('add-new-item')
-def get_new_item(context):
-  global data
-  room_id = context['roomID']
-  room = data['lobby']['rooms'][room_id]
-  context = room.add_item(context)
-  
-  join_room(context['roomID'])
-  emit('broadcasted_added_item', context, broadcast=True, include_self=False, to=context['roomID'])
-  
 
 @socketio.on('del_item')
 def get_del_item(context):
   global data
-  
+  print(context)
   permission = task_permission_redirector(data, context)
   
   if permission:
     room_id = context['roomID']
     room = data['lobby']['rooms'][room_id]
-    context = room.del_item(context)
+    room.purchase.delete_item(context['fromTable'],
+                              context['index'])
     
     join_room(context['roomID'])
-    emit('broadcasted_deleted_item', context, broadcast=True, include_self=True, to=context['roomID'])
-
-
-@socketio.on('mod_item')
-def get_mod_item(context):
-  global data
-  print(context)
-  room_id = context['roomID']
-  room = data['lobby']['rooms'][room_id]
-  context = room.mod_item(context)
-  
-  join_room(context['roomID'])
-  emit('broadcasted_mod_item', context, broadcast=True, include_self=True, to=context['roomID'])
+    emit('broadcasted_deleted_item', 
+         context, 
+         broadcast=True, 
+         include_self=True, 
+         to=context['roomID'])
 
 
 @socketio.on('suspending_room')
@@ -474,24 +449,30 @@ def finish_room(context):
 
   room_id = context['roomID']
   suffix = context['suffix']
-  
   passer = get_passer(suffix)
   user_id = passer.get('id',None)
   token = passer.get('token',None)
-  atype = passer.get('type', None)
+  object_type = passer.get('type', None)
   
   if not user_id or not token:
-    url =  url_for('index')
+    context['url'] =  url_for('index')
     
   else:
-    url = url_for('index_admin', id= user_id, token= token)
-
+    context['url'] = url_for('index_admin', 
+                  id= user_id, 
+                  token= token)
 
   room = data['lobby']['rooms'][room_id]
-  room.update_status_to_received(data, atype)
+  room.update_status("received", 
+                     "finished", 
+                     "close", 
+                     object_type, 
+                     data)
 
-  context['url'] = url
-  emit('broacasted_finish', context, broadcast=True, include_self=True)
+  emit('broacasted_finish', 
+       context, 
+       broadcast=True, 
+       include_self=True)
 
 
 @socketio.on('recharging_room')
@@ -554,24 +535,27 @@ def validate_purchase(context):
     
     if object_type == 'purchase':
       state = odoo.post_purchase(purchase, data, context['autoval'])
-      
     else:
       state = odoo.post_inventory(purchase, data, context['autoval'])
       
     if state['validity']:
-      room.update_status_to_verified(data, object_type)
+      room.update_status("received", 
+                        "verified", 
+                        "done", 
+                        object_type, 
+                        data)
+      
       user_id = passer.get('id',None)
       token = passer.get('token',None)
-      
       if not user_id or not token:
         context['url'] =  url_for('index')
-        
       else:
         context['url'] = url_for('index_admin', id= user_id, token= token)      
-
-      emit('close-room-on-validation', context)
+      emit('close-room-on-validation', 
+           context)
     
     else: 
       state['string_list'] = ', '.join(list(filter(lambda x: type(x) != bool, state['item_list'])))
       context['post_state'] = state
-      emit('close-test-fail-error-window', context)
+      emit('close-test-fail-error-window', 
+           context)
