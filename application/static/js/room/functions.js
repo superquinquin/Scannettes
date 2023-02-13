@@ -83,24 +83,24 @@ function QtyVerificationN(element) {
 ///////////////////////////////////////////////////////////////
 function correctTableID(tableID) {
   if (tableID == 'purchased-list') {
-    tableID = 'dataframe entry_table';
+    tableID = 'table_entries';
   } else if (tableID == 'scanned-list') {
-    tableID = 'dataframe queue_table';
+    tableID = 'table_queue';
   } else if (tableID == 'scanned-laser-list') {
-    tableID = 'dataframe queue_table';
+    tableID = 'table_queue';
   } else if (tableID == 'verified-list') {
-    tableID = 'dataframe done_table';
+    tableID = 'table_done';
   }
   return tableID
 }
 
 
 function translateTableID(tableID) {
-  if (tableID == 'dataframe entry_table') {
+  if (tableID == 'table_entries') {
     tableID = 'purchased-list';
-  } else if (tableID == 'dataframe queue_table') {
+  } else if (tableID == 'table_queue') {
     tableID = 'scanned-list';
-  } else if (tableID == 'dataframe done_table') {
+  } else if (tableID == 'table_done') {
     tableID = 'verified-list';
   }
   return tableID     
@@ -243,6 +243,7 @@ function DelRequest(tableID) {
   let index = [];
   let container = document.getElementById(tableID);
   let items = container.getElementsByClassName('product');
+  tableID = correctTableID(tableID);
 
   for (const product of items) {
     let box = product.getElementsByClassName('check');

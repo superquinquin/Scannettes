@@ -23,6 +23,10 @@ Open source Flask webapp for delivieries and inventory management for COOP or sh
 <br>• add admin user on the whitelist file with the following syntaxe for each lines: USER PASSWORD
 <br>• ADD A folder called "volume" on the root of the repo.
 <br>• CHOWN the volume folder to give rights to everyone, so the docker could write the backup and the logs into it.
+```
+mkdir volume
+chmod 777 volume
+```
 <br>• Finally run the following docker compose command
 ```
 docker-compose up --build
@@ -32,12 +36,11 @@ docker-compose up --build
 <br> [x] Refactor JS lobby file.
 <br> [x] Refactor JS room file.
 <br> [] Refactor JS camera file and make it work properly.
-<br> [] Refactor python backend.
+<br> [x] Refactor python backend.
+<br> [x] Backend docstring. partly done
+<br> [] mail and better Odoo db error reorientation
 
 # Known bug:
 <br>• nullification of inventories when entries and queue are empty block the client.
-<br>• on certain unknown occasion packet can be send without activating client cocket events. this leads to rooms not filling themself with the data.
-<br> possibly a python type badly infered by JS, or inventory object badly indexed (corrected). 
-<br> Do not know if the bug still persist on the new version.
 <br>• scanning process not handling all possible errors
 <br>• ...

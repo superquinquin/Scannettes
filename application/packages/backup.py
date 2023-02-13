@@ -10,7 +10,10 @@ from application.packages.utils import get_delay
 class Data(object):
 
   @classmethod
-  def init_data(self, config):
+  def init_data(self, config:object) -> dict:
+    """build cache for the application
+    charge backup if any
+    """
     if config.BUILD_ON_BACKUP == True:
       data = BackUp().load_backup(config)
     
@@ -51,14 +54,16 @@ class Data(object):
 
 class BackUp:
 
-  def save_backup(self, data, fileName):
+  def save_backup(self, data: dict, fileName: str):
+    """dump cache data dict into pickle file"""
     with open(fileName, 'wb') as f:
       dump(data, f, protocol= HIGHEST_PROTOCOL)
       # json.dump(data, fileName)
 
 
-  def load_backup(self, config):
-    # global data
+  def load_backup(self, config: object) -> dict:
+    """try to charge backup data if any file is found
+    return cache data dict"""
     print('loading backup')
     try:
       with open(config.BACKUP_FILENAME, 'rb') as f:
@@ -70,13 +75,16 @@ class BackUp:
     
     return data
 
-  def BACKUP_RUNNER(self, config):
+  def BACKUP_RUNNER(self, config: object):
+    """backup thread timer runner
+    select delay and prepare backup thread to run"""
     delay = get_delay(delta= config.BACKUP_FREQUENCY)
     print(f'new start in : {delay} seconds')
     timer = Timer(delay, self.BACKUP)
     timer.start()
 
   def BACKUP(self):
+    """BACKUP THREAD"""
     from application import data
     
     self.save_backup(data, data['config'].BACKUP_FILENAME)
@@ -89,11 +97,11 @@ class BackUp:
 
 class Update:
   
-  def __init__(self, odoo, lobby) -> None:
+  def __init__(self, odoo: object, lobby: object) -> None:
     self.odoo = odoo
     self.lobby = lobby
   
-  def UPDATE_RUNNER(self, config):
+  def UPDATE_RUNNER(self, config: object):
     """THREADING and schedulding update every XXXX hours
     possibly placed under build"""
     delay = get_delay(time= config.BUILD_UPDATE_TIME) #time
@@ -103,6 +111,7 @@ class Update:
 
 
   def update_build(self):
+    """try to update purchase list"""
     from application import data
     
     while True:

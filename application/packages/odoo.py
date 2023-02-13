@@ -7,13 +7,29 @@ from datetime import datetime
 
 from application.packages.purchase import Purchase, Supplier
 from application.packages.lobby import Lobby
-from application.packages.utils import get_ceiling_date, update_item_auto_table_selector, get_delay
+from application.packages.utils import get_ceiling_date
 
 pd.options.mode.chained_assignment = None
 
 
 
 class Odoo:
+  """ODOO INSTANCE
+  communicate with odoo database
+  
+  STATUS
+  @builded (bool): True when cache is builded during build function
+  @connected (bool): wether the instance is connected to odoo database
+                     when False, try to reconnect every 60s
+  
+  ERPPEEK API ATTR
+  @client: odoo erppeek client instance
+  @log: erppeek log
+  @tz: erppeek tz
+  @user: erppeek user.
+  """
+  
+  
   def __init__(self):
     #STATUS
     self.builded = False
@@ -26,7 +42,7 @@ class Odoo:
     self.user = None
 
 
-  def connect(self, url, login, password, db, verbose):
+  def connect(self, url: str, login: str, password: str, db: str, verbose: bool):
     while self.connected == False:
       try:
         self.client = erppeek.Client(url, verbose=verbose)
@@ -40,50 +56,57 @@ class Odoo:
         time.sleep(60)
 
 
-  def get(self, model: str, cond:List):
+  def get(self, model: str, cond:List[Tuple[str]]):
+    """short for odoo client get method"""
     result = self.client.model(model).get(cond)
     return result
   
-  def browse(self, model:str, cond:List):
+  def browse(self, model:str, cond:List[Tuple[str]]):
+    """short for odoo client browse method"""
     result = self.client.model(model).browse(cond)
     return result
+  
+  def create(self, model:str, object:dict):
+    """short for odoo client create method"""
+    result = self.client.model(model).create(object)
+    return result
 
-  def search_product_from_id(self, product_id):
-    return self.client.model('product.product').get([('id', '=', product_id)])
-
-
-
-  def search_product_from_ean(self, code_ean):
-    """search for product object in product table."""
-    return self.client.model('product.product').get([('barcode', '=', code_ean)])
-
-
-
-  def search_alternative_ean(self, code_ean):
-    """search in multi_barcode for scanned ean
-    return product linked to main ean"""
-    alt_product = self.client.model('product.multi.barcode').get([('barcode','=',code_ean)])
-    if alt_product is not None:
-      return self.client.model('product.multi.barcode').get([('barcode','=',code_ean)]).product_id
-
-    else:
-      return None
-
-
-  def search_item_tmpl_id_from_product_id(self, product_id):
-    return self.client.model('product.product').get([('id','=', product_id)]).product_tmpl_id.id
-
-
-  def apply_purchase_record_change(self, move_id, received_qty):
-    move = self.client.model('stock.move.line').get([('move_id.id','=', move_id)])
+  def apply_purchase_record_change(self, move_id: int, received_qty: int):
+    """during post purchase process update odoo record value"""
+    move = self.get('stock.move.line', [('move_id.id','=', move_id)])
     move.qty_done = received_qty
     
+  def get_barcode(self, item) -> int:
+    """ get barcode from multibarcode table
+    handle False barcode from odoo"""
+    barcode = item.product_id.barcode
+    alt = self.browse('product.multi.barcode', [('product_id','=',item.product_id.id)])
 
+    if (barcode == False
+        and alt):
+      for p in alt:
+        if p.barcode:
+          barcode = p.barcode
+          break
+    return barcode
 
-  def get_picking_state(self, name):
+  def get_picking_state(self, name: str) -> str:
+    """try to search picking state of a purchase
+    
+    ON VALUE ERROR due to multiple picking id 
+    certainly from reediting purchase and cancel previous ones
+    give priority as follow:
+    None < Cancel < assigned < done
+    
+    Args:
+        name (str): origin field in stock picking field
 
+    Returns:
+        str: current picking state, can be [None, 'cancel','assigned','done']
+    """
     try:
-      picking = self.client.model('stock.picking').get([('origin','=', name)])
+      picking = self.get('stock.picking', [('origin','=', name)])
+
       if picking:
         picking_state = picking.state
 
@@ -91,10 +114,7 @@ class Odoo:
         picking_state = 'draft'
 
     except ValueError as e:
-      # multiple picking ID heading towards a purchase.
-      # most likely 1st is canceled and next one correct it.
-      # state priority : None < Cancel < assigned < done
-      picking = self.client.model('stock.picking').browse([('origin','=', name)])
+      picking = self.browse('stock.picking', [('origin','=', name)])
       picking_state = None
 
       for pick in picking:
@@ -112,10 +132,24 @@ class Odoo:
     return picking_state
 
 
-  def get_item_state(self, name: str, id: int):
+  def get_item_state(self, name: str, id: int) -> str:
+    """try to search for item state
+    
+    ON VALUE ERROR 
+    can be due to multiple item with same id,
+    originating from canceled item and reediting ones
+    state priority : None < Cancel < assigned < done
+    
+    Args:
+        name (str): origin field from stock.move
+        id (int): product id
 
+    Returns:
+        str: item state, can be [None, 'cancel','assigned','done']
+    """
     try:
-      item = self.client.model('stock.move').get([('origin','=', name), ('product_id.id','=', id)])
+      item = self.get('stock.move', [('origin','=', name), 
+                              ('product_id.id','=', id)])
       if item:
         item_state = item.state
 
@@ -123,10 +157,9 @@ class Odoo:
         item_state = 'none'
 
     except ValueError as e:
-      # multiple picking ID heading towards a purchase.
-      # most likely 1st is canceled and next one correct it.
-      # state priority : None < Cancel < assigned < done
-      items = self.client.model('stock.move').browse([('origin','=', name), ('product_id.id','=', id)])
+
+      items = self.browse('stock.move', [('origin','=', name), 
+                                        ('product_id.id','=', id)])
       item_state = None
 
       for item in items:
@@ -144,7 +177,7 @@ class Odoo:
     return item_state
 
 
-  def get_purchase(self, timeDelta: list, data) -> None:
+  def get_purchase(self, timeDelta: list, data: dict) -> dict:
     """
     Collect tracked Odoo Purchases adn group them in sub-groups based on pruchase & picking state ['draft', 'incoming', 'received', 'done'].
     Purchase state : ['draft', 'purchase', 'cancel'], draft = price requeste, purchase = purchase incoming.
@@ -158,46 +191,35 @@ class Odoo:
 
     @timeDelta : list [YEAR, MONTH, WEEK, DAY] as time difference between Now and targeted date.
     > time range for tracking purchases. Supplented by last get_purchase activation date if any.
-
-    Global Variable:
-    @data : dict
+    @data: cache data dict
 
     Return Modification to nested dict data['odoo']['purchases'] and data['odoo']['history']['update_purchase']
     """
-
     draft = list(data['odoo']['purchases']['draft'].keys())
     incoming = list(data['odoo']['purchases']['incoming'].keys())
     received = list(data['odoo']['purchases']['received'].keys())
     done = list(data['odoo']['purchases']['done'].keys())
-
     date_ceiling = get_ceiling_date(timeDelta, data, 'update_purchase')
-    
-    purhasesList = (self.client.model('purchase.order').browse([('create_date', '>', date_ceiling)]) +
-                   self.client.model('purchase.order').browse([('id', 'in', draft)]) + 
-                   self.client.model('purchase.order').browse([('id', 'in', incoming)]) +
-                   self.client.model('purchase.order').browse([('id', 'in', received)]))
+    purchasesList = (
+      self.browse('purchase.order', [('create_date', '>', date_ceiling)]) +
+      self.browse('purchase.order', [('id', 'in', draft)]) +
+      self.browse('purchase.order', [('id', 'in', incoming)]) +
+      self.browse('purchase.order', [('id', 'in', received)])  
+    )
     data['odoo']['purchases']['draft'] = {} # reset to avoid duplicate
 
-    for pur in purhasesList:
-      items = []
-
-      id = pur.id
-      name = pur.name
-      supplier = pur.partner_id
-      purchase_state = pur.state                                # ['draft','purchase','cancel']
-      create_date = pur.create_date                             # date purchase is created in odoo
-      added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S") # date purchase is added in here
-
+    for pur in purchasesList:
+      # pur.states ['draft','purchase','cancel']
+      id, name, purchase_state, create_date = pur.id, pur.name, pur.state, pur.create_date
+                            
       if purchase_state == 'purchase' and id not in done: 
         print(name,'-', create_date)
-
         picking_state = self.get_picking_state(name) # ['assigned, cancel, done']
         
         if picking_state == 'cancel':
           # then remove the purchase
           Lobby().remove_room_associated_to_purchase(data, id)
           self.remove_purchase(data, id)
-
         elif picking_state == 'done':
           # then pass it to done dict adn remove it from previous dict
           exist = Lobby().update_room_associated_to_purchase(data, id, 'done')
@@ -205,33 +227,18 @@ class Odoo:
             # room associated  exist, update purchase
             self.move_purchase(data, id, 'done')
             data['odoo']['purchases']['done'][id].change_status('received','verified')
-            
           else:
             # room not exist, then no need to keep purchase
             self.remove_purchase(data, id)
           
         elif picking_state == 'assigned':
           if id not in incoming + received:
-            # add purchase to dict
-            moves = self.client.model('stock.move').browse([('origin', '=', name)])
-            for item in moves:
-              if item.state == 'assigned':   
-                items.append([self.get_barcode(item), # item.product_id.barcode
-                              item.product_id.id, 
-                              re.sub('\[.*?\]', '', item.name).strip(), 
-                              item.product_qty, 
-                              item.product_qty_package, 
-                              0])
-
-            table = pd.DataFrame(items, columns=['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
-            data['odoo']['purchases']['incoming'][id] = Purchase(id, name, supplier, True, 'purchase', create_date, added_date, 'incoming', table)
-          
+            self.add_purchase(pur, name, id, data)
           else:
             # in case modification has been made
             if id in incoming:
               purchase = data['odoo']['purchases']['incoming'][id]
               self.recharge_purchase(purchase, data)
-
             elif id in received:
               purchase = data['odoo']['purchases']['received'][id]
               self.recharge_purchase(purchase, data)
@@ -240,11 +247,41 @@ class Odoo:
         data['odoo']['purchases']['draft'][id] = None # Placeholder to keep tracking drafts
     
     data['odoo']['history']['update_purchase'].append(datetime.now().date().strftime("%Y-%m-%d %H:%M:%S"))
-
     return data
 
+  def add_purchase(self, pur, name:str, id:str, data: dict):
+    """add purchase into the cache"""
+    items = []
+    supplier = pur.partner_id
+    create_date = pur.create_date                             
+    added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    moves = self.browse('stock.move', [('origin', '=', name)])
+    for item in moves:
+      if item.state == 'assigned':   
+        items.append([self.get_barcode(item), # item.product_id.barcode
+                      item.product_id.id, 
+                      re.sub('\[.*?\]', '', item.name).strip(), 
+                      item.product_qty, 
+                      item.product_qty_package, 
+                      0])
+
+    table = pd.DataFrame(items, 
+                         columns=['barcode', 'id', 'name', 'qty', 'pckg_qty', 'qty_received'])
+    data['odoo']['purchases']['incoming'][id] = Purchase(id, 
+                                                         name, 
+                                                         supplier, 
+                                                         True, 
+                                                         'purchase', 
+                                                         create_date, 
+                                                         added_date, 
+                                                         'incoming', 
+                                                         table)
+    
 
   def remove_purchase(self,data:Dict, id:int):
+    """ handle remove a purchase during get_purchase method"""
+
     if id in list(data['odoo']['purchases']['incoming'].keys()):
       data['odoo']['purchases']['incoming'].pop(id)
     
@@ -256,6 +293,7 @@ class Odoo:
       
 
   def move_purchase(self, data:Dict, id:int, dest:str):
+    """handle move purchase during get_purchase method"""
     if (id in list(data['odoo']['purchases']['incoming'].keys())
         and dest != 'incoming'):
       data['odoo']['purchases'][dest][id] = data['odoo']['purchases']['incoming'][id]
@@ -272,21 +310,15 @@ class Odoo:
       data['odoo']['purchases']['done'].pop(id)  
 
 
-  def get_barcode(self, item) -> int:
-    barcode = item.product_id.barcode
-    alt = self.browse('product.multi.barcode', [('product_id','=',item.product_id.id)])
 
-    if (barcode == False
-        and alt):
-      for p in alt:
-        if p.barcode:
-          barcode = p.barcode
-          break
-    return barcode
   
   
   def check_item_alt_integrity(self, item) -> Dict:
-
+    """request odoo for main and mulitbarcode products
+    WHEN ALTS, CHECKS ALT ID AND BARCODE CONSISTENCIES
+    
+    RETURN ITEM VALIDITY CHECK
+    """
     item_barcode, item_id = item[0], item[1]
     main = self.get('product.product', [('id','=', item_id)])
     alts = self.browse('product.multi.barcode', [('barcode','=', item_barcode)])
@@ -294,12 +326,14 @@ class Odoo:
     def check_alt():
       # verify if all ids are same
       # verify if all barcodes are the same
-
-      if not main:
-        check_i, check_b = alts[0].product_id.id, alts[0].barcode
-      else:
-        check_i, check_b = main.id, main.barcode
-        
+      try:
+        if not main:
+          check_i, check_b = alts[0].product_id.id, alts[0].barcode
+        else:
+          check_i, check_b = main.id, main.barcode
+      except IndexError:
+        return False
+      
       for alt in alts:
         barcode = alt.barcode
         id = alt.product_id.id
@@ -329,6 +363,21 @@ class Odoo:
       
 
   def check_item_odoo_existence(self, table: pd.DataFrame) -> dict:
+    """CHECKS IF ITEMS TO BE SENT TO ODOO ARE 
+      INDEED EXISTING IN ODOO PRODUCT.PRODUCT TABLE
+    
+    CHECKS CROSS VALIDATION OF PRODUCTS IDs AND BARCODE
+
+    TEST CAN RAISE MANY PROBLEMS DUE TO ODOO DATABASE UNCONSISTENCIES
+    @multi_items
+    @...
+    
+    Args:
+        table (pd.DataFrame): purchase object Table_done to check
+
+    Returns:
+        dict: test valididy
+    """
     item_list = []
     validity = True
 
@@ -369,6 +418,20 @@ class Odoo:
 
 
   def check_item_purchase_existence(self, purchase, table: pd.DataFrame, create: bool) -> dict:
+    """CHECK IF ITEMS ARE INDEED IN ODOO PURCHASE
+    
+    WHEN product not found and config apply auto item creation, 
+    the item will be automatically created,
+    otherwise break validation process and request manual item add
+
+    Args:
+        purchase (_type_): Purchase object to check
+        table (pd.DataFrame): purchase table_done to check
+        create (bool): create item or not when unmatched
+
+    Returns:
+        dict: test results and valididy
+    """
     item_list = []
     validity = True
     id = purchase.id
@@ -394,14 +457,61 @@ class Odoo:
     return {'validity': validity, 'item_list': item_list}
 
 
-
-
-  def post_purchase(self, purchase, data, autoval) -> dict:
-
-    purchase.process_status = 'verified'
-    id = purchase.id
+  def post_products(self, purchase: Purchase):
+    """apply received qty in odoo for eachs received items of the purchase"""
     name = purchase.name
-    new_items = purchase.new_items
+    moves = self.browse('stock.move', [('origin', '=', name)])
+    for move in moves:
+      print('--', move.product_id)
+      move_id = move.id
+      move_state = move.state
+      item_id = move.product_id.id
+
+      if move_state == 'assigned' and purchase.is_received(item_id):
+        received_qty = purchase.get_item_received_qty(item_id)
+        self.apply_purchase_record_change(move_id, received_qty)
+
+
+  def post_purchase(self, purchase: Purchase, data: dict, autoval:bool) -> dict:
+    """METHOD TO SEND PURCHASE DATA BACK INTO ODOO, APPLYING RECEIVED QTY MODFICATION
+      AND AUTO VALIDATION WHEN TRUE
+      to avoid any clash, crash and errors back into odoo database, the post processus
+      follow restrictive checks that stops the process at any abnormality found.
+      
+      The post process takes only care about purchase.table_done products,
+      table_queue and table_entries are neglected and considered non-relevant.
+      
+      CHECKS
+      @test1: checks if the purchase has not already been manually validated in odoo.
+      @test2: checks if all table_done items are existing in odoo product.product table
+              in case, where a product do not exist, it is required to manually
+              add the product into odoo
+      @test3: checks if all items from table_done are existing inside the its original odoo image,
+              IF ODOO_CREATE_NEW_PURCHASE_LINE config is True:
+                when an unmatched item is found, automatically add it into odoo purchase
+              IF ODOO_CREATE_NEW_PURCHASE_LINE config is False:
+                when an unmatched item is found, break processus. The item needs 
+                to be manually added or removed from the application table
+      
+      If all test are passed, the data can be safely imported into odoo.
+      it take all rpoducts from odoo purchase and apply its new received qty
+      
+      If autoval is True:
+        Propagate the validation event. No manual validation in odoo is recquired.
+      If autoval is False:
+        Manual validation in odoo is recquired
+        
+    Args:
+        purchase (Purchase): Purchase to be validated
+        data (dict): cache data dict
+        autoval (bool): wether propagate with an odoo auto validation 
+                        or keep manual odoo validation
+
+    Returns:
+        dict: validation state dict
+    """
+    purchase.process_status = 'verified'
+    name = purchase.name
     table = purchase.table_done
     
     # ====> verify that the purchase is not already validated
@@ -426,24 +536,21 @@ class Odoo:
     print('test2 passed')
 
     # APPLY MODIFICATION TO ODOO ITEMS
-    moves = self.client.model('stock.move').browse([('origin', '=', name)])
-    for move in moves:
-      print('--', move.product_id)
-      move_id = move.id
-      move_state = move.state
-      item_id = move.product_id.id
-
-      if move_state == 'assigned' and purchase.is_received(item_id):
-        received_qty = purchase.get_item_received_qty(item_id)
-        self.apply_purchase_record_change(move_id, received_qty)
-    
+    self.post_products(purchase)    
     return {'validity': True, 'failed': 'none', 'item_list': []}
 
 
 
   def product_supplier_data(self, purchase, product):
-    partner_item = self.client.model('product.supplierinfo').get([('id','=', purchase.supplier.id),
-                                                                   ('product_tmpl_id.id','=', product.product_tmpl_id.id)])
+    """retrieve supplier data for requested item
+    Price and name
+    Informations are nacessary in order to create new item row in odoo purchase
+    return product name and price"""
+    partner_item = self.get('product.supplierinfo', 
+                            [('id','=', purchase.supplier.id), 
+                             ('product_tmpl_id.id','=', product.product_tmpl_id.id)
+                             ])
+
     if partner_item:
       price = partner_item.base_price
       product_code = partner_item.product_code
@@ -461,19 +568,28 @@ class Odoo:
     return name, price
 
 
-  def create_purchase_record(self, purchase, item_id):
-    purchase_id = purchase.id
+  def create_purchase_record(self, purchase: Purchase, item_id: int) -> bool:
+    """ USED IF ODOO_CREATE_NEW_PURCHASE_LINE=TRUE
+    create item row into an odoo purchase.
+    
+    If the item is not found in product.product, 
+    the process fail and break post_purchase test3
+    However this case should not happen as test2 has been sucessfull
 
-    product = self.search_product_from_id(item_id)
+    Args:
+        purchase (Purchase): purchase object
+        item_id (int): odoo product.prudct id
+
+    Returns:
+        bool: successfully created item
+    """
+    purchase_id = purchase.id
+    product = self.get('product.product', [('id','=',item_id)])
     if not product:
-      # TEMPORARY TO PREVENT BAD ODOO MANIPULATION, IF ANY INATTENDED PROBLEMS
-      # product does not exist on Odoo
-      # This very case might not happen as we check already product existence in odoo
       return False
 
     uom = product.product_tmpl_id.uom_id.id
     name, price = self.product_supplier_data(purchase, product)
-
     new_item = {'order_id': purchase_id,
                 'product_uom': uom,
                 'price_unit': price,
@@ -482,12 +598,11 @@ class Odoo:
                 'product_id': product,
                 'date_planned': datetime.now()}
 
-    self.client.model('purchase.order.line').create(new_item)
-
+    self.create('purchase.order.line', new_item)
     return True
 
 
-  def recharge_purchase(self, purchase, data) -> None:
+  def recharge_purchase(self, purchase: object, data: dict) -> None:
     """Request to update purchase data from odoo
     keep room table structure untouched
     In use when odoo is modified eg: 
@@ -498,26 +613,28 @@ class Odoo:
     return purchase object 
     """
 
-    id = purchase.id
-    name = purchase.name
-    purchase_state = self.client.model('purchase.order').get([('id', '=', id)]).state
+    id, name = purchase.id, purchase.name
+    purchase_state = self.get('purchase.order', [('id', '=', id)]).state
     picking_state = self.get_picking_state(name) 
+    
     if purchase_state == 'purchase' and picking_state == 'assigned':
-      moves = self.client.model('stock.move').browse([('origin', '=', name)])
-      passed = False
+      ### LOOK FOR UPDATE
+      moves = self.browse('stock.move',
+                          [('origin', '=', name)])
 
       for item in moves:
-        # if item.state == 'assigned':   
-        productData = {'item_id': item.product_id.id,
-                      'item_barcode': self.get_barcode(item), #item.product_id.barcode
-                      'item_name': re.sub('\[.*?\]', '', item.name).strip(),
-                      'item_qty': item.product_qty,
-                      'item_qty_packaqe': item.product_qty_package,
-                      'item_qty_received': 0}
-        update_item_auto_table_selector(purchase, productData, purchase.process_status, item.state)
+        product = {'id': item.product_id.id,
+                  'barcode': self.get_barcode(item),
+                  'name': re.sub('\[.*?\]', '', item.name).strip(),
+                  'qty': item.product_qty,
+                  'qty_packaqe': item.product_qty_package,
+                  'qty_received': 0}
+        purchase.recharge_item(product, 
+                               purchase.process_status, 
+                               item.state)
       
     elif purchase_state == 'cancel' or picking_state == 'cancel':
-      # remove from data dict
+      # CANCELED: REMOVE PURCHASE
       if id in list(data['odoo']['purchases']['incoming'].keys()):
         data['odoo']['purchases']['incoming'].pop(id)
 
@@ -525,7 +642,8 @@ class Odoo:
         data['odoo']['purchases']['received'].pop(id)
     
 
-  def delete_purchase(self, id, data, object_type, state):
+  def delete_purchase(self, id:str, data: dict, object_type: str, state: str):
+    """removed purchase from paired list"""
     if state == 'done':
       if object_type == 'purchase':
         data['odoo']['purchases']['done'].pop(id)
@@ -539,7 +657,13 @@ class Odoo:
         data['odoo']['inventory']['processed'].pop(id)
   
   
-  def get_product_categories(self, data:Dict) -> List[Tuple[str, int]]:
+
+
+
+  ########################################### INVENTORY #########################################################
+  ###############################################################################################################
+  
+  def get_product_categories(self, data: dict) -> List[Tuple[str, int]]:
     """Generate list of product categories existing in odoo. sort it by lexicographic order
     
     place the data into the data dict: data['odoo']['inventory']['type']
@@ -548,17 +672,15 @@ class Odoo:
         List[Tuple[str, int]]: list of tuple name and id of product categories.
     """
 
-    categories = self.browse('product.category', [(['create_date','>','1900-01-01 01:01:01'])]) # api does not work without conditions
-    cat = sorted([(c.complete_name, c.id) for c in categories],                                 # setup obvious cond. as turn around
+    categories = self.browse('product.category', 
+                             [(['create_date','>','1900-01-01 01:01:01'])])
+    cat = sorted([(c.complete_name, c.id) for c in categories],
                   key=lambda x: x[0],
                   reverse=False)
     
     data['odoo']['inventory']['type'] = cat
-    
     return data   
-
-
-  ################ INVENTORY #########################
+  
   def generate_inv_product_table(self, cat_id:int) -> pd.DataFrame:
     """takes a category id as input, generate list of product records from this categ
         products records are : pp id, pt name, pp or pmb barcode, pt stock qty
@@ -577,7 +699,6 @@ class Odoo:
           if p.barcode:
             barcode = p.barcode
             break 
-
       return barcode
     
     def get_name_translation() -> str:
@@ -586,10 +707,8 @@ class Odoo:
         if t.name == 'product.template,name':
           name = t.value
           break
-      
       if not name:
         name = pt.name
-
       return name
     
     # name, barcode or multiple barcode, theoric qty, real quantity
@@ -602,21 +721,31 @@ class Odoo:
       pp = self.get('product.product', [(['product_tmpl_id', '=', tmpl_id])])
       pmb = self.browse('product.multi.barcode', [(['product_id','=', pp.id])])    
       name = get_name_translation()
-      
       qty = pt.qty_available
-      virtual = pt.virtual_available
-                      
+      virtual = pt.virtual_available            
       id = pp.id
       barcode = get_barcode()
-
       product_list.append([barcode, id, name, qty, virtual, qty])  
     
-    return pd.DataFrame(product_list, columns=['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received'])
+    columns = ['barcode', 'id', 'name', 'qty', 'virtual_qty', 'qty_received']
+    table = pd.DataFrame(product_list, columns= columns)
+    table.fillna(0, inplace=True)
+    return table
 
 
 
-  def create_inventory(self, input:Dict, data: Dict, table: pd.DataFrame) -> int:
-    #generate Purchase object for inventory
+  def create_inventory(self, input:dict, data: dict, table: pd.DataFrame) -> int:
+    """ CREATE A PURCHASE OBJECT
+
+    Args:
+        input (dict): odoo cat_id 
+        data (dict): cache data dict
+        table (pd.DataFrame): object origin table 
+
+    Returns:
+        int: object_id that reference the object into 
+            cache['odoo']['inventory']['ongoing'][object_id]
+    """
     def get_id() -> int:
       ongoing = list(data['odoo']['inventory']['ongoing'].keys())
       processed = list(data['odoo']['inventory']['processed'].keys())
@@ -624,10 +753,10 @@ class Odoo:
       m = max(ongoing + processed + done, default=0)
       return m + 1     
     
-    inv_id = get_id()
+    object_id = get_id()
     cat_id = input['object_id']
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    inventory = Purchase(inv_id,
+    inventory = Purchase(object_id,
                          [x[0] for x in data['odoo']['inventory']['type'] if x[1] == cat_id][0], #get name from the categ type list
                          Supplier(None, 'inventaire'),
                          True,
@@ -636,31 +765,38 @@ class Odoo:
                          now,
                          'incoming',
                          table)
-    print(cat_id)
-    print(inventory, inventory.id, inventory.name)
-    data['odoo']['inventory']['ongoing'][inv_id] = inventory
-    return inv_id
+
+    data['odoo']['inventory']['ongoing'][object_id] = inventory
+    return object_id
  
 
 
-  def post_inventory(self, inventory:Purchase, data:Dict, autoval:bool) -> bool:
-    """_summary_
+  def post_inventory(self, inventory:Purchase, data: dict, autoval:bool) -> bool:
+    """MAIN AND ONLY INTERACTION PROCESS WITH ODOO FOR INVENTORIES OTHER THAN
+      THAN FETCHING TEMPLATE DATA
+      INVENTORIES ARE ONLY ADDED INTO ODOO AT VALIDATION PROCESS
+
+    THUS
+    !!! PRODUCTS ARE NOT BLOCKED IN ODOO AND CAN BE MANIPULATED, SALED...       !!!
+    !!! IT IS STRONGLY RECOMMENDED DURING INVENTORIES TO STOP ANY OTHER PROCESS !!!
+    !!! THAT COULD AFFECT INVENTORIED PRODUCTS                                  !!!
+    
+    STEPS
+    @CHECKS if products do exist in odoo product.product table, break the process
+            if product is found unmatched. A manual add is recquired to be abble to complete this check
+    @CREATE A 'stock.inventory' row that will be used as a container for uour inventoried products
+    @CREATE 'stock.inventory/line' for each purchase table_done products
+    
+    @PROPAGATE START, validate the inventory and its lines.
+    @PROPAGATE VALIDATION, optionnal input from user, remove recquired manual validation
 
     Args:
         inventory (Purchase): purchase object containing related inventory data
-        data (Dict): global data dict 
+        data (Dict): cache data dict
 
     Returns:
-        bool: _description_
+        bool: process state record
     """
-    
-    ## CREATE A STOCK.INVENTORY ROW
-    ## CREATE STOCK.INVENTORY.LINE FOR THE CREATED INVENTORY
-    ### WITH CHECK ON ODOO PRODUCT EXISTENCE
-    ### WITH INVENTORED QTY
-
-    ## SHOULD ALLLOW AUTO VALIDATION PROCESS..
-    print('in post inventory')
     odoo_exist = self.check_item_odoo_existence(inventory.table_done)
     if odoo_exist['validity'] == False:
       # DATA VALIDITY IS TO BE PASSED TO ODOO
@@ -676,40 +812,42 @@ class Odoo:
 
 
 
-  def create_stock_inventory_row(self,inventory:Purchase):
+  def create_stock_inventory_row(self, inventory:Purchase):
+    """create a 'stock.inventory' container to be filled with inventory lines"""
     date = datetime.now().strftime("%d-%m-%Y")
     name = f'{inventory.name} {date}'
     
-    return self.client.model('stock.inventory').create(
-                                                      {'name': name,
-                                                      'filter': 'categories',
-                                                      'location_id': 12
-                                                      })
+    return self.create('stock.inventory', {'name': name,
+                                          'filter': 'categories',
+                                          'location_id': 12
+                                          })
 
 
 
-  def create_stock_inventory_line_row(self, inventory:Purchase, container):
+  def create_stock_inventory_line_row(self, inventory:Purchase, container: object):
+    """Fill the odoo 'stock.inventory' container with 'stock.inventory.line'
+    records from purchase.table_done"""
     _,_,records = inventory.get_table_records()
     for r in records:
-      product = self.client.model('product.product').get([('id', '=', r['id'])])
+      product = self.get('product.product', [('id', '=', r['id'])])
       uom = product.product_tmpl_id.uom_id.id
-      
-      self.client.model('stock.inventory.line').create(
+      self.create('stock.inventory.line', 
         {
           'product_qty': r['qty_received'],
           'product_id': r['id'],
           'product_uom_id': uom,
           'location_id': 12,
           'inventory_id': container.id,
-        })
-    
+        })    
     return container
 
-  def propagate_start(self, container):
+  def propagate_start(self, container:object):
+    """use odoo action_start method to propagate inventory creation events"""
     container.action_start()
     return container
 
-  def propagate_validate(self, container, autoval:bool):
+  def propagate_validate(self, container:object, autoval:bool):
+    """use odoo action_validate methdod to automaticaly validate an inventory"""
     if autoval:
       try:
         container.action_validate()
@@ -722,13 +860,11 @@ class Odoo:
 
 
   #################### BUILD ##############################
-  def build(self, data, url, login, password, db, verbose, timeDelta):
+  def build(self, data: dict, url:str, login:str, password:str, db:str, verbose:bool, timeDelta: list[int]) -> dict:
     """Building base dataset
     activate only on first activation of the server"""
     self.connect(url, login, password, db, verbose)
     data = self.get_purchase(timeDelta, data)
     data = self.get_product_categories(data)
-
     self.builded = True
-
     return data

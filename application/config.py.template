@@ -27,6 +27,14 @@ class Config(object):
   LOG_FILENAME: str = './volume/log/log.log'
   JSON_CONFIG_FILENAME: str = './application/static/js/config.js'
 
+  #MAIL
+  SMTP_PORT: int = 587
+  SMTP_SERVER: str = "smtp-server.adress"
+  EMAIL_LOGIN: str = "sender email"
+  EMAIL_PASSWORD = "sender password" 
+  RECEIVERS: List[str] = ["rx email1", "rx email2"]
+
+
   # CAMERA
   CAMERA_ENABLE_VIDEO: bool = True
   CAMERA_ENABLE_AUDIO: bool = False

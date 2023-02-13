@@ -173,9 +173,9 @@ socket.on('modify_scanned_laser_item', function(context) {
 
 socket.on('broadcasted_deleted_item', function(context) {
   if (roomID == context.roomID) {
-    let tableID = context.fromTable
-    let index = context.index
-    let container = document.getElementById(tableID)
+    let tableID = translateTableID(context.fromTable); 
+    let index = context.index;
+    let container = document.getElementById(tableID);
     let items = container.getElementsByClassName('product');
 
     for (var i = index.length - 1; i >= 0; i--) {
