@@ -228,13 +228,15 @@ class Purchase:
         idx (int): idx of the row to delete
     """
     scanned = getattr(self, "scanned_barcodes")
+    setattr(self, "scanned_barcodes", 
+            [x for x in scanned 
+             if x not in table.loc[idx, 'barcode'].values.tolist()])
+    
     table = getattr(self, table_name)
     table = table.drop(idx, axis=0)
     table = table.reset_index(drop=True)
     setattr(self, table_name, table)
-    setattr(self, "scanned_barcodes", 
-            [x for x in scanned 
-             if x not in table.loc[idx, 'barcode'].values.tolist()])
+
 
 
   def create_item(self, table_name:str, product:dict) -> None:
@@ -464,7 +466,7 @@ class Purchase:
     """take an item and place it into the queue table
     -item can be in table entries, thus it is moved into next table
     -item can be odoo thus being imported into the purchase object
-    - item nowhere to be found, imported with minimal know informations
+    - item nowhere to be found, imported with minimal known informations
 
     Args:
         context (dict): context about product localisation
@@ -481,7 +483,7 @@ class Purchase:
                                                                      axis=0)
       self.table_entries = self.table_entries.reset_index(drop=True)
       
-      product_data = context['product'].values.tolist()[1:5]
+      product_data = context['product'].values.tolist()[0][1:]
       id, name, qty, pkg_qty, received_qty = product_data
       
     elif context['state'] in [2,3]:

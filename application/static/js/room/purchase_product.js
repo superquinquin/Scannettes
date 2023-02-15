@@ -7,11 +7,11 @@ function CreateProductBubble(context, tableID, admin) {
   let product = document.createElement('div');
   product.classList.add('product');
   if (context.new.length > 0 & context.new.includes(context.barcode)) {
-    product.setAttribute('style','background-color: #ff7866;')
+    product.setAttribute('style','background-color:' + config.COLOR_NEW_ITEMS +';')
   } else if (context.mod.length > 0 & context.mod.includes(context.barcode)) {
-    product.setAttribute('style','background-color: #ff9f40;')
+    product.setAttribute('style','background-color:' + config.COLOR_MOD_ITEMS +';')
   } else {
-    product.setAttribute('style','background-color: #fffee8;')
+    product.setAttribute('style','background-color:' + config.COLOR_NORMAL_ITEMS+ ';')
   }
 
   if (admin) {
