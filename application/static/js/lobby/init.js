@@ -7,6 +7,7 @@ var charged = false;
 
 const socket = io.connect(config.ADDRESS);
 //MAIN
+const root = document.documentElement;
 const roomManagement = document.getElementById('room-management');
 const roomAssembler = document.getElementById('room-assembler');
 const create_btn = document.getElementById('create-btn');
@@ -42,6 +43,9 @@ roomAssembler.hidden = true;
 
 
 // INIT FUNCTION
+root.style.setProperty('--primary', config.COLOR_PRIMARY);
+root.style.setProperty('--secondary', config.COLOR_SECONDARY);
+
 function get_suffix(url) {
     let array = url.split('%26id%3D');
     if (array.length > 1) {

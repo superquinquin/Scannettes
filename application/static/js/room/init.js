@@ -6,6 +6,7 @@ var browser = get_browser_id();
 
 var admin =  false;
 const socket = io.connect(config.ADDRESS);
+const root = document.documentElement;
 const adminClose = document.getElementById('admin-close');
 const closing = document.getElementById('closing-room');
 const aucdiv = document.getElementById('all-user-close');
@@ -26,6 +27,9 @@ suspender.disabled = true;
 
 // INIT 
 ////////////////////////////////////////////////////////////////////
+root.style.setProperty('--primary', config.COLOR_PRIMARY);
+root.style.setProperty('--secondary', config.COLOR_SECONDARY);
+
 function get_suffix(url) {
   let array = url.split('%26type%3D');
   if (array.length > 1) {

@@ -1,3 +1,9 @@
+
+:root {
+  --primary: #123456;
+  --secondary: #654321;
+}
+
 html {
   font-family: 'Raleway', sans-serif;
   overflow-x: hidden;
@@ -33,10 +39,10 @@ img {
   width: 600px;
   height: 600px;
   position: relative;
-  border-left: solid 1px #3C312E;
-  border-top: solid 1px #3C312E;
-  border-right: solid 3px #3C312E;
-  border-bottom: solid 3px #3C312E;
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-right: solid 3px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
   border-radius: 10px;
   display: flex;
 }
@@ -55,12 +61,12 @@ img {
 .switch-button {
   background: rgba(200, 200, 200, 0.95);
   border-radius: 30px;
-  border: solid 3px #3C312E;
+  border: solid 3px var(--secondary);
   overflow: hidden;
   width: 240px;
   font-size: 18px;
   letter-spacing: 1px;
-  color: #3C312E;
+  color: var(--secondary);
   position: relative;
   padding-right: 120px;
   position: relative;
@@ -112,7 +118,7 @@ img {
 }
 .switch-button-checkbox + .switch-button-label:before {
   content: "";
-  background: #fef84c;
+  background: var(--primary);
   height: 100%;
   width: 80%;
   position: absolute;
@@ -139,9 +145,9 @@ img {
   margin-top: 10px;
   width: 500px;
   height: 30px;
-  border: solid 3px #3C312E;
+  border: solid 3px var(--secondary);
   border-radius: 30px;
-  border-color: #3C312E;
+  border-color: var(--secondary);
   background-color: #fff;
   font-size: 16px;
   font-weight: bold;
@@ -170,24 +176,24 @@ img {
 #modal-button button {
   position: relative;
   left: 17%;
-  border-left: solid 1px #3C312E;
-  border-top: solid 1px #3C312E;
-  border-right: solid 3px #3C312E;
-  border-bottom: solid 3px #3C312E; 
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-right: solid 3px var(--secondary);
+  border-bottom: solid 3px var(--secondary); 
   border-radius: 10px;
   height: 50px;
   width: 150px;
   padding: 5px 10px 5px 10px;
-  background-color: #fef84c;
-  color: #3C312E;
+  background-color: var(--primary);
+  color: var(--secondary);
   font-size: 16px;
   font-weight: bold;
 }
 
 #modal-button button:hover {
   cursor: pointer;
-  color: #fef84c;
-  background-color: #3C312E;
+  color: var(--primary);
+  background-color: var(--secondary);
 }
 
 #createRoom {
@@ -204,8 +210,8 @@ img {
   top: -10px;
   list-style-type: none;
   overflow: auto;
-  background-color: #fef84c;
-  border-bottom: solid 2px #3C312E;
+  background-color: var(--primary);
+  border-bottom: solid 2px var(--secondary);
 }
 
 
@@ -230,15 +236,15 @@ img {
   justify-content: center;
   padding: 14px 16px;
   text-decoration: none;
-  color: #3C312E;
+  color: var(--secondary);
   font-size: 20px;
-  background-color: #fef84c;
+  background-color: var(--primary);
   border-bottom-left-radius: 10px;
 }
 
 #login-container :hover {
   color: white;
-  background-color: #3C312E;
+  background-color: var(--secondary);
 }
 
 /* management buttons */
@@ -250,12 +256,12 @@ img {
   margin: 10px 10px 50px 5px;
   padding: 5px 10px 5px 10px;
   height: 40px;
-  border-left: solid 1px #3C312E;
-  border-top: solid 1px #3C312E;
-  border-bottom: solid 3px #3C312E;
-  border-right: solid 3px #3C312E;
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-right: solid 3px var(--secondary);
   border-radius: 10px;
-  background-color: #fef84c;
+  background-color: var(--primary);
   font-weight: bold;
   font-size: 14px;
 }
@@ -263,8 +269,8 @@ img {
 .mngmnt-btn:hover {
   cursor: pointer;
   color: white;
-  background-color: #3C312E;
-  color: #fef84c;
+  background-color: var(--secondary);
+  color: var(--primary);
 }
 
 #create-btn {
@@ -302,10 +308,10 @@ th {
   padding-bottom: 12px;
   padding-left: 10px;
   text-align: center;
-  background-color: #fef84c;
-  color: #3C312E;
-  border-bottom: 2px solid #3C312E;
-  border-top: 2px solid #3C312E;
+  background-color: var(--primary);
+  color: var(--secondary);
+  border-bottom: 2px solid var(--secondary);
+  border-top: 2px solid var(--secondary);
 }
 
 tr {
@@ -313,7 +319,7 @@ tr {
   padding-bottom: 5px;
   padding-left: 10px;
   width: 100%;
-  border-bottom: 1px solid #3C312E;
+  border-bottom: 1px solid var(--secondary);
   text-align: center;
 }
 
@@ -323,34 +329,34 @@ td:nth-child(3) {
 }
 
 td:first-child, th:first-child {
-  border-left: 2px solid #3C312E;
+  border-left: 2px solid var(--secondary);
 }
 
 td:last-child, th:last-child {
-  border-right: 2px solid #3C312E;
+  border-right: 2px solid var(--secondary);
 }
 
 tr:last-child td {
-  border-bottom: 2px solid #3C312E;
+  border-bottom: 2px solid var(--secondary);
 }
 
 tr:first-child th:first-child {
-  border-left: 2px solid #3C312E;
+  border-left: 2px solid var(--secondary);
   border-top-left-radius: 10px;
 }
 
 tr:first-child th:last-child {
-  border-right: 2px solid #3C312E;
+  border-right: 2px solid var(--secondary);
   border-top-right-radius: 10px;
 }
 
 tr:last-child td:first-child {
-  border-left: 2px solid #3C312E;
+  border-left: 2px solid var(--secondary);
   border-bottom-left-radius: 10px;
 }
 
 tr:last-child td:last-child {
-  border-right: 2px solid #3C312E;
+  border-right: 2px solid var(--secondary);
   border-bottom-right-radius: 10px;
 }
 
@@ -358,7 +364,7 @@ tr:nth-child(even){background-color: #f2f2f2;}
 tr:hover {background-color: #ddd;}
 
 .password {
-  border: solid 2px #3C312E;
+  border: solid 2px var(--secondary);
   border-radius: 10px;
   background-color: #fffee8;
   font-size: 15px;
@@ -366,21 +372,21 @@ tr:hover {background-color: #ddd;}
 }
 
 .join-btn {
-  background-color: #fef84c;
+  background-color: var(--primary);
   border-radius: 5px;
   padding: 5px 10px 5px 10px;
-  border-left: solid 1px #3C312E;
-  border-top: solid 1px #3C312E;
-  border-bottom: solid 3px #3C312E;
-  border-right: solid 3px #3C312E;
-  color: #3C312E;
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-right: solid 3px var(--secondary);
+  color: var(--secondary);
   font-weight: bold;
 }
 
 .join-btn:hover {
   cursor: pointer;
-  background-color: #3C312E;
-  color: #fef84c;
+  background-color: var(--secondary);
+  color: var(--primary);
 }
 
 

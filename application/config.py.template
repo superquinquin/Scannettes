@@ -181,7 +181,9 @@ class ClientJsonConfig(object):
     return  dict([(k, v) for k, v in 
             list(config.__dict__.items()) + 
             list(subconfig.__dict__.items()) 
-            if (k.startswith('CAMERA') or k.startswith('ADDRESS'))])
+            if (k.startswith('CAMERA') or 
+                k.startswith('ADDRESS') or 
+                k.startswith('COLOR'))])
 
   @classmethod
   def to_json(self, config: object, subconfig: object):
