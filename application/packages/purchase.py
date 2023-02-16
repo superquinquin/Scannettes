@@ -227,12 +227,12 @@ class Purchase:
         table_name (str): name of the purchase table to update
         idx (int): idx of the row to delete
     """
+    table = getattr(self, table_name)
     scanned = getattr(self, "scanned_barcodes")
     setattr(self, "scanned_barcodes", 
             [x for x in scanned 
              if x not in table.loc[idx, 'barcode'].values.tolist()])
     
-    table = getattr(self, table_name)
     table = table.drop(idx, axis=0)
     table = table.reset_index(drop=True)
     setattr(self, table_name, table)
