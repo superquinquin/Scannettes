@@ -218,7 +218,16 @@ class Purchase:
                                                            product['qty'],
                                                            product['qty_packaqe']] 
     setattr(self, table_name, table)
-
+  
+  def remmove_from_scanned(self, barcodes: List[int]) -> None:
+    """remove item from scanned items list"""
+    for idx in barcodes:
+      try:
+        loc = self.scanned_barcodes.index(idx)
+        self.scanned_barcodes.pop(loc)
+      except ValueError:
+        """not in list"""
+        pass
  
   def delete_item(self, table_name:str, idx:int) -> None:
     """delete a product row to the selected table
@@ -228,11 +237,8 @@ class Purchase:
         idx (int): idx of the row to delete
     """
     table = getattr(self, table_name)
-    scanned = getattr(self, "scanned_barcodes")
-    setattr(self, "scanned_barcodes", 
-            [x for x in scanned 
-             if x not in table.loc[idx, 'barcode'].values.tolist()])
-    
+    rm_scanned = table.loc[idx, 'barcode'].values.tolist()
+    self.remmove_from_scanned(rm_scanned)    
     table = table.drop(idx, axis=0)
     table = table.reset_index(drop=True)
     setattr(self, table_name, table)

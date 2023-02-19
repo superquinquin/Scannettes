@@ -1,6 +1,5 @@
 
 function CreateProductBubble(context, tableID, admin) {
-  console.log(context)
   let container = document.getElementById(tableID);
   removeEmptyPlaceholder(tableID)
 
