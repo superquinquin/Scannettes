@@ -34,6 +34,12 @@ class Config(object):
   EMAIL_PASSWORD = "sender password" 
   RECEIVERS: List[str] = ["rx email1", "rx email2"]
 
+  #COLORS
+  COLOR_PRIMARY: str = "#fef84c"
+  COLOR_SECONDARY: str = "#3C312E"
+  COLOR_NEW_ITEMS: str = "#ff7866"
+  COLOR_MOD_ITEMS: str = "#ff9f40"
+  COLOR_NORMAL_ITEMS: str = "#fffee8"
 
   # CAMERA
   CAMERA_ENABLE_VIDEO: bool = True
