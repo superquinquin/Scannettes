@@ -2,7 +2,7 @@ import os
 import binascii
 import pandas as pd
 from glob import glob
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, List
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
 
@@ -171,13 +171,26 @@ def get_status_related_collections(atype:str, new_status:str) -> Tuple[str, str]
     return "received", "done"
   
   
+def order_files(files: List[str]) -> List[str]:
+  """give order for unifying process"""
+  ordered, schema = [], ['config', 'init', 'functions', 'product', 'camera', 'others']
+  for t in schema:
+    for file in files:
+      if t in file:
+        ordered.append(file)
+      if t == "others" and file not in ordered:
+        ordered.append(file)
+  
+  return ordered
+  
 def unify(folder:str, types:str, outfile:str) -> None:
   """unify folder files into an unified file
   this aim to limit client request as page open"""
   glob_files = glob(f'{"/".join(folder.split("/")[:-1])}/*.{types}')
   files = glob(f'{folder}/*.{types}')
+  ordered = order_files(glob_files + files)
   with open(f'{folder}/{outfile}.{types}','w') as unify:
-    for file in glob_files + files:
+    for file in ordered:
       if ("inventory" in outfile and
           "purchase" in file):
         continue
