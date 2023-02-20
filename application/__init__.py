@@ -5,6 +5,7 @@ from application.config import define_config, define_client_config, parser
 from application.packages import init_ext
 from application.packages.log import Log, Hook, ErrLogFlush
 from application.packages.backup import Data, BackUp, Update
+from application.packages.utils import unify
 
 
 config = define_config(parser().config)
@@ -28,7 +29,11 @@ def create_app(config_name: str = None, main: bool = True) -> Flask :
   global data 
   
   config = define_config(config_name)
-  define_client_config(config)  
+  define_client_config(config)
+  unify('application/static/js/room', 'js','unified_inventory')
+  unify('application/static/js/room', 'js','unified_purchase')
+  unify('application/static/js/lobby', 'js','unified')
+  unify('application/static/js/login', 'js','unified')
   
   app = Flask(__name__,
               static_url_path= config.STATIC_URL)
