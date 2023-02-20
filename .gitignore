@@ -1,6 +1,7 @@
 
 application/config.py
 application/static/js/config.js
+application/static/js/*/unified*.js
 application/whitelist.txt
 volume/
 *.pickle

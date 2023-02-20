@@ -1,6 +1,7 @@
 import os
 import binascii
 import pandas as pd
+from glob import glob
 from typing import Dict, Union, Tuple
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
@@ -168,3 +169,24 @@ def get_status_related_collections(atype:str, new_status:str) -> Tuple[str, str]
     return "incoming", "received"
   elif atype == "purchase" and new_status == "verified":
     return "received", "done"
+  
+  
+def unify(folder:str, types:str, outfile:str) -> None:
+  """unify folder files into an unified file
+  this aim to limit client request as page open"""
+  glob_files = glob(f'{"/".join(folder.split("/")[:-1])}/*.{types}')
+  files = glob(f'{folder}/*.{types}')
+  with open(f'{folder}/{outfile}.{types}','w') as unify:
+    for file in glob_files + files:
+      if ("inventory" in outfile and
+          "purchase" in file):
+        continue
+      
+      elif ("purchase" in outfile and
+          "inventory" in file):
+        continue
+      
+      else:
+        with open(file, 'r') as f:
+          content = f.read()
+          unify.write(f'{content}\n')
