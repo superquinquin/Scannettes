@@ -413,23 +413,30 @@ class Purchase:
       alt = self._get_product_out_of_exceptions(odoo,
                                                 "product.multi.barcode", 
                                                 context)
+      
     if not alt:
       context['state'] = 2
-    
-    elif self.table_entries[(self.table_entries['barcode'] == alt.barcode)].empty:
-      ## GET PRODUCT DATA FROM ODOO
-      context['product'] = alt.product_id
-      context['state'] = 2
+      
+    elif self.table_entries[(self.table_entries['barcode'] == alt.product_id.barcode)].empty == False:
+      # found product
+      context['product'] = self.table_entries[(self.table_entries['barcode'] == alt.product_id.barcode)]
+      context['code_ean'] = alt.product_id.barcode
       context['flag'] = False
+
+    elif self.table_entries[(self.table_entries['barcode'] == alt.barcode)].empty == False:
+      ## find product with alt barcode
+      context['product'] = self.table_entries[(self.table_entries['barcode'] == alt.barcode)]
+      context['code_ean'] = alt.barcode
+      context['flag'] = False      
       
     else:
-      context['product'] = self.table_entries[(self.table_entries['barcode'] == alt.barcode)]
+      # do not find the product in table
+      context['product'] = alt.product_id
+      context['state'] = 2
       context['flag'] = False
 
     return context
   
-
-      
   
   def _state_2_search(self, odoo: object, context: dict) -> dict:
     """search item into product.product table.

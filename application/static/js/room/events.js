@@ -143,7 +143,6 @@ socket.on('broadcast_update_table_on_edit', function(context) {
 
 socket.on('move_product_to_queue', function(context) {
   //find product on entry table, append it to queue
-
   if (roomID == context.room_id) {
     let purchasedTable = document.getElementById('purchased-list');
     if (context.new_item) {
@@ -301,22 +300,20 @@ socket.on('close-room-on-validation', function(context) {
 
 socket.on('close-test-fail-error-window', function(context) {
   if (roomID == context.roomID) {
-    let state = context.post_state;
-    let test_name = state.failed;
-    let item_list = state.string_list;
+    let errors = context.errors;
 
     RemoveAutovalModule();
     document.getElementById('cancel-confirmation').hidden = false;
     document.getElementById('accept-confirmation').hidden = false;
 
-    if (test_name  == 'odoo_exist') {
+    if (context.failed  == 'odoo_exist') {
       document.getElementById('heading-message').innerHTML = 'Oups Odoo pose problème...';
-      document.getElementById('content-message').innerHTML = "Produits inexistants sur odoo, ou erreur de code barre multiple: " + item_list;
+      document.getElementById('content-message').innerHTML = "Produits inexistants sur odoo, ou erreur de code barre multiple:<br>" + errors;
 
-    } else if (test_name == 'purchase_exist') {
+    } else if (context.failed == 'purchase_exist') {
       document.getElementById('heading-message').innerHTML = 'Commande: Produit inexistant';
-      document.getElementById('content-message').innerHTML = "Veuillez rajouter les produits suivants dans la commande associée : " + item_list;
-    } else if (test_name == 'validation_exist') {
+      document.getElementById('content-message').innerHTML = "Veuillez rajouter les produits suivants dans la commande associée :<br>" + errors;
+    } else if (context.failed == 'validation_exist') {
       document.getElementById('heading-message').innerHTML = 'Commande déjà validée...';
       document.getElementById('content-message').innerHTML = "Il semble que la commande soit déjà validée. Vous n'avez rien a faire, le salon disparaitra lors de la prochaine mise à jour";
     }

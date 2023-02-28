@@ -7,7 +7,7 @@ from datetime import datetime
 
 from application.packages.purchase import Purchase, Supplier
 from application.packages.lobby import Lobby
-from application.packages.utils import get_ceiling_date
+from application.packages.utils import get_ceiling_date, format_error_cases
 
 pd.options.mode.chained_assignment = None
 
@@ -328,14 +328,14 @@ class Odoo:
       # verify if all barcodes are the same
       try:
         if not main:
-          check_i, check_b = alts[0].product_id.id, alts[0].barcode
+          check_i, check_b = alts[0].product_id.id, alts[0].product_id.barcode
         else:
           check_i, check_b = main.id, main.barcode
       except IndexError:
         return False
       
       for alt in alts:
-        barcode = alt.barcode
+        barcode = alt.product_id.barcode
         id = alt.product_id.id
         if check_i != id or check_b != barcode:
           return False
@@ -344,20 +344,22 @@ class Odoo:
 
     if not item_barcode or not main:
       ## no product has barcode
-      return {'item_validity': False, 'alt': None, 'has_main': False}
+      return {'item_validity': False, 'alt': None, 'has_main': False, 'product': None}
     
     elif not main.barcode and alts:
       # main product has no barcode, barcode is on alt
       # but multiple alts
-      return {'item_validity': check_alt(), 'alt': alts[0], 'has_main': False}
+      return {'item_validity': check_alt(), 'alt': alts[0], 'has_main': False, 'product': None}
 
     
     elif main.barcode and alts:
-      return {'item_validity': check_alt(), 'alt': alts[0], 'has_main': True}
+      print('both questionnable')
+      return {'item_validity': check_alt(), 'alt': alts[0], 'has_main': True, 'product': main}
 
     else:
       # only main
-      return {'item_validity': True, 'alt': None, 'has_main': True}
+      print("only main")
+      return {'item_validity': True, 'alt': None, 'has_main': True, 'product': main}
 
       
       
@@ -378,17 +380,18 @@ class Odoo:
     Returns:
         dict: test valididy
     """
-    item_list = []
+    errors = [] #dict(barode, product, hint placeholder)
     validity = True
 
     for item in table.values.tolist():
-      print('__', item[0], '-', item[1] )
-      result = self.check_item_alt_integrity(item)
       item_barcode = item[0]
-      item_id = item[1]     
-      
+      item_id = item[1] 
+      result = self.check_item_alt_integrity(item)
+      result['barcode'] = item_barcode
       item_validity = result['item_validity']
+      print('__', item_barcode, '-', item_id)
       print('valid__', item_validity)
+      
       if item_validity:
         odoo_alt = result['alt']
         if not result['has_main']:
@@ -397,24 +400,33 @@ class Odoo:
         else:
           odoo_barcode = self.get('product.product', [('id','=',item_id)]).barcode
           odoo_id = self.get('product.product', [('barcode','=',item_barcode)]).id
-        
-        if item_id != odoo_id or item_barcode != odoo_barcode:
+          odoo_alts = self.browse('product.multi.barcode', [('product_id','=', item_id)]).barcode
+          
+        if item_id != odoo_id or (item_barcode != odoo_barcode and item_barcode not in odoo_alts):
           print('_',odoo_barcode, 'has a problem')
+          ## ITEM VALIDITY FALSE
+          ### CASE BARCODE IS FALSE :: NO BARCODE PRODUCT
+          ### CASE ID AND BARCODE DO NOT MATCH
           item_validity = False
-          validity = False
-          item_list.append(item_barcode)
+          validity = False          
+          # test arror handling
+          errors.append(format_error_cases("unmatch", result))
           continue
       
       else:
+        ## ITEM VALIDITY IS FALSE
+        ###CASE ALT == NONE && HAS_MAIN == FALSE: PREDUCT NOT IN ODOO
+        ###CASE ALT == NOT NONE && HAS_MAIN == TRUE: PREDUCT HAS DUPLICATES IN MULTI && PROD.PROD
+        ###CASE ALT == NOT NONE && HAS_MAIN == FALSE: PREDUCT HAS DUPLICATES INSIDE MULTI BARCODE SUPPOSED NOT HAPPEN HANDLE IT ANYWAY
         # Odoo database problem where a product barcode refer to multiple products...
-        print('odoo database duplicate problem...')
         print('__', item_barcode, '__')
         item_validity = False
-        validity = False
-        item_list.append(item_barcode)
+        validity = False        
+        #test error handling
+        errors.append(format_error_cases("item_validity", result))
         continue
       
-    return {'validity': validity, 'item_list': item_list}
+    return {'validity': validity, "errors": errors}
 
 
   def check_item_purchase_existence(self, purchase, table: pd.DataFrame, create: bool) -> dict:
@@ -432,7 +444,7 @@ class Odoo:
     Returns:
         dict: test results and valididy
     """
-    item_list = []
+    errors = []
     validity = True
     id = purchase.id
     name = purchase.name
@@ -448,13 +460,26 @@ class Odoo:
         print('init item creation')
         passed = self.create_purchase_record(purchase, item_id)
         if passed == False:
-          item_list.append(name)
+          validity = False        
+          ## errors handling
+          errors.append(format_error_cases("creation_no_exist", 
+                                           {
+                                            "barcode": item_barcode, 
+                                            "product": self.get('product.product', 
+                                                                [('id','=',item_id)])
+                                            }))
         
       elif item_state == 'none' and create == False:
         validity = False
-        item_list.append(name)
+        ## errors handling
+        errors.append(format_error_cases("creation_inactivated", 
+                                          {
+                                          "barcode": item_barcode, 
+                                          "product": self.get('product.product', 
+                                                              [('id','=',item_id)])
+                                          }))
 
-    return {'validity': validity, 'item_list': item_list}
+    return {'validity': validity, "errors": errors}
 
 
   def post_products(self, purchase: Purchase):
@@ -518,13 +543,13 @@ class Odoo:
     picking_state = self.get_picking_state(name)
     if picking_state == 'done':
       # already odoo validated, msg this information and block data transfer
-      return {'validity': False, 'failed': 'validation_exist', 'item_list': ['']} 
+      return {'validity': False, 'failed': 'validation_exist', 'errors': ['']} 
     
     # ====> purchase_item exist in ODOO
     odoo_exist = self.check_item_odoo_existence(table)
     if odoo_exist['validity'] == False:
       # DATA VALIDITY IS TO BE PASSED TO ODOO
-      return {'validity': False, 'failed': 'odoo_exist', 'item_list': odoo_exist['item_list']}
+      return {'validity': False, 'failed': 'odoo_exist', 'errors': odoo_exist['errors']}
     print('test1 passed')
 
     # <==== room item all in odoo purchase
@@ -532,12 +557,12 @@ class Odoo:
     if purchase_exist['validity'] == False:
       # All product from the app are not in the odoo purchase object.
       # purchase items can be create if odoo_create_new_purchase_item == True
-      return {'validity': False, 'failed': 'purchase_exist', 'item_list': purchase_exist['item_list']}
+      return {'validity': False, 'failed': 'purchase_exist', 'errors': purchase_exist['errors']}
     print('test2 passed')
 
     # APPLY MODIFICATION TO ODOO ITEMS
     self.post_products(purchase)    
-    return {'validity': True, 'failed': 'none', 'item_list': []}
+    return {'validity': True, 'failed': 'none', 'errors': []}
 
 
 
