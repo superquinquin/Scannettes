@@ -4,7 +4,7 @@ from flask_socketio import emit, join_room
 from application.packages.lobby import Lobby
 from application.packages.odoo import Odoo
 from .. import socketio, data, odoo, lobby
-from .utils import get_passer, get_task_permission, standart_name, standart_object_name
+from .utils import get_passer, get_task_permission, standart_name, standart_object_name, format_error_client_message
 from .pdf import PDF
 
 
@@ -520,10 +520,10 @@ def validate_purchase(context):
   config = data['config']
   odoo = Odoo()
   odoo.connect(config.API_URL, 
-                  config.SERVICE_ACCOUNT_LOGGIN, 
-                  config.SERVICE_ACCOUNT_PASSWORD, 
-                  config.API_DB, 
-                  config.API_VERBOSE)
+                config.SERVICE_ACCOUNT_LOGGIN, 
+                config.SERVICE_ACCOUNT_PASSWORD, 
+                config.API_DB, 
+                config.API_VERBOSE)
 
   if permission:
     print('____validation process______')
@@ -555,7 +555,9 @@ def validate_purchase(context):
            context)
     
     else: 
-      state['string_list'] = ', '.join(list(filter(lambda x: type(x) != bool, state['item_list'])))
-      context['post_state'] = state
+      # state['string_list'] = ', '.join(list(filter(lambda x: type(x) != bool, state['item_list'])))
+      msg = format_error_client_message(state['errors'])
       emit('close-test-fail-error-window', 
-           context)
+           {"errors": msg,
+            "failed": state["failed"],
+            "roomID": context['roomID']})

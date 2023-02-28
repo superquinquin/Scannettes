@@ -203,3 +203,66 @@ def unify(folder:str, types:str, outfile:str) -> None:
         with open(file, 'r') as f:
           content = f.read()
           unify.write(f'{content}\n')
+
+          
+def format_error_cases(channel:str, context: dict):
+  # channel [item_validity, unmatch]
+  
+  if channel == 'unmatch':
+    if context['barcode'] == False:
+      ## no barcode
+      hint = "Aucun code-barres associés à ce produit dans Odoo"
+      err = "NoBarcode"
+    else:
+      ## ID AND BARCODE DO NOT MATCH IN CHECK PROCESS
+      hint = "Le code-barres ne correspond pas au bon produit Odoo"
+      err = "NoMatchs"
+  
+  elif channel == "item_validity":
+    if context['alt'] == None and context['has_main'] == False:
+      hint = "Le produit n'est pas référencé dans Odoo"
+      err = "NoExist"
+    elif context['alt'] != None and context['has_main'] == True:
+      hint = "Le code-barres est à la fois un code-barre principale et multiple"
+      err = "MultiOccur"
+    elif context['alt'] != None and context['has_main'] == False:
+      hint = "Le code-barre n'a pas de produits principaux"
+      err = "OnlyALt"
+      
+  elif channel == "creation_no_exist":
+    hint = "Le produit n'est pas référencé dans Odoo"
+    err = "CreationNoExist"
+    
+  elif channel == "creation_inactivated":
+    hint = "La création automatique de produit est désactivée"
+    err = "CreationInactivated"
+  
+  
+  return {"barcode": context['barcode'],
+          "product": context['product'],
+          "hint": hint,
+          "err": err}
+
+def format_error_client_message(errors:List[dict]) -> str:
+  """takes context from failed process like odoo post process
+format the errors component into string to be displayed into the client
+
+  Args:
+      errors (List): list of object err with keys: barcode, product, hint
+
+  Returns:
+      str: formated string
+  """
+  
+  s = ""
+  for err in errors:
+    if err['barcode'] != False and err['product'] != None:
+      s += f" {err['barcode']} - {err['product'].name} - ({err['hint']}),<br>"
+    elif err['barcode'] == False and err['product'] != None:
+      s += f" {err['product'].name} - ({err['hint']}),<br>"
+    elif err['barcode'] == False and err['product'] == None:
+      s += f"produit inconnu - ({err['hint']}),<br>"
+    elif err['barcode'] != False and err['product'] == None:
+      s += f" {err['barcode']} - ({err['hint']}),<br>"
+  
+  return s.rstrip(',<br>')
