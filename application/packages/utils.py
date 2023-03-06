@@ -199,6 +199,9 @@ def unify(folder:str, types:str, outfile:str) -> None:
           "inventory" in file):
         continue
       
+      elif "unified" in file:
+        continue
+      
       else:
         with open(file, 'r') as f:
           content = f.read()
