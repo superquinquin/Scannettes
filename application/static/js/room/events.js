@@ -161,13 +161,13 @@ socket.on('move_product_to_queue', function(context) {
 socket.on('modify_scanned_item', function(context) {
   //  open modal for scanner to modify product without living camera mode
   let modal = document.getElementById('scanned-item-modal');
-  CreateProductBubble(context, 'scanned-item-modal', admin)
+  CreateProductBubble(context, 'scanned-item-modal', admin);
   modal.style.display = 'flex';
 });
 
 socket.on('modify_scanned_laser_item', function(context) {
   //  open modal for scanner to modify product without living camera mode
-  CreateProductBubble(context, 'scanned-laser-list', admin)
+  CreateProductBubble(context, 'scanned-laser-list', admin);
 });
 
 socket.on('broadcasted_deleted_item', function(context) {
@@ -178,9 +178,10 @@ socket.on('broadcasted_deleted_item', function(context) {
     let items = container.getElementsByClassName('product');
 
     for (var i = index.length - 1; i >= 0; i--) {
-      items[index[i]].remove()
+      items[index[i]].remove();
     }
-    updateRemainingProdcutToScan()
+    updateRemainingProdcutToScan();
+    emptyPlaceholder(tableID);
   }
 });
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -303,21 +304,28 @@ socket.on('close-test-fail-error-window', function(context) {
     let errors = context.errors;
 
     RemoveAutovalModule();
+    rescaleCModalContainer("open");
     document.getElementById('cancel-confirmation').hidden = false;
     document.getElementById('accept-confirmation').hidden = false;
 
     if (context.failed  == 'odoo_exist') {
-      document.getElementById('heading-message').innerHTML = 'Oups Odoo pose problème...';
-      document.getElementById('content-message').innerHTML = "Produits inexistants sur odoo, ou erreur de code barre multiple:<br>" + errors;
+      document.getElementById('heading-message').innerHTML = 'Oups des problèmes sont survenu avec certains produits';
+      document.getElementById('content-message').innerHTML = "<strong>Produits inexistants sur odoo, ou problème de code-barre:</strong><br>" + errors;
 
     } else if (context.failed == 'purchase_exist') {
-      document.getElementById('heading-message').innerHTML = 'Commande: Produit inexistant';
-      document.getElementById('content-message').innerHTML = "Veuillez rajouter les produits suivants dans la commande associée :<br>" + errors;
+      document.getElementById('heading-message').innerHTML = 'Oups des produits sont inexistant dans la commande Odoo';
+      document.getElementById('content-message').innerHTML = "<strong>Veuillez rajouter les produits suivants dans la commande associée :</strong><br>" + errors;
     } else if (context.failed == 'validation_exist') {
-      document.getElementById('heading-message').innerHTML = 'Commande déjà validée...';
-      document.getElementById('content-message').innerHTML = "Il semble que la commande soit déjà validée. Vous n'avez rien a faire, le salon disparaitra lors de la prochaine mise à jour";
+      document.getElementById('heading-message').innerHTML = 'Oups cette commande à déjà été validée';
+      document.getElementById('content-message').innerHTML = "<strong>Il semble que la commande soit déjà validée</strong>.<br>Vous n'avez rien a faire, le salon disparaitra lors de la prochaine mise à jour";
+    } else if (context.failed == 'inv_row') {
+      document.getElementById('heading-message').innerHTML = 'Oups un problème est survenu';
+      document.getElementById('content-message').innerHTML = "<strong>Il n'a pas été possible de créer l'inventaire dans Odoo</strong>.<br>veuillez réessayer plus tard.";
+    } else if (context.failed == "inv_line_row") {
+      document.getElementById('heading-message').innerHTML = 'Inventaire produit déjà existant...';
+      document.getElementById('content-message').innerHTML = "<strong>Les produits suivant sont déjà en cours d'inventaire.</strong><br>Veuillez suprimer les anciennes instances d'inventaire ainsi que celle ci avant de recommencer le processus :<br>" + errors;
     }
-    document.getElementById('accept-confirmation').setAttribute('onclick','CloseCModal()')
+    document.getElementById('accept-confirmation').setAttribute('onclick','CloseCModal()');
   }
 });
 /////////////////////////////////////////////////////////////////////////////////////////////

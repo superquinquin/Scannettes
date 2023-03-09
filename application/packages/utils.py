@@ -240,6 +240,9 @@ def format_error_cases(channel:str, context: dict):
     hint = "La création automatique de produit est désactivée"
     err = "CreationInactivated"
   
+  elif channel == "inv_block":
+    hint = "Déjà dans un inventaire en cours"
+    err = "multiInvOpen"
   
   return {"barcode": context['barcode'],
           "product": context['product'],
@@ -260,12 +263,12 @@ format the errors component into string to be displayed into the client
   s = ""
   for err in errors:
     if err['barcode'] != False and err['product'] != None:
-      s += f" {err['barcode']} - {err['product'].name} - ({err['hint']}),<br>"
+      s += f"&#8226; {err['barcode']}, {err['product'].name} ({err['hint']}),<br>"
     elif err['barcode'] == False and err['product'] != None:
-      s += f" {err['product'].name} - ({err['hint']}),<br>"
+      s += f"&#8226; {err['product'].name} ({err['hint']}),<br>"
     elif err['barcode'] == False and err['product'] == None:
-      s += f"produit inconnu - ({err['hint']}),<br>"
+      s += f"&#8226; produit inconnu ({err['hint']}),<br>"
     elif err['barcode'] != False and err['product'] == None:
-      s += f" {err['barcode']} - ({err['hint']}),<br>"
+      s += f"&#8226; {err['barcode']} ({err['hint']}),<br>"
   
   return s.rstrip(',<br>')

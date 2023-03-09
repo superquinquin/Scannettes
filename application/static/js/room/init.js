@@ -1,8 +1,9 @@
 // INIT SOCKET & VARIABLES
 
 const currentLoc = window.location.href;
+const browser = get_browser_id();
+const agent = get_agent();
 var roomID, suffix = get_suffix(currentLoc);
-var browser = get_browser_id();
 
 var admin =  false;
 const socket = io.connect(config.ADDRESS);
@@ -49,6 +50,27 @@ function get_state() {
     }
   }
   return state
+}
+
+function get_agent() {
+  let agent = "Unknown";
+  const ua = {
+    "Linux": /Linux/i,
+    "Android": /Android/i,
+    "BlackBerry": /BlackBerry/i,
+    "Bluebird": /EF500/i,
+    "Chrome OS": /CrOS/i,
+    "Datalogic": /DL-AXIS/i,
+    "Honeywell": /CT50/i,
+    "iPad": /iPad/i,
+    "iPhone": /iPhone/i,
+    "iPod": /iPod/i,
+    "macOS": /Macintosh/i,
+    "Windows": /IEMobile|Windows/i,
+    "Zebra": /TC70|TC55/i,
+  }
+  Object.keys(ua).map(v => navigator.userAgent.match(ua[v]) && (agent = v));
+  return agent
 }
 //////////////////////////////////////////////////////////////////////
 

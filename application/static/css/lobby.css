@@ -55,6 +55,10 @@ img {
   display: block;
 }
 
+.check {
+  height: 17px;
+  width: 17px;
+}
 
 /* switch  */
 

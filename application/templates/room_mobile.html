@@ -6,7 +6,6 @@
   <title>Salon</title>
   <link rel="stylesheet" media="all" href="/static/css/room_mobile.css">
   <script async src="https://docs.opencv.org/master/opencv.js" type="text/javascript"></script>
-  <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js"></script> -->
   <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
 </head>
 
@@ -95,8 +94,16 @@
   <div id="purchased-block" class="list-block">
     <button class="collaps-block">Produits commandés</button>
     <div class="container">
-      <p id="purchased-situation" class="situation">Aucun produit</p> 
-      <div id="purchased-list" class="list-container"></div>  
+      <div id="sub-container">
+        <div id="search">
+          <input id="search-purchased-product" class="searchbar" type="text" placeholder="Rechercher nom/code barre de produit" onkeyup="searchPurchasedItem(event)">
+          <button id="reset-purchased-search" class="reset-searchbar" onclick="resetSearch('purchased')">&#10006</button>
+        </div>
+        <div>
+          <p id="purchased-situation" class="situation">Aucun produit</p> 
+          <div id="purchased-list" class="list-container"></div>  
+        </div>
+      </div>
     </div>
     <button id="del-from-purchased" class="btn" onclick="GenerateDelConfimartion('purchased-list')" hidden>Supprimer</button>
   </div>
@@ -105,9 +112,9 @@
     <button class="collaps-block">Produits vérifiés</button>
     <div class="container">
       <div id="sub-container">
-        <div id="verified-search">
-          <input id="search-product" type="text" placeholder="Rechercher nom/code barre de produit" onkeyup="searchVerifiedItem(event)">
-          <button id="reset-product-search" onclick="resetVerifiedSearch()">&#10006</button>
+        <div id="search">
+          <input id="search-verified-product" class="searchbar" type="text" placeholder="Rechercher nom/code barre de produit" onkeyup="searchVerifiedItem(event)">
+          <button id="reset-verified-search" class="reset-searchbar" onclick="resetSearch('verified')">&#10006</button>
         </div>
         <div>
           <p id="verified-situation" class="situation">Aucun produit</p>
