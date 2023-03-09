@@ -167,7 +167,8 @@ function CreateProductBubble(context, tableID, admin) {
   
     let inp = document.createElement('input');
     inp.classList.add('mod-input');
-    inp.setAttribute('type', 'text');
+    inp.setAttribute('type', 'number');
+    inp.setAttribute('onclick', 'elevate(this)');
     inp.setAttribute('onkeydown', 'acceptModFromKey(this)')
     inpBlock.appendChild(inp);
     inputMod.appendChild(inpBlock)

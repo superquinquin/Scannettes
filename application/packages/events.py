@@ -555,7 +555,6 @@ def validate_purchase(context):
            context)
     
     else: 
-      # state['string_list'] = ', '.join(list(filter(lambda x: type(x) != bool, state['item_list'])))
       msg = format_error_client_message(state['errors'])
       emit('close-test-fail-error-window', 
            {"errors": msg,

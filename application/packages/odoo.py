@@ -825,15 +825,23 @@ class Odoo:
     odoo_exist = self.check_item_odoo_existence(inventory.table_done)
     if odoo_exist['validity'] == False:
       # DATA VALIDITY IS TO BE PASSED TO ODOO
-      return {'validity': False, 'failed': 'odoo_exist', 'item_list': odoo_exist['item_list']}
+      return {'validity': False, 'failed': 'odoo_exist', 'errors': odoo_exist['errors']}
     
     print('test1 passed')
-    c = self.create_stock_inventory_row(inventory)
-    c = self.create_stock_inventory_line_row(inventory, c)
-    c = self.propagate_start(c)
-    self.propagate_validate(c, autoval)
+    p1 = self.create_stock_inventory_row(inventory)
+    if p1['validity'] == False:
+      # fail at creating a stock.inventory row
+      return {'validity': False, 'failed': 'inv_row', 'errors': p1['errors']}
     
-    return {'validity': True, 'failed': 'none', 'item_list': []}
+    p2 = self.create_stock_inventory_line_row(inventory, p1['container'])
+    if p2['validity'] == False:
+      # fail at creating one or more stock.inventory.line
+      return {'validity': False, 'failed': 'inv_line_row', 'errors': p2['errors']}
+    
+    
+    c = self.propagate_start(p2['container'])
+    self.propagate_validate(c, autoval)
+    return {'validity': True, 'failed': 'none', 'errors': []}
 
 
 
@@ -841,30 +849,49 @@ class Odoo:
     """create a 'stock.inventory' container to be filled with inventory lines"""
     date = datetime.now().strftime("%d-%m-%Y")
     name = f'{inventory.name} {date}'
+    validity = True
+    try:
+      container = self.create('stock.inventory', 
+                              {'name': name,
+                                'filter': 'categories',
+                                'location_id': 12
+                                })
+    except Exception:
+      # handle odoo errors on row creation 
+      container = None
+      validity = False
     
-    return self.create('stock.inventory', {'name': name,
-                                          'filter': 'categories',
-                                          'location_id': 12
-                                          })
-
-
-
+    return {"validity": validity, "container": container, "errors": []}
+      
+      
   def create_stock_inventory_line_row(self, inventory:Purchase, container: object):
     """Fill the odoo 'stock.inventory' container with 'stock.inventory.line'
     records from purchase.table_done"""
+    validity, errors = True, []
     _,_,records = inventory.get_table_records()
     for r in records:
       product = self.get('product.product', [('id', '=', r['id'])])
       uom = product.product_tmpl_id.uom_id.id
-      self.create('stock.inventory.line', 
-        {
-          'product_qty': r['qty_received'],
-          'product_id': r['id'],
-          'product_uom_id': uom,
-          'location_id': 12,
-          'inventory_id': container.id,
-        })    
-    return container
+      try:
+        self.create('stock.inventory.line', 
+          {
+            'product_qty': r['qty_received'],
+            'product_id': r['id'],
+            'product_uom_id': uom,
+            'location_id': 12,
+            'inventory_id': container.id,
+          })
+        
+      except Exception:
+        #handle odoo erppeek erros
+        validity = False
+        errors.append(format_error_cases("inv_block", 
+                                         {"barcode": product.barcode, 
+                                          "product": product
+                                          })
+                      )
+ 
+    return {"validity": validity, "container": container, "errors": errors}
 
   def propagate_start(self, container:object):
     """use odoo action_start method to propagate inventory creation events"""

@@ -152,6 +152,7 @@ function acceptMod(element) {
 
 
   if (/^\d+\.\d+$|^\d+$/.test(newQty)) {
+    scrolltopAfterElevate();
     receiver.innerHTML = newQty;
     input.value = '';
 
@@ -305,10 +306,54 @@ function searchVerifiedItem(e) {
   }
 }
 
-function resetVerifiedSearch() {
-  document.getElementById('search-product').value = '';
-  searchVerifiedItem({key: ''});
-  document.getElementById('search-product').blur()
+
+function searchVerifiedItem(e) {
+  if (e.key == 'Enter') {
+    document.getElementById('search-product').blur()
+  } else {
+    search_into_container(e, 'verified-list', 'search-verified-product')
+  }
+}
+
+function searchPurchasedItem(e) {
+  if (e.key == 'Enter') {
+    document.getElementById('search-product').blur()
+  } else {
+    search_into_container(e, 'purchased-list', 'search-purchased-product')
+  }
+}
+
+function search_into_container(e, c, inpfield) {
+  let container = document.getElementById(c);
+  let search = document.getElementById(inpfield).value.toLowerCase();
+  if (search == '') {
+    for (product of container.getElementsByClassName('product')) {
+      product.hidden = false;
+    }
+  } else {
+    for (product of container.getElementsByClassName('product')) {
+      let name = product.getElementsByClassName('product-name')[0].innerHTML.toLowerCase();
+      let barcode =  product.getElementsByClassName('code-barre')[0].innerHTML.toLowerCase();
+
+      if (name.includes(search) || barcode.includes(search)) {
+        product.hidden = false;
+      } else {
+        product.hidden = true;
+      }
+    } 
+  }
+} 
+
+function resetSearch(list) {
+  if (list == "purchased") {
+    document.getElementById('search-purchased-product').value = '';
+    searchPurchasedItem({key: ''});
+    document.getElementById('search-purchased-product').blur();
+  } else if (list == "verified") {
+    document.getElementById('search-verified-product').value = '';
+    searchVerifiedItem({key: ''});
+    document.getElementById('search-verified-product').blur();
+  }
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -330,6 +375,7 @@ function openCModal(headerMsg, bodyMsg, closeFunc, autoVal) {
   document.getElementById('html').style.overflowY = 'hidden';
   document.getElementById('heading-message').innerHTML = headerMsg;
   document.getElementById('content-message').innerHTML = bodyMsg;
+  rescaleCModalContainer()
   if (autoVal) {
     autoValidationModule();
   }
@@ -373,12 +419,31 @@ function RemoveAutovalModule() {
   }
 }
 
+function rescaleCModalContainer(action) {
+  let ch = document.getElementById('confirmation-container').clientHeight;
+  let cw = document.getElementById('confirmation-container').clientWidth;
+  let h = document.getElementById('confirmation-container').style.height;
+  let w = document.getElementById('confirmation-container').style.width;
+  // apply rescaling for computer screen on error modal
+  if (action == "open" && ch == 250 && cw == 300) {
+    document.getElementById('confirmation-container').style.height = "80%";
+    document.getElementById('confirmation-container').style.width = "50%";
+  } else if (action == "open" && h == "80%" && w == "50%") {
+    document.getElementById('confirmation-container').style.height = "250px";
+    document.getElementById('confirmation-container').style.width = "300px";
+  } else if (action == "close") {
+    document.getElementById('confirmation-container').style.height = "250px";
+    document.getElementById('confirmation-container').style.width = "300px";
+  }
+}
+
 function CloseCModal() {
   document.getElementById('confirmation-hub-modal').style.display = 'none';
   document.getElementById('html').style.overflowY = 'visible';
   document.getElementById('cancel-confirmation').hidden = false;
   document.getElementById('accept-confirmation').hidden = false;
   RemoveAutovalModule();
+  rescaleCModalContainer("close")
 }
 
 function emitCEvent(event) {
@@ -435,7 +500,11 @@ function GenerateDelConfimartion(tableID) {
       if (box[0].checked) {
         let productData = getRecordData(product)
         productArray.push(productData)
-        nameArray.push(productData.name)
+        if (productData.name == "") {
+          nameArray.push(productData.barcode)
+        } else {
+          nameArray.push(productData.name)
+        }
       }
     }
 
@@ -448,7 +517,7 @@ function GenerateDelConfimartion(tableID) {
 
     } else {
       openCModal('Suppression de Produits',
-        "Voulez vous supprimer: <strong>" + nameArray.toString() + "</strong>",
+        "Voulez vous supprimer: <strong>" + nameArray.toString().replace(',',', ') + "</strong>",
         "DelRequest('" + tableID + "')",
         false
       )
@@ -459,9 +528,21 @@ function GenerateDelConfimartion(tableID) {
 ///////////////////////////////////////////////////////////////////////////////
 
 
+function elevate(elm) {
+  if (["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
+    let product = elm.parentElement.parentElement.parentElement;
+    let dist = product.getBoundingClientRect().top;
+    let offset = 5;
+    window.scrollBy(0,dist - offset)
+  }
+}
 
-
-
+function scrolltopAfterElevate(product) {
+ if (product.parentElement=="scanned-laser-list" && 
+ ["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
+  scrolltop()
+ }
+}
 
 
 
