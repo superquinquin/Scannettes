@@ -529,19 +529,21 @@ function GenerateDelConfimartion(tableID) {
 
 
 function elevate(elm) {
-  if (["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
-    let product = elm.parentElement.parentElement.parentElement;
-    let dist = product.getBoundingClientRect().top;
-    let offset = 5;
-    window.scrollBy(0,dist - offset)
-  }
+  let e = elm;
+  // if (["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
+  //   let product = elm.parentElement.parentElement.parentElement;
+  //   let dist = product.getBoundingClientRect().top;
+  //   let offset = 5;
+  //   window.scrollBy(0,dist - offset)
+  // }
 }
 
 function scrolltopAfterElevate(product) {
- if (product.parentElement=="scanned-laser-list" && 
- ["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
-  scrolltop()
- }
+  let p = product;
+//  if (product.parentElement.id=="scanned-laser-list" && 
+//  ["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
+//   scrolltop()
+//  }
 }
 
 
