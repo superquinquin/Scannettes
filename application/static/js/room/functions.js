@@ -152,7 +152,7 @@ function acceptMod(element) {
 
 
   if (/^\d+\.\d+$|^\d+$/.test(newQty)) {
-    scrolltopAfterElevate();
+    scrolltopAfterElevate(product);
     receiver.innerHTML = newQty;
     input.value = '';
 
