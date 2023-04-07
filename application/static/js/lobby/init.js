@@ -45,6 +45,7 @@ roomAssembler.hidden = true;
 // INIT FUNCTION
 root.style.setProperty('--primary', config.COLOR_PRIMARY);
 root.style.setProperty('--secondary', config.COLOR_SECONDARY);
+root.style.setProperty('--ternary', config.COLOR_TERNARY);
 
 function get_suffix(url) {
     let array = url.split('%26id%3D');

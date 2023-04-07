@@ -5,12 +5,14 @@ function CreateProductBubble(context, tableID, admin) {
 
   let product = document.createElement('div');
   product.classList.add('product');
-  if (context.new.length > 0 & context.new.includes(context.barcode)) {
-    product.setAttribute('style','background-color:' + config.COLOR_NEW_ITEMS +';')
-  } else if (context.mod.length > 0 & context.mod.includes(context.barcode)) {
-    product.setAttribute('style','background-color:' + config.COLOR_MOD_ITEMS +';')
+  if (context.new.length > 0 && context.new.includes(context.barcode) && context.name == "") {
+    product.setAttribute('style','background-color:' + config.COLOR_NEW_ITEMS +';');
+  } else if (context.mod.length > 0 && context.mod.includes(context.barcode)) {
+    product.setAttribute('style','background-color:' + config.COLOR_MOD_ITEMS +';');
+  } else if (context.new.length > 0 && context.new.includes(context.barcode) && context.name != "") {
+    product.setAttribute('style','background-color:' + config.COLOR_NEW_ITEMS_IF_EXIST +';');
   } else {
-    product.setAttribute('style','background-color:' + config.COLOR_NORMAL_ITEMS+ ';')
+    product.setAttribute('style','background-color:' + config.COLOR_NORMAL_ITEMS+ ';');
   }
 
   if (admin) {

@@ -529,13 +529,25 @@ function GenerateDelConfimartion(tableID) {
 
 
 function elevate(elm) {
-  let e = elm;
-  // if (["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
-  //   let product = elm.parentElement.parentElement.parentElement;
-  //   let dist = product.getBoundingClientRect().top;
-  //   let offset = 5;
-  //   window.scrollBy(0,dist - offset)
-  // }
+  let product = elm.parentElement.parentElement.parentElement;
+  let container = product.parentElement;
+  let offset = 30;
+
+  if (container.id == "scanned-laser-list" &&
+    ["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
+    let container = document.getElementById("scanned-laser-list");
+    let containerTop = container.offsetTop;
+    let containerScroll = container.scrollTop;
+    let prodTop = product.offsetTop;
+    let prodHeight = product.offsetHeight;
+    let innerPos = prodTop - containerTop;
+  } else if (container.id != "scanned-laser-list" &&
+    ["Linux", "macOS", "Windows", "Chrome OS"].includes(agent) == false) {
+    let currentTop = document.documentElement.scrollTop;
+    let inner = window.innerHeight;
+    let prodBot = product.getBoundingClientRect().bottom;
+    window.scroll(0, currentTop - (inner - prodBot) + offset);
+  }
 }
 
 function scrolltopAfterElevate(product) {
@@ -547,4 +559,8 @@ function scrolltopAfterElevate(product) {
 }
 
 
-
+function closeLaser() {
+  document.getElementById('modal-laser').style.display = "none";
+  document.getElementById('html').style.overflowY = 'visible';
+  modal_btn.disabled = false;
+}

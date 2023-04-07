@@ -90,6 +90,29 @@ class Odoo:
           break
     return barcode
 
+  def get_name_translation(self, product) -> str:
+    """search product template id in translation table
+    IF ANY translation select it as name
+    OTHERWISE keep product template name
+
+    Args:
+        tmpl_id (int): product.template id 
+
+    Returns:
+        str: last updated product name
+    """
+    name = None
+    irt = self.browse('ir.translation', 
+                      [('res_id','=', product.product_tmpl_id.id)])
+    for t in irt:
+      if t.name == 'product.template,name':
+        name = t.value
+        break
+    if not name:
+      name = product.name
+    return name
+
+
   def get_picking_state(self, name: str) -> str:
     """try to search picking state of a purchase
     
@@ -261,7 +284,7 @@ class Odoo:
       if item.state == 'assigned':   
         items.append([self.get_barcode(item), # item.product_id.barcode
                       item.product_id.id, 
-                      re.sub('\[.*?\]', '', item.name).strip(), 
+                      re.sub('\[.*?\]', '', self.get_name_translation(item.product_id)).strip(),
                       item.product_qty, 
                       item.product_qty_package, 
                       0])

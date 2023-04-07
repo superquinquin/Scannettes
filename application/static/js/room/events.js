@@ -14,36 +14,38 @@ socket.on('connect', function() {
 });
 
 socket.on('load_existing_room', function(context) {
-  //header
-  const roomName = document.getElementById('room-name');
-  roomName.textContent = 'Salon : ' + context.room_name;
+  if (!charged) {
+    //header
+    const roomName = document.getElementById('room-name');
+    roomName.textContent = 'Salon : ' + context.room_name;
 
-  const purchaseName = document.getElementById('purchase-name');
-  if (context.purchase_supplier == 'none') {
-    const pur = context.purchase_name;
-    purchaseName.textContent = 'Commande : ' + pur;
+    const purchaseName = document.getElementById('purchase-name');
+    if (context.purchase_supplier == 'none') {
+      const pur = context.purchase_name;
+      purchaseName.textContent = 'Commande : ' + pur;
 
-  } else {
-    const pur = context.purchase_name + ' - ' + context.purchase_supplier;
-    purchaseName.textContent = 'Commande : ' + pur;
+    } else {
+      const pur = context.purchase_name + ' - ' + context.purchase_supplier;
+      purchaseName.textContent = 'Commande : ' + pur;
+    }
+
+    // QUEUE
+    let queueRecords = context.queue_records;
+    fill_table("scanned-list", context, queueRecords, admin)
+
+    // PURCHASED
+    let purchasedRecords = context.entries_records
+    fill_table("purchased-list", context, purchasedRecords, admin)
+
+    // DONE
+    let doneRecords = context.done_records;
+    fill_table("verified-list", context, doneRecords, admin)
+
+    CloseCModal();
+    canvasDimension();
+    scannedProductPlacement();
+    updateRemainingProdcutToScan();
   }
-
-  // QUEUE
-  let queueRecords = context.queue_records;
-  fill_table("scanned-list", context, queueRecords, admin)
-
-  // PURCHASED
-  let purchasedRecords = context.entries_records
-  fill_table("purchased-list", context, purchasedRecords, admin)
-
-  // DONE
-  let doneRecords = context.done_records;
-  fill_table("verified-list", context, doneRecords, admin)
-
-  CloseCModal();
-  canvasDimension();
-  scannedProductPlacement();
-  updateRemainingProdcutToScan();
 });
 
 socket.on('grant_permission', () => {

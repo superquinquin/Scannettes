@@ -152,7 +152,6 @@ var doubleScanBlocker = false;
 var lastScanned = '';
 
 modal_laser_btn.onclick =  function () {
-
   if (modal_laser.style.display != 'flex') {
     modal_laser.style.display = 'flex';
     document.getElementById('html').style.overflowY = 'hidden';

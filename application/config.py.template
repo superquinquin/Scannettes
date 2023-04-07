@@ -35,11 +35,13 @@ class Config(object):
   RECEIVERS: List[str] = ["rx email1", "rx email2"]
 
   #COLORS
-  COLOR_PRIMARY: str = "#fef84c"
+  COLOR_PRIMARY: str = "#fefa85"
   COLOR_SECONDARY: str = "#3C312E"
-  COLOR_NEW_ITEMS: str = "#ff7866"
-  COLOR_MOD_ITEMS: str = "#ff9f40"
-  COLOR_NORMAL_ITEMS: str = "#fffee8"
+  COLOR_TERNARY: str = "#FAEFEF"
+  COLOR_NEW_ITEMS: str = "#FD8789"
+  COLOR_NEW_ITEMS_IF_EXIST: str = "#B5B3D0"
+  COLOR_MOD_ITEMS: str = "#FDC087"
+  COLOR_NORMAL_ITEMS: str = "#CFF2E8"
 
   # CAMERA
   CAMERA_ENABLE_VIDEO: bool = True

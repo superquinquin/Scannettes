@@ -353,6 +353,7 @@ function add_room_btn(input, tableID) {
   let inp = document.createElement("input");
   inp.setAttribute('class','password');
   inp.setAttribute('type','password');
+  inp.setAttribute('autocomplete','off');
   col5.appendChild(inp);
   row.appendChild(col5);
 

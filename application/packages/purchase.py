@@ -475,7 +475,7 @@ class Purchase:
         
     return context
  
-  def _move_scanned_item(self, context: dict) -> dict:
+  def _move_scanned_item(self, odoo: object, context: dict) -> dict:
     """take an item and place it into the queue table
     -item can be in table entries, thus it is moved into next table
     -item can be odoo thus being imported into the purchase object
@@ -505,7 +505,7 @@ class Purchase:
       self.append_new_items(context['code_ean'])
       if context['state'] == 2:
         # found in either product multi or product
-        name = context['product'].name
+        name = odoo.get_name_translation(context['product'])
         id = context['product'].id
 
       elif context['state'] == 3:

@@ -2,6 +2,9 @@ from flask import render_template
 
 
 # route
+def doc():
+  return render_template('doc.html')
+
 def index():
   return render_template('lobby.html')
 

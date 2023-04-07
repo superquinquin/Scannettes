@@ -2,6 +2,7 @@
 :root {
   --primary: #fef84c;
   --secondary: #3C312E;
+  --ternary: #fffee8;
 }
 
 
@@ -49,6 +50,10 @@ img {
   margin-left: 10px;
   margin-right: 10px;
   background-color: var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-right: solid 3px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-left: solid 1px var(--secondary);
   border-radius: 5px;
 }
 
@@ -199,6 +204,7 @@ img {
   border-bottom: solid 3px var(--secondary);
   border-left: solid 1px var(--secondary);
   border-radius: 5px;
+  color: var(--secondary);
   width: 90%;
   padding-left: 7px;
   margin-top: 5px;
@@ -218,6 +224,7 @@ img {
 .product-name {
   font-weight: bolder;
   width: 93%;
+  word-break: break-word;
 }
 
 .core-data {
@@ -253,6 +260,10 @@ img {
   padding: auto;
   background-color: var(--secondary);
   color: var(--primary);
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-right: solid 3px var(--secondary);
   border-radius: 5px;
   margin-left: 15px;
   height: 25px;
@@ -300,6 +311,10 @@ input[type=number] {
   top: -5px;
   background-color: var(--secondary);
   color: var(--primary);
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-right: solid 3px var(--secondary);
   border-radius: 5px;
   padding: auto;
   width: 90px;
@@ -327,7 +342,10 @@ input[type=number] {
 }
 
 .closing-btn {
-  border: solid 1px black;
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-right: solid 3px var(--secondary);
   border-radius: 5px;
   background-color: var(--primary);
   width: 200px;
@@ -341,7 +359,7 @@ input[type=number] {
 .closing-btn:hover {
   cursor: pointer;
   background-color: var(--secondary);
-  color: white;
+  color: var(--primary);
 }
 
 
@@ -352,7 +370,10 @@ input[type=number] {
   height: 30px;
   margin: 10px 10px 10px 5px;
   padding: 5px 10px 5px 10px;
-  border: 1px solid var(--secondary);
+  border-left: solid 1px var(--secondary);
+  border-top: solid 1px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-right: solid 3px var(--secondary);
   border-radius: 5px;
   background-color: var(--primary);
   color: var(--secondary);
@@ -434,6 +455,10 @@ font-size: 20px;
   border-radius: 5px;
   background-color: var(--secondary);
   color: var(--primary);
+  border-top: solid 1px var(--secondary);
+  border-right: solid 3px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-left: solid 1px var(--secondary);
   width: 100px;
   height: 30px;
   padding: 3px 7px 5px 3px;
@@ -519,31 +544,63 @@ font-size: 20px;
 #modal-laser {
   display: none;
   z-index: 1;
-  position: fixed;
-  left: -10px;
-  background-color: var(--secondary);
+  /* position: fixed; */
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  /* background-color: var(--secondary); */
+  background-color: rgba(255, 254, 232, 0.9);
   width: 100%;
   height: 100%;
-  margin-top: 40px;
+  /* margin-top: 40px; */
   padding: 20px 10px 20px 10px;
   border-radius: 10px;
+  overflow-y: hidden;
+  min-height: 400px;
+}
+
+#close-laser {
+  display: block;
+  font-size: 36px;
+  color: var(--secondary);
+  padding: 0;
+  border: none;
+  background: none;
+  float: right;
+  margin-right: 7px;
+  margin-top: 5px;
+}
+
+#close-laser:hover {
+  cursor: pointer;
+  color: #ff4d4d;
+}
+
+
+#laser-title {
+  margin-left: 10px;
 }
 
 #modal-laser-container {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
   margin: auto;
   margin-top: 0px;
   width: 50%;
-  height: 70%;
+  height: 80%;
   background-color: white; /* #fffee8 */
   border-radius: 5px;
-  border-top: solid 1px var(--primary);
-  border-right: solid 3px var(--primary);
-  border-bottom: solid 3px var(--primary);
-  border-left: solid 1px var(--primary);
+  border-top: solid 1px var(--secondary);
+  border-right: solid 3px var(--secondary);
+  border-bottom: solid 3px var(--secondary);
+  border-left: solid 1px var(--secondary);
+  min-height: 400px;
+  max-height: 85%;
 }
 
-#modal-laser-container .scanned-laser-container {
-  max-height: 85%;
+.scanned-laser-container {
+  max-height: 78%;
   overflow-y: auto;
 }
 
@@ -1169,12 +1226,11 @@ input:checked + .slider:before {
   #modal-laser {
     display: none;
     z-index: 1;
-    position: fixed;
-    left: -10px;
-    background-color: var(--secondary);
+    position: absolute;
+    left: -1px;
+    top: -1px;
     width: 100%;
     height: 100%;
-    margin-top: 165px;
     padding: 20px 10px 20px 10px;
     border-radius: 10px;
   }
@@ -1184,14 +1240,16 @@ input:checked + .slider:before {
     margin-top: 0px;
     width: 90%;
     height: 70%;
-    background-color: white;
     border-radius: 5px;
-    border-top: solid 1px var(--primary);
-    border-right: solid 3px var(--primary);
-    border-bottom: solid 3px var(--primary);
-    border-left: solid 1px var(--primary);
-
     font-size: 30px;
+  }
+
+  #close-laser {
+    font-size: 60px;
+  }
+
+  #modal-laser-head {
+    margin-top: 100px;
   }
 
   #modal-laser-container #errorBox {

@@ -10,36 +10,18 @@
 
 <body>
   <div id="head">
-    <img class="head-content" src="{{url_for('static', filename='misc/superquinquin_logo2.png')}}">
-    <h1 id="title" class="head-content">Lobby</h1>
-    <div id="login-container">
-      <a id="login" class="head-content" href="{{ url_for('login') }}"><strong>Se connecter</strong></a>
+    <div id="head-container">
+      <img class="head-content" src="{{url_for('static', filename='misc/superquinquin_logo2.png')}}">
+      <h1 id="title" class="head-content">Lobby</h1>
+      <div id="fields-container">
+        <ul id="head-fields">
+          <li><a id="doc" class="head-content" href="{{ url_for('doc') }}"><strong>Documentation</strong></a></li>
+          <li id="field-space"> </li>
+          <li><a id="login" class="head-content" href="{{ url_for('login') }}"><strong>Se connecter</strong></a></li>
+        </ul>
+        
+      </div>
     </div>
-  </div>
-
-  <div id="room-selection">
-    <h3>Salons ouverts</h3>
-    <table id="room-listing">
-      <tr>
-        <th><button id="checkAll"><span>&#9989;</span> Select</button></th>
-        <th>Nom</th>
-        <th>Commande</th>
-        <th>Etat</th>
-        <th>Date de création</th>
-        <th>Mot de passe</th>
-        <th>Rejoindre</th>
-      </tr>
-    </table>
-  </div>
-  <div id="room-management">
-    <button id="create-btn" class="mngmnt-btn">Créer</button>
-    <button id="del-btn" class="mngmnt-btn">Supprimer</button>
-    <button id="reset-btn" class="mngmnt-btn">Réinitialiser</button>
-    <button id="qrcode-btn" class="mngmnt-btn">QR-code</button>
-  </div>
-
-  <div id="errorBox">
-    <p id="errorText"></p>
   </div>
 
   <div id="creation-modal">
@@ -68,7 +50,7 @@
         <label for="room-name"><strong>Définir un nom (facultatif) :</strong></label>
         <input id="room-name" class="inputs" type="text" value="">
         <label for="room-password"><strong>Définir un mot de passe (facultatif) :</strong></label>
-        <input id="room-password" class="inputs" type="text" value="">
+        <input id="room-password" class="inputs" type="text" value="" autocomplete="off">
         <p id="creation-info"></p>
         <div id="modal-button">
           <button id="CancelRoom">Annuler</button>   
@@ -78,37 +60,64 @@
     </div>
   </div>
 
-  <div id="room-to-verify">
-    <h3>Vérification</h3>
-    <table id="room-verify-listing">
-      <tr>
-        <th>Select</th>
-        <th>Nom</th>
-        <th>Commande</th>
-        <th>Etat</th>
-        <th>Date de création</th>
-        <th>Mot de passe</th>
-        <th>Rejoindre</th>
-      </tr>
-    </table>
-  </div>
-  <div id="room-assembler">
-    <button id="asmbl-btn" class="mngmnt-btn">Assembler</button>
-  </div>
+  <div id="table-container">
+    <div id="room-selection">
+      <h3>Salons ouverts</h3>
+      <table id="room-listing">
+        <tr>
+          <th><button id="checkAll"><span>&#9989;</span> Select</button></th>
+          <th>Nom</th>
+          <th>Commande</th>
+          <th>Etat</th>
+          <th>Date de création</th>
+          <th>Mot de passe</th>
+          <th>Rejoindre</th>
+        </tr>
+      </table>
+      <div id="room-management">
+        <button id="create-btn" class="mngmnt-btn">Créer</button>
+        <button id="del-btn" class="mngmnt-btn">Supprimer</button>
+        <button id="reset-btn" class="mngmnt-btn">Réinitialiser</button>
+        <button id="qrcode-btn" class="mngmnt-btn">QR-code</button>
+      </div>
+    </div>
 
-  <div id="historic">
-    <h3>Historique</h3>
-    <table id="room-historic">
-      <tr>
-        <th>Select</th>
-        <th>Nom</th>
-        <th>Commande</th>
-        <th>Etat</th>
-        <th>Date de validation</th>
-        <th>Mot de passe</th>
-        <th>Rejoindre</th>
-      </tr>
-    </table>
+    <div id="errorBox">
+      <p id="errorText"></p>
+    </div>
+  
+    <div id="room-to-verify">
+      <h3>Vérification</h3>
+      <table id="room-verify-listing">
+        <tr>
+          <th>Select</th>
+          <th>Nom</th>
+          <th>Commande</th>
+          <th>Etat</th>
+          <th>Date de création</th>
+          <th>Mot de passe</th>
+          <th>Rejoindre</th>
+        </tr>
+      </table>
+      <div id="room-assembler">
+        <button id="asmbl-btn" class="mngmnt-btn">Assembler</button>
+      </div>
+    </div>
+
+    <div id="historic">
+      <h3>Historique</h3>
+      <table id="room-historic">
+        <tr>
+          <th>Select</th>
+          <th>Nom</th>
+          <th>Commande</th>
+          <th>Etat</th>
+          <th>Date de validation</th>
+          <th>Mot de passe</th>
+          <th>Rejoindre</th>
+        </tr>
+      </table>
+    </div>
   </div>
   <script type="text/javascript" src="/static/js/lobby/unified.js"></script>
 </body>

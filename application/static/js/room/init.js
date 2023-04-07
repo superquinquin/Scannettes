@@ -3,6 +3,8 @@
 const currentLoc = window.location.href;
 const browser = get_browser_id();
 const agent = get_agent();
+const charged = isCharged();
+
 var roomID, suffix = get_suffix(currentLoc);
 
 var admin =  false;
@@ -30,6 +32,7 @@ suspender.disabled = true;
 ////////////////////////////////////////////////////////////////////
 root.style.setProperty('--primary', config.COLOR_PRIMARY);
 root.style.setProperty('--secondary', config.COLOR_SECONDARY);
+root.style.setProperty('--ternary', config.COLOR_TERNARY);
 
 function get_suffix(url) {
   let array = url.split('%26type%3D');
@@ -125,5 +128,17 @@ function done_room_setup() {
   verifBlock.hidden = true;
   verifier.disabled = true;
   recharger.disabled = true;
+}
+
+function isCharged() {
+  var queue = document.getElementById('scanned-situation');
+  var entries = document.getElementById('purchased-situation');
+  var verified = document.getElementById('verified-situation');
+
+  if (queue.innerHTML != "" && queue.innerHTML == entries.innerHTML && queue.innerHTML == verified.innerHTML) {
+    return false
+  } else {
+    return true
+  }
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////

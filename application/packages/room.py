@@ -196,7 +196,7 @@ class Room:
       ## LOOKING FOR PRODUCT EXISTENCE IN ODOO
       context = self.purchase._state_2_search(odoo, context)
 
-    context = self.purchase._move_scanned_item(context)
+    context = self.purchase._move_scanned_item(odoo, context)
     return context
 
 

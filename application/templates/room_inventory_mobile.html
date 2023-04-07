@@ -37,6 +37,7 @@
 
   <div id="modal-laser">
     <div id="modal-laser-container">
+      <button id="close-laser" onclick="closeLaser()">&#10006</button>
       <div id="modal-laser-head">
         <p id="laser-title"><strong>Veuillez scanner un produit avec un scanner laser</strong></p>
         <input type="text" readonly="readonly" id="laser-output" style="outline: none; border: 0; color: white">
@@ -60,8 +61,8 @@
         <p id="content-message"></p>
       </div>
       <div id="confirmation-container-btn">
-        <button id="cancel-confirmation" onclick="CloseCModal()">Annuler</button>
-        <button id="accept-confirmation">Confirmer</button>
+        <button id="cancel-confirmation" onclick="CloseCModal()"><strong>Annuler</strong></button>
+        <button id="accept-confirmation"><strong>Confirmer</strong></button>
       </div>
     </div>
   </div>
@@ -88,11 +89,11 @@
       <p id="scanned-situation" class="situation">Aucun produit</p>
       <div id="scanned-list" class="list-container"></div>      
     </div>
-    <button id="del-from-queue" class="btn" onclick="GenerateDelConfimartion('scanned-list')" hidden>Supprimer</button>
+    <button id="del-from-queue" class="btn" onclick="GenerateDelConfimartion('scanned-list')" hidden><strong>Supprimer</strong></button>
   </div>
 
   <div id="purchased-block" class="list-block">
-    <button class="collaps-block">Produits commandés</button>
+    <button class="collaps-block">Produits possedés</button>
     <div class="container">
       <div id="sub-container">
         <div id="search">
@@ -105,7 +106,7 @@
         </div>
       </div>
     </div>
-    <button id="del-from-purchased" class="btn" onclick="GenerateDelConfimartion('purchased-list')" hidden>Supprimer</button>
+    <button id="del-from-purchased" class="btn" onclick="GenerateDelConfimartion('purchased-list')" hidden><strong>Supprimer</strong></button>
   </div>
 
   <div id="verified-block" class="list-block">
@@ -122,21 +123,21 @@
         </div>
       </div>
     </div>
-    <button id="del-from-verfied" class="btn" onclick="GenerateDelConfimartion('verified-list')" hidden>Supprimer</button>
+    <button id="del-from-verfied" class="btn" onclick="GenerateDelConfimartion('verified-list')" hidden><strong>Supprimer</strong></button>
   </div>
 
   <div id="closing-option">
     <div id="all-user-close">
-      <button id="closing-room" class="closing-btn">Finir l'inventaire</button>
+      <button id="closing-room" class="closing-btn"><strong>Finir l'inventaire</strong></button>
     </div>
     <div id="admin-close">
       <div id="suspension-block">
-        <button id="room-suspension" class="closing-btn"> Suspendre l'inentaire</button>
+        <button id="room-suspension" class="closing-btn"><strong>Suspendre l'inentaire</strong></button>
       </div id="recharge-block">
       </div>
       <div id="verif-block">
-        <button id="room-recharge" class="closing-btn">Nullifier</button>
-        <button id="admin-validation" class="closing-btn">Validation</button>
+        <button id="room-recharge" class="closing-btn"><strong>Nullifier</strong></button>
+        <button id="admin-validation" class="closing-btn"><strong>Validation</strong></button>
       </div>
     </div>
   </div>
