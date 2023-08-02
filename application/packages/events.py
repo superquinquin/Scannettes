@@ -89,7 +89,7 @@ def verify_logger(context):
 @socketio.on('redirect')
 def redirect(context):
   global data
-    
+  
   id = context['id']
   atype = context['type']
   password = context['password']
@@ -101,10 +101,10 @@ def redirect(context):
   room = data['lobby']['rooms'][id]
   room_token = room.token
 
-  ## bypass pw bugged currently
-  # if password == room.password:
-  # else:
-  #   emit('access_denied', context,include_self=True)
+
+  if data["config"].ACTIVATE_ROOM_PASSWORD is False:
+    room.password = password
+
   if password == room.password:
 
     if suffix == 'lobby' and atype == 'purchase':
