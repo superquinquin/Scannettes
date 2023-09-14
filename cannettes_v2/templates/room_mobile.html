@@ -1,0 +1,146 @@
+<!doctype html>
+
+<html id="html" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Salon</title>
+  <link rel="stylesheet" media="all" href="/static/css/room_mobile.css">
+  <script async src="https://docs.opencv.org/master/opencv.js" type="text/javascript"></script>
+  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div id="room-header">
+    <h3 id="room-name">Salon : </h3>
+    <h5 id="purchase-name">Commande : </h5>
+  </div>
+
+  <div id="scanner-laser-panel">
+    <div id="centered">
+      <button id="display_modal" class="scanner-btn"><img src="/static/misc/camera-icon.png"></button>
+      <button id="display_laser" class="scanner-btn"><img src="/static/misc/laser-icon.png"></button>
+    </div>
+  </div>
+
+  <div id="modal">
+    <div id="modal_block">
+      <div id="videobox">
+        <canvas id="canvas"></canvas>
+        <video autoplay="true" id="videoElement"></video>
+        <canvas id="cropped-canvas"></canvas>
+      </div>  
+      <div id="scanned-item-modal" style="display: none;">
+        <p class="situation"></p>
+      </div>      
+    </div>
+  </div>
+
+  <div id="modal-laser">
+    <div id="modal-laser-container">
+      <button id="close-laser" onclick="closeLaser()">&#10006</button>
+      <div id="modal-laser-head">
+        <p id="laser-title"><strong>Veuillez scanner un produit avec un scanner laser</strong></p>
+        <input type="text" readonly="readonly" id="laser-output" style="outline: none; border: 0; color: white">
+        <div id="errorBox">
+          <p id="errorText"></p>
+        </div>
+      </div>
+      <div class="scanned-laser-container">
+        <p id="scanned-laser-situation" class="situation">Aucun produit</p>
+        <div id="scanned-laser-list" class="list-laser-container"></div>      
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmation-hub-modal" style="display: none;">
+    <div id="confirmation-container">
+      <div id="confirmation-container-heading">
+        <p id="heading-message"></p>
+      </div>
+      <div id="confirmation-container-content">
+        <p id="content-message"></p>
+      </div>
+      <div id="confirmation-container-btn">
+        <button id="cancel-confirmation" onclick="CloseCModal()"><strong>Annuler</strong></button>
+        <button id="accept-confirmation"><strong>Confirmer</strong></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toTop" style="display: none;">
+    <div id="totop-container">
+      <button id="totop-btn" onclick="scrolltop()">
+        <div id="caret"><p>&#8248</p></div>
+        <div id="content"><p><strong>Top</strong></p></div>
+      </button>
+    </div>
+  </div>  
+
+  <div id="stats-block">
+    <p>Il reste </p>
+    <p id="nb"><strong>XX</strong></p>
+    <p> produits à scanner</p>
+  </div>
+
+  <div id="scanned-block" class="list-block">
+    <h5 class="title">Produits scannés</h5>
+    <div class="scanned-container">
+      <p id="scanned-situation" class="situation">Aucun produit</p>
+      <div id="scanned-list" class="list-container"></div>      
+    </div>
+    <button id="del-from-queue" class="btn" onclick="GenerateDelConfimartion('scanned-list')" hidden><strong>Supprimer</strong></button>
+  </div>
+
+  
+  <div id="purchased-block" class="list-block">
+    <button class="collaps-block">Produits commandés</button>
+    <div class="container">
+      <div id="sub-container">
+        <div id="search">
+          <input id="search-purchased-product" class="searchbar" type="text" placeholder="Rechercher nom/code barre de produit" onkeyup="searchPurchasedItem(event)">
+          <button id="reset-purchased-search" class="reset-searchbar" onclick="resetSearch('purchased')">&#10006</button>
+        </div>
+        <div>
+          <p id="purchased-situation" class="situation">Aucun produit</p> 
+          <div id="purchased-list" class="list-container"></div>  
+        </div>
+      </div>
+    </div>
+    <button id="del-from-purchased" class="btn" onclick="GenerateDelConfimartion('purchased-list')" hidden><strong>Supprimer</strong></button>
+  </div>
+
+  <div id="verified-block" class="list-block">
+    <button class="collaps-block">Produits vérifiés</button>
+    <div class="container">
+      <div id="sub-container">
+        <div id="search">
+          <input id="search-verified-product" class="searchbar" type="text" placeholder="Rechercher nom/code barre de produit" onkeyup="searchVerifiedItem(event)">
+          <button id="reset-verified-search" class="reset-searchbar" onclick="resetSearch('verified')">&#10006</button>
+        </div>
+        <div>
+          <p id="verified-situation" class="situation">Aucun produit</p>
+          <div id="verified-list" class="list-container"></div>
+        </div>
+      </div>
+    </div>
+    <button id="del-from-verfied" class="btn" onclick="GenerateDelConfimartion('verified-list')" hidden><strong>Supprimer</strong></button>
+  </div>
+
+  <div id="closing-option">
+    <div id="all-user-close">
+      <button id="closing-room" class="closing-btn"><strong>Finir la réception</strong></button>
+    </div>
+    <div id="admin-close">
+      <div id="suspension-block">
+        <button id="room-suspension" class="closing-btn"><strong>Suspendre la réception</strong></button>
+      </div id="recharge-block">
+      <button id="room-recharge" class="closing-btn"><strong>Recharger</strong></button>
+      </div>
+      <div id="verif-block">
+        <button id="admin-validation" class="closing-btn"><strong>Validation</strong></button>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="/static/js/room/unified_purchase.js"></script>
+</body>
+</html>
