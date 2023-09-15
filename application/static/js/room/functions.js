@@ -126,16 +126,12 @@ function getRecordData(product) {
     table = document.getElementById('scanned-list');
   }
 
-  let index;
   let tableElements = table.getElementsByClassName('product');
   for (var i = 0; i < tableElements.length; i++) {
-    let id = tableElements[i].getElementsByClassName('product-id')[0].innerHTML;
-    let ean = tableElements[i].getElementsByClassName('code-barre')[0].innerHTML;
-    if ((id == productId & id != "0") | ean == barcode) {
-      index = i;
+    if (tableElements[i] == product) {
+      var index = i;
     }
   }
-
   return {'name':name, 'id': productId, 'barcode':barcode,
           'qty': qty, 'pckg_qty': pkgQty, 'qty_received': receivedQty,
           'tableID':tableID, 'index': index}
@@ -249,17 +245,17 @@ function DelRequest(tableID) {
   for (const product of items) {
     let box = product.getElementsByClassName('check');
     if (box[0].checked) {
-      let productData = getRecordData(product)
-      index.push(productData.index)
+      let productData = getRecordData(product);
+      index.push(productData.index);
     }
   }
 
   context = {'index': index, 'fromTable': tableID, 
               'roomID': roomID, 'suffix': suffix}
 
-  socket.emit('del_item', context)
-  CloseCModal()
-  UncheckBox(tableID)
+  socket.emit('del_item', context);
+  CloseCModal();
+  UncheckBox(translateTableID(tableID));
 }
 
 function UncheckBox(tableID) {
@@ -279,47 +275,22 @@ function UncheckBox(tableID) {
 
 // SEARCH VERIFIED ITEM BAR
 ////////////////////////////////////////////////////////////////////////////////////////
-function searchVerifiedItem(e) {
-  if (e.key == 'Enter') {
-    document.getElementById('search-product').blur()
-  } else {
-    let container = document.getElementById('verified-list');
-    let search = document.getElementById('search-product').value.toLowerCase();
-  
-    if (search == '') {
-      for (product of container.getElementsByClassName('product')) {
-        product.hidden = false;
-      }
-  
-    } else {
-      for (product of container.getElementsByClassName('product')) {
-        let name = product.getElementsByClassName('product-name')[0].innerHTML.toLowerCase();
-        let barcode =  product.getElementsByClassName('code-barre')[0].innerHTML.toLowerCase();
-  
-        if (name.includes(search) || barcode.includes(search)) {
-          product.hidden = false;
-        } else {
-          product.hidden = true;
-        }
-      } 
-    }
-  }
-}
-
 
 function searchVerifiedItem(e) {
   if (e.key == 'Enter') {
-    document.getElementById('search-product').blur()
+    document.getElementById('search-verified-product').blur();
+    search_into_container(e, 'verified-list', 'search-verified-product');
   } else {
-    search_into_container(e, 'verified-list', 'search-verified-product')
+    search_into_container(e, 'verified-list', 'search-verified-product');
   }
 }
 
 function searchPurchasedItem(e) {
   if (e.key == 'Enter') {
-    document.getElementById('search-product').blur()
+    document.getElementById('search-purchased-product').blur();
+    search_into_container(e, 'purchased-list', 'search-purchased-product');
   } else {
-    search_into_container(e, 'purchased-list', 'search-purchased-product')
+    search_into_container(e, 'purchased-list', 'search-purchased-product');
   }
 }
 
