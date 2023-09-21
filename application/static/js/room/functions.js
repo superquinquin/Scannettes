@@ -128,7 +128,9 @@ function getRecordData(product) {
 
   let tableElements = table.getElementsByClassName('product');
   for (var i = 0; i < tableElements.length; i++) {
-    if (tableElements[i] == product) {
+    let id = tableElements[i].getElementsByClassName('product-id')[0].innerHTML;
+    let ean = tableElements[i].getElementsByClassName('code-barre')[0].innerHTML;
+    if ((tableElements[i] == product) || ( tableID == "scanned-laser-list" && ((id == productId & id != "0") | ean == barcode))) {
       var index = i;
     }
   }
