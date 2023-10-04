@@ -21,7 +21,7 @@ def set_user_config():
         print(" | Registering user...")
         username = input("Username: ")
         password = sha256(getpass.getpass("Password: ").encode("utf-8")).hexdigest()
-        payload = {"username": username, "password": password, "authorization": [""]}
+        payload = {"username": username, "password": password, "authorizations": ["admin"]}
         while secrets["users"].get(username):
             print('... this username already exist. please enter another username')
             username = input("Username: ")

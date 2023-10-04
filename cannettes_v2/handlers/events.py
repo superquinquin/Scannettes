@@ -1,4 +1,4 @@
-from flask import url_for, current_app, request, Response
+from flask import url_for, current_app
 from flask_socketio import emit, join_room
 from typing import Dict, List, Tuple, Any
 import json
@@ -8,6 +8,7 @@ from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.tools.pdf import PDF
 from cannettes_v2.authenticator import Authenticator
+from cannettes_v2.decorators import protected
 from cannettes_v2.utils import (
     get_passer,
     get_task_permission,
@@ -18,6 +19,8 @@ from cannettes_v2.utils import (
 
 Cache = Dict[str, Any]
 Payload = Dict[str, Any]
+
+
 
 def task_permission_redirector(data, context) -> bool:
     permission = get_task_permission(data, context["suffix"])
@@ -42,9 +45,13 @@ def verify_loggin(context: Payload):
         **users
     ).authenticate(**context)
 
+    # resp = make_response(url_for("cannettes_bp.index_admin"))
+    # resp.set_cookie("session", auth["token"])
+    # return resp
+    
     emit(
         "on-authentication", 
-        {"auth": auth, "redirect": url_for("cannettes_bp.index")},
+        {"auth": auth, "redirect": url_for("cannettes_bp.index_admin")},
         include_self=True,
     )
 
@@ -89,7 +96,7 @@ def verify_logger(context):
 
 
 @cannette.socketio.on("redirect")
-def redirect(context):
+def rredirect(context):
     global data
 
     id = context["id"]
@@ -276,6 +283,7 @@ def joining_room(room):
 
 
 @cannette.socketio.on("create_room")
+@protected(auth_level="admin")
 def create_room(input):
     global data
     print("create room")

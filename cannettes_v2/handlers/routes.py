@@ -1,6 +1,8 @@
-from flask import render_template
+from flask import render_template, request
 from flask import Blueprint
 
+from cannettes_v2.decorators import protected
+from cannettes_v2.authenticator import Authenticator
 
 cannettes_bp = Blueprint('cannettes_bp', __name__)
 
@@ -8,17 +10,23 @@ cannettes_bp = Blueprint('cannettes_bp', __name__)
 def doc():
     return render_template("doc.html")
 
-@cannettes_bp.route("/lobby")
-def index():
-    return render_template("lobby.html")
-
-@cannettes_bp.route("/lobby&id=<id>&token=<token>")
-def index_admin(id, token):
-    return render_template("lobby.html")
-
-@cannettes_bp.route("/lobby/login")
+@cannettes_bp.route("/login")
 def login():
     return render_template("login.html")
+
+@cannettes_bp.route("/setJWT", methods = ['POST'])
+def set_cookie():
+    return Authenticator.login(request)
+
+@cannettes_bp.route("/lobby")
+def index():
+    return render_template("std/lobby.html")
+
+@cannettes_bp.route("/admin/lobby") #"/lobby&id=<id>&token=<token>"
+@protected(auth_level="admin")
+def index_admin(): #id, token
+    return render_template("admin/lobby.html")
+
 
 @cannettes_bp.route("/lobby/<id>&type=purchase&roomtoken=<room_token>")
 def get_purchase_room(id, room_token):

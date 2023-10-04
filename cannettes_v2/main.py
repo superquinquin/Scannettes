@@ -123,14 +123,7 @@ class Cannettes(object):
         unify("cannettes_v2/static/js/login", "js", "unified")
         unify("cannettes_v2/static/js/room", "js", "unified_purchase")
         unify("cannettes_v2/static/js/room", "js", "unified_inventory")     
-        
-        
-        @self.app.before_request
-        def logme():
-            request.cache = self.cache
-            self.logger.log.info("i am bae")
-            
-        
+                
         self.app.users = users
         self.app.cache = self.cache
         self.socketio.init_app(self.app)
