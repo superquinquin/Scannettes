@@ -20,7 +20,6 @@ const room_to_verify_list = document.getElementById('room-verify-listing');
 const room_historic = document.getElementById('room-historic');
 const verifySection = document.getElementById('room-to-verify');
 const historicSection = document.getElementById('historic');
-const checkAll = document.getElementById('checkAll');
 //Modal
 const roomName = document.getElementById('room-name');
 const roomPassword = document.getElementById('room-password');

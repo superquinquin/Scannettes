@@ -9,19 +9,20 @@
     <title>Login</title>
   </head>
   <body>
-    <div id="logger">
-      <div class="field">
-        <label for="identifiant">Identifiant: </label>
-        <input id="identifiant" type="text" value="">
+    <form action = "/setJWT" method = "POST">
+      <div id="logger">
+        <div class="field">
+          <label for="identifiant">Identifiant: </label>
+          <input id="identifiant" name="username" type="text" value="">
+        </div>
+        <div class="field">
+          <label for="password">Mot de passe: </label>
+          <input id="password" name="password" type="password" value="">
+        </div>
+        <button id="connection-btn" type="submit">Connexion</button>
+        <p id="error-msg"></p>
       </div>
-      <div class="field">
-        <label for="password">Mot de passe: </label>
-        <input id="password" type="password" value="">
-      </div>
-      <button id="connection-btn">Connexion</button>
-      <p id="error-msg"></p>
-    </div>
-
+    </form>
     <script type="text/javascript" src="/static/js/login/unified.js"></script>
   </body>
 </html>

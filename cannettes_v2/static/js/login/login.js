@@ -15,7 +15,7 @@ const connectionBtn = document.getElementById('connection-btn')
 connectionBtn.onclick = function () { 
   let id = IDInput.value;
   let password = passwordInput.value;
-  socket.emit('authenticate', {'username': id, 'password': password})
+  // socket.emit('authenticate', {'username': id, 'password': password})
 }
 
 socket.on('on-authentication', (context) => {
@@ -23,7 +23,9 @@ socket.on('on-authentication', (context) => {
   if (context.auth.status == "success") {
     console.log("set cookie")
     document.cookie = context.auth.cookie;
-    window.location = context.redirect;
+    console.log(document.cookie);
+    // window.location = context.redirect;
+
   } else {
     passwordInput.value = '';
     errorMsg.innerHTML = context.auth.reasons;
