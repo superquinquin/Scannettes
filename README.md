@@ -64,9 +64,8 @@ chmod 777 volume
 * `.env` will contains all api secrets and credentials for running the app. Those will be parsed and exported in `cannettes_config.yaml` at init time.
 
 #### Scannettes configurations
-```bash
-nano cannettes_configs/cannettes_config.yaml.example
-```
+Generate and fill `cannettes_configs/cannettes_config.yaml` from `cannettes_configs/cannettes_config.yaml.example`
+
 * Flask configuration : [Flask server parameters](https://flask.palletsprojects.com/en/3.0.x/api/#flask.Flask)
 * Flask Soketio configuration : [Flask SocketIo parameters](https://flask-socketio.readthedocs.io/en/latest/api.html#flask_socketio.SocketIO)
 * Authentication JWT cookie configuration : [Cookie](https://flask.palletsprojects.com/en/3.0.x/api/#flask.Response.set_cookie)
@@ -74,10 +73,7 @@ nano cannettes_configs/cannettes_config.yaml.example
 For env variable that will be imported into the configuration file, annotate ${<ENV_VAR_NAME>} for the specific fields you want to apply as an env variable. The config parser will retrieve and fill the config file with the env variables
 
 #### Env
-```bash
-nano .env.example
-```
-Output the .env file after filling the différents ENV variable. It is recommended to set Odoo api credentials and SMTP server credentials as env variable.
+Generate .env file after filling the différents ENV variable. It is recommended to set Odoo api credentials and SMTP server credentials as env variable. **todo: create template**
 
 #### Create Users
 ```bash
@@ -92,9 +88,6 @@ You can whenever you want add a new users to by reusing the tool. It will automa
 For removing users, `nano cannettes_configs/secrets.yaml` and manually remove the users you want to delete.
 
 ### Docker-compose
-```bash
-nano docker-compose.yml.template
-```
 Save your docker-compose file as `docker-compose.yml`. No particular inputs are needed unless you want to custumize further your docker setup.
 
 ### Launching
