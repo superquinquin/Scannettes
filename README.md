@@ -28,6 +28,7 @@ Maybe those points will pop as Github issues if I have the time.
 **Backend**
 * [ ] move from PipEnv to Poetry. propagate those changes in the Docker file.
 * [x] Better config system and config injection.
+* [ ] Config validation ( probably in CUE lang )
 * [ ] Env variable parser for injecting those into the config yaml at run time.
 * [x] Authentication System based On JWT. Controle admin endpoint access.
 * [ ] More consistent variable naming accross Backend & Frontend.
