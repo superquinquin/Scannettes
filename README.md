@@ -1,17 +1,17 @@
 # Scannettes
 Open source Flask webapp for delivieries and inventory management for COOP with an ODOO backend.
 
-* [Guideslines](Contributions-Guideslines)
-  * [How to contribute](How-to-contribute)
-  * [On what to contribute](On-what-to-contribute)
-* [Installation](Installation)
-  * [Setup](Setup)
-  * [Configuration](Configuration)
-  * [Docker-compose](Docker-compose)
-  * [Launching](Launching)
+* [Guideslines](#Contributions-Guideslines)
+  * [How to contribute](#How-to-contribute)
+  * [On what to contribute](#On-what-to-contribute)
+* [Installation](#Installation)
+  * [Setup](#Setup)
+  * [Configuration](#Configuration)
+  * [Docker-compose](#Docker-compose)
+  * [Launching](#Launching)
 
 
-## Contributions-Guideslines
+## Contributions Guideslines
 All development efforts are put into v1.0 branch, unless we need to fix a bug in production.
 
 ### How to contribute
