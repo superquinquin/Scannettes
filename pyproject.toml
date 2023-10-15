@@ -1,0 +1,72 @@
+[tool.poetry]
+name = "cannettes_v2"
+version = "1.0.0"
+description = "Flask app handling inventories and deliveries for Odoo based FoodCoop"
+license = "GPL-3.0-only"
+authors = ["Romain Viry <rom88.viry@gmail.com>"]
+maintainers = ["Romain Viry <rom88.viry@gmail.com>"]
+repository = "https://github.com/superquinquin/inventory-bl-scanner-webapp"
+keywords = ["inventories", "deliveries", "scanner", "Odoo"]
+
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.11"
+Flask = "==2.2.3"
+Flask-SocketIO = "==5.3.2"
+python-socketio = "==5.7.2"
+python-engineio = "==4.3.4"
+Werkzeug = "==2.2.3"
+numpy = "==1.21.5"
+pandas = "==1.3.5"
+gevent = "^23.9.1"
+pyzbar = "^0.1.9"
+python-dateutil = "^2.8.2"
+ERPpeek = "^1.7.1"
+uwsgi = "^2.0.22"
+importlib-metadata = "^6.8.0"
+fpdf2 = "^2.7.6"
+Pillow = "^10.0.1"
+qrcode = "^7.4.2"
+pyjwt = "^2.8.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "==6.2.5"
+pytest-cov = "^3.0.0"
+pytest-flakes = "^4.0.5"
+black = "^22.6.0"
+docformatter = "~1.6.0"
+isort = "~5.12.0"
+commitizen = "^2.27.1"
+pre-commit = "^2.19.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+tag_format = "$version"
+version_files = [
+    "cannettes_v2/__init__.py:__version__", 
+    "pyproject.toml:^version"
+]
+major_version_zero = true
+update_changelog_on_bump = true
+
+[tool.black]
+line-length = 90
+target-version = ["py37", "py38", "py39", "py310"]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.mypy_cache
+    | _build
+    | build
+    | dist
+  )/
+)
+'''
