@@ -3,7 +3,7 @@ from flask_socketio import emit, join_room
 from typing import Dict, List, Tuple, Any
 import json
 
-from cannettes_v2.main import cannette
+from wsgi_v2 import cannette
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.tools.pdf import PDF
@@ -211,7 +211,7 @@ def rredirect(context):
 @cannette.socketio.on("join_lobby")
 def join_lobby():
     cache = current_app.cache
-
+    print('joining lobby')
     context = {
         "room": [],
         "selector": [],

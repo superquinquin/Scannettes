@@ -1,21 +1,17 @@
 
-
-import sys
-import yaml
-from yaml import SafeLoader
-from flask import Flask, request
+from os import environ
+from flask import Flask
 from flask_socketio import SocketIO
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 
 from cannettes_v2.odoo.deliveries import Deliveries
 from cannettes_v2.odoo.inventories import Inventories 
-
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.tools.backup import Caching, BackUp, Update
 from cannettes_v2.tools.log import Logger
 from cannettes_v2.authenticator import Authenticator
 from cannettes_v2.utils import unify
-from cannettes_v2.parsers import parse_client_config, parse_config
+from cannettes_v2.parsers import parse_client_config, get_config
 
 banner = """\
       ___           ___           ___           ___           ___                                       ___           ___     
@@ -128,14 +124,14 @@ class Cannettes(object):
         self.app.cache = self.cache
         self.socketio.init_app(self.app)
 
+    
+    @classmethod
+    def create_app(cls):
+        cfg = get_config(environ.get("CONFIG_FILEPATH", "./cannettes_configs/cannettes_config.yaml"))
+        self = cls(**cfg)
+        import cannettes_v2.handlers.events
+        return self
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(self, *args: Any, **kwds: Any) -> Any: 
         print(banner)
-        self.socketio.run(self.app)
-
-
-
-
-cfg = parse_config(yaml.load(open("cannettes_configs/cannettes_config.yaml"), SafeLoader))
-cannette = Cannettes(**cfg)
-import cannettes_v2.handlers.events
+        return self.socketio.run(self.app)
