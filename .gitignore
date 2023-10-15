@@ -4,10 +4,11 @@ application/static/js/config.js
 application/static/js/*/unified*.js
 application/whitelist.txt
 volume/
+dist/
 *.pickle
 *.log
 *.pyc
-*.yaml
+cannettes_configs/*.yaml
 .venv
 docker-compose.yml
 test.py
