@@ -3,6 +3,7 @@ Open source Flask webapp for delivieries and inventory management for COOP with 
 
 * [Guideslines](#Contributions-Guideslines)
   * [How to contribute](#How-to-contribute)
+  * [Dev setup](#Dev-setup)
   * [On what to contribute](#On-what-to-contribute)
 * [Installation](#Installation)
   * [Setup](#Setup)
@@ -22,14 +23,26 @@ All development efforts are put into v1.0 branch, unless we need to fix a bug in
 *  Format your commits using tools such as [Commitizen](https://github.com/commitizen/cz-cli) or any equivalent tools.
 *  PR must heads towards the v1.0 branch
 
+### Dev setup
+
+On root
+```bash
+poetry build
+poetry install
+```
+when builded, you can `poetry shell` to enable the project venv.
+
+For launching the application `python wsgi_v2.py`.
+
 ### On what to contribute
 Maybe those points will pop as Github issues if I have the time.
 
 **Backend**
-* [ ] move from PipEnv to Poetry. propagate those changes in the Docker file.
+* [x] move from PipEnv to Poetry.
+* [x] Rebuild dockerfile for poetry build. 
 * [x] Better config system and config injection.
 * [ ] Config validation ( probably in CUE lang )
-* [ ] Env variable parser for injecting those into the config yaml at run time.
+* [x] Env variable parser for injecting those into the config yaml at run time.
 * [x] Authentication System based On JWT. Controle admin endpoint access.
 * [ ] More consistent variable naming accross Backend & Frontend.
 * [ ] Tracking system for logging catched errors.
@@ -48,6 +61,10 @@ Maybe those points will pop as Github issues if I have the time.
 * [ ] revisit Camera barcode scanner to maybe process the barcode on client side.
 * [ ] Reformat JS code base
 * [ ] Restructure JS code base, maybe using Lit or other very small JS framework ( preferable to be loadable via CDN ).
+
+**Bug**
+* [ ] Bug Uwsgi not ( not finding callback, or bad port mapping .. )
+* [ ] client get porduct data when no barcode ( fixed in main )
 
 ## Installation
 ### Setup
