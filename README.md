@@ -112,9 +112,3 @@ Once the applications is configurated:
 ```bash
 docker-compose up --build -d
 ```
-
-
-# Known bug:
-<br>• nullification of inventories when entries and queue are empty block the client.
-<br>• scanning process not handling all possible errors
-<br>• ...
