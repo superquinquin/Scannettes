@@ -1,9 +1,10 @@
-from flask import Request, request, current_app, redirect
-
-from typing import Optional, Callable
 from functools import wraps
+from typing import Optional
+
+from flask import current_app, redirect, request
 
 from cannettes_v2.authenticator import Authenticator
+
 
 def protected(auth_level: Optional[str]):
     def decorator(f):
@@ -22,17 +23,20 @@ def protected(auth_level: Optional[str]):
                 return f(*args, **kwargs)
             else:
                 return redirect(request.headers.get("Referer"))
-        return wrapped    
+
+        return wrapped
+
     return decorator
 
 
-
-
 def tracker(f):
+    @wraps(f)
     def wrapped(*args, **kwargs):
-        
-        # track status of the thread
-        # log errors 
-        return 0
-    
+        logger = current_app.logger
+        try:
+            out = f(*args, **kwargs)
+        except Exception as e:
+            logger.exception(e)
+        return out
+
     return wrapped
