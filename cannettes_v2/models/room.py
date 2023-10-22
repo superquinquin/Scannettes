@@ -1,245 +1,115 @@
 import base64
-import numpy as np
-import pandas as pd
 from datetime import datetime
+from typing import Any, Dict, Literal, Optional, Union
+
+import numpy as np
 from pyzbar.pyzbar import decode
 
-from cannettes_v2.models.purchase import Purchase
-from cannettes_v2.utils import generate_token, get_status_related_collections
+# from cannettes_v2.models.product import Product
+from cannettes_v2.models.purchase import Inventory, Purchase
+from cannettes_v2.models.state_handler import ROOM_STATE, State
+from cannettes_v2.odoo.deliveries import Deliveries
+from cannettes_v2.odoo.inventories import Inventories
+from cannettes_v2.odoo.odoo import Odoo
+from cannettes_v2.utils import generate_uuid
+
+Payload = Dict[str, Any]
+RoomType = Literal["purchase", "inventory"]
+SearchType = Literal["image", "laser"]
 
 
-class Room:
-    """ROOM INSTANCE
-
-    ROOM IDENTIFIER
-    @id (str): UNIQUE id for representing the room,
-               used to store object inside cache as follow
-               cache['lobby']['rooms'][id]
-    @name (str): name give to the room, inpu from the user.
-                 replaced by the id in case no name are given
-    @token (str): UNIQUE HEX token used to build room url
-    @password (str): password input from the user, optional
-    @user (int): user count, UNUSED
-
-    OBJECT
-    @purchase (class:Purchase): linked INVENTORY or PURCHASE
-
-    STATUS
-    @type (str): can be [purchase, inventory], label the type of the object
-    @status (str): can be [open, close, done], label the process status of the room and its related object
-                   open: when the room is accessible for everyone, the object is still not processed or currently is
-                   close: room restrained only to administrators, await for its object to be verified and validated
-                   done: room restrained only to administrators, still visible but can't be interected with
-
-    DATETIME
-    @opening_date (str): date of creation of the room.
-    @closing_date (str): date the room passed in 'done' status
-
-    """
-
-    def __init__(self, id, name, password, object_id, type, data):
-        # status
-        self.id = id
+class Room(object):
+    def __init__(
+        self,
+        *,
+        rid: int,
+        name: str = "",
+        password: Optional[str] = None,
+        type: RoomType,
+        data: Union[Purchase, Inventory],
+        creating_date: datetime,
+        **kwargs,
+    ) -> None:
+        self.rid = rid
         self.name = name
         self.password = password
-        self.token = generate_token(10)
         self.type = type
-        self.status = "open"
-        self.oppening_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.data = data
+        self.creating_date = creating_date
         self.closing_date = None
-        self.users = 0
+        self.state = State(ROOM_STATE)
+        self.token = generate_uuid()
+        self.__dict__.update(**kwargs)
 
-        if not object_id:
-            self.purchase = self.generate_pseaudo_purchase(data, id)
+        self._image_handler = [
+            self._image_decoder,
+            self._is_not_scanned_yet,
+            self.data.search_scanned_in_self,
+            self.data.search_scanned_in_odoo,
+            self.data.add_external_product,
+            self.data.update_scanned_product,
+        ]
 
-        elif object_id and type == "inventory":
-            self.purchase = data["odoo"]["inventory"]["ongoing"][object_id]
+        self._laser_handler = [
+            self._is_not_scanned_yet,
+            self.data.search_scanned_in_self,
+            self.data.search_scanned_in_odoo,
+            self.data.add_external_product,
+            self.data.update_scanned_product,
+        ]
 
-        elif object_id and type == "purchase":
-            self.purchase = data["odoo"]["purchases"]["incoming"][object_id]
+    def __repr__(self) -> str:
+        return f"<{self.rid} {self.name} ({self.type}) : {self._state}>"
 
-    def generate_pseaudo_purchase(self, data: dict, id: str) -> Purchase:
-        """building a table not binded to an existing purchase
-        Create an empty template
+    def update(self, payload: Payload) -> None:
+        for k, v in payload.items():
+            current = getattr(self, k, None)
+            if current is None:
+                raise KeyError(f"{self} : {k} attribute doesn't exist")
+            if type(current) != type(v) and current is not None:
+                raise TypeError(
+                    f"{self} : field {k} value {v} ({type(v)}) does not match current type ({type(current)})"
+                )
+            setattr(self, k, v)
 
-        Args:
-            data (dict): cache dict
-            id (_type_): id to be taken inside the cache
+    def is_finished(self):
+        self.state.bump_to("close")
+        self.data.is_finished()
 
-        Returns:
-            Purchase: _description_
-        """
-        spo_id = "spo" + str(
-            len(list(data["odoo"]["purchases"]["pseudo-purchase"].keys())) + 1
-        )
-        spo_supplier = None
-        spo_realness = False
-        spo_ptype = "purchase"
-        spo_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        spo_status = "incoming"
-        spo_table = pd.DataFrame(
-            [], columns=["barcode", "id", "name", "qty", "pckg_qty", "qty_received"]
-        )
+    def is_validated(self):
+        self.closing_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.state.bump_to("done")
+        self.data.is_validated()
 
-        data["odoo"]["purchases"]["pseudo-purchase"][id] = Purchase(
-            spo_id,
-            spo_id,
-            spo_supplier,
-            spo_realness,
-            spo_ptype,
-            spo_date,
-            spo_date,
-            spo_status,
-            spo_table,
-        )
-
-        return data["odoo"]["purchases"]["pseudo-purchase"][id]
-
-    def image_decoder(
-        self, imageData: str, room_id: str, room: object, odoo: object, data: dict
-    ) -> dict:
-        """
-        state: 0 for no ean found; 1 for new ean ; 2 for ean already scanned
-        """
-        image = self.decoder(imageData, data)
-
-        image = np.array(image)
-        ean = decode(image)  # ZBAR
-        if ean:
-            code_ean = ean[0].data.decode("utf-8")
-
-            if code_ean not in self.purchase.scanned_barcodes:
-                self.purchase.append_scanned_items(code_ean)
-
-                context = self.search_and_move_scanned_item(code_ean, odoo)
-                context["room_id"] = room_id
-                context["scanned"] = self.purchase.scanned_barcodes
-                context["new"] = self.purchase.new_items
-                context["mod"] = self.purchase.modified_items
-                context["state"] = 1
-                print(code_ean)
-
-            else:
-                context = {"state": 2}
-                print(code_ean, "is already scanned")
-
-        else:
-            context = {"state": 0}
-
-        return context
-
-    def decoder(self, image_data: str, data: dict) -> np.ndarray:
-        """base64 strings
-        decode it into numpy array of shape [n,m,1]"""
-
-        bytes = base64.b64decode(image_data)
-        pixels = np.array([b for b in bytes], dtype="uint8")
-
-        image = (
-            np.array(pixels)
-            .reshape(
-                data["config"].CAMERA_FRAME_HEIGHT, data["config"].CAMERA_FRAME_WIDTH
-            )
-            .astype("uint8")
-        )
-
-        return image
-
-    def laser_decoder(
+    def search_product(
         self,
-        laserData,
-        room_id: str,
-        barcode: int,
-        room: object,
-        odoo: object,
-        data: dict,
-    ) -> dict:
-        """
-        state: 1 ok; state 2: already scanned
-        """
-
-        if barcode not in self.purchase.scanned_barcodes:
-            self.purchase.append_scanned_items(barcode)
-
-            context = self.search_and_move_scanned_item(barcode, odoo)
-            context["room_id"] = room_id
-            context["scanned"] = self.purchase.scanned_barcodes
-            context["new"] = self.purchase.new_items
-            context["mod"] = self.purchase.modified_items
-            context["state"] = 1
-
-        else:
-            context = {"state": 2}
-            print(barcode, "is already scanned")
-
+        stype: SearchType,
+        context: Payload,
+        api: Union[Odoo, Deliveries, Inventories],
+    ) -> Payload:
+        handlers = iter(getattr(self, f"_{stype}_handlers"))
+        while context["res"] is None:
+            handler = next(handlers)
+            context = handler(context=context, api=api)
         return context
 
-    def search_and_move_scanned_item(self, code_ean: str, odoo: object) -> dict:
-        """SEARCH FOR ANY GIVEN BARCODE IF IT EXIST IN:
-        state 0: THE PURCHASE OBJECT TABLES
-        state 1: HAS AN ALT BARCODE THAT EXIST IN OBJECT TABLE
-        state 2: WHETER BARCODE OR ALT BARCODE EXIST IN ODOO BUT NOT IN OBJECT TABLE
-        state 3: PRODUCT CAN'T BE FOUND EITHER IN OBJECT TABLE OR ODOO
+    def _decoder(self, context: Payload, **kwargs) -> np.ndarray:
+        """base64 strings decode it into numpy array of shape [n,m,1]"""
+        fh, fw = context["fh"], context["fw"]
+        bytes = base64.b64decode(context["data"])
+        pixels = np.array([b for b in bytes], dtype="uint8")
+        return np.array(pixels).reshape(fh, fw).astype("uint8")
 
-        AFTER DEFINING THE STATE OF THE PRODUCT
-        IT GET EITHER MOVED FROM ENTRIES TO QUEUE TABLE OR IS ADDED INTO THE TABLE DIRECTLY
-
-        Args:
-            odoo (Odoo): object to interact with odoo db
-            code_ean (str): barcode
-
-        Return : context with product data
-        """
-        context = {"code_ean": code_ean, "flag": True, "state": 0, "product": None}
-
-        if context["flag"] and context["state"] == 0:
-            ## SEARCH FORPRODUCT EXISTENCE IN PURCHASE OBJECT
-            context = self.purchase._state_0_search(context)
-
-        if context["flag"] and context["state"] == 1:
-            ## SEARCH FOR ALT BARCODE EXISTENCE
-            ## AND WETHER IT EXIST IN PURCHASE OBJECT OR NOT
-            context = self.purchase._state_1_search(odoo, context)
-
-        if context["flag"] and context["state"] == 2:
-            ## LOOKING FOR PRODUCT EXISTENCE IN ODOO
-            context = self.purchase._state_2_search(odoo, context)
-
-        context = self.purchase._move_scanned_item(odoo, context)
+    def _image_decoder(self, context: Payload, **kwargs) -> Payload:
+        image = self._decoder(context)
+        barcode = decode(image)
+        if barcode:
+            context["barcode"] = barcode[0].data.decode("utf-8")
+        else:
+            context["res"] = {"msg": ""}
         return context
 
-    def update_status(
-        self, new: str, new_pr: str, new_rm, object_type: str, data: dict
-    ):
-        """take a room and modify its status, process status and binded object status
-
-        Args:
-            new (str): new purchase status
-            new_pr (str): new process status
-            new_rm (str)
-            object_type (str): type of the object: purchase or inventory
-            data (str): data dict
-        """
-        object_id = self.purchase.id
-        self.purchase.status = new
-        self.purchase.process_status = new_pr
-        self.status = new_rm
-
-        if self.status == "done":
-            self.closing_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        prv, nxt = get_status_related_collections(object_type, new_pr)
-        if object_type == "purchase":
-            data["odoo"]["purchases"][nxt][object_id] = self.purchase
-            data["odoo"]["purchases"][prv].pop(object_id, None)
-            data["odoo"]["purchases"]["incoming"].pop(object_id, None)  # in case
-
-        else:
-            data["odoo"]["inventory"][nxt][object_id] = self.purchase
-            data["odoo"]["inventory"][prv].pop(object_id, None)
-
-    def change_status(self, status: str):
-        self.status = status
-
-        if status == "done":
-            self.closing_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def _is_not_scanned_yet(self, context: Payload, **kwargs) -> Payload:
+        if context["barcode"] in self.data.get_scanned_products():
+            context["res"] = {"msg": ""}
+        return context
