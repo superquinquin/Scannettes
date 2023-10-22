@@ -1,25 +1,25 @@
-from flask import url_for, current_app
-from flask_socketio import emit, join_room
-from typing import Dict, List, Tuple, Any
 import json
+from typing import Any, Dict, List, Tuple
 
-from wsgi_v2 import cannette
+from flask import current_app, url_for
+from flask_socketio import emit, join_room
+
+from cannettes_v2 import cannette
+from cannettes_v2.authenticator import Authenticator
+from cannettes_v2.decorators import protected
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.tools.pdf import PDF
-from cannettes_v2.authenticator import Authenticator
-from cannettes_v2.decorators import protected
 from cannettes_v2.utils import (
+    format_error_client_message,
     get_passer,
     get_task_permission,
     standart_name,
     standart_object_name,
-    format_error_client_message,
 )
 
 Cache = Dict[str, Any]
 Payload = Dict[str, Any]
-
 
 
 def task_permission_redirector(data, context) -> bool:
@@ -40,17 +40,14 @@ def handle_my_custom_event(msg):
 def verify_loggin(context: Payload):
     authenticator = current_app.cache["config"]["authenticator"]
     users = current_app.users
-    auth = Authenticator(
-        **authenticator,
-        **users
-    ).authenticate(**context)
+    auth = Authenticator(**authenticator, **users).authenticate(**context)
 
     # resp = make_response(url_for("cannettes_bp.index_admin"))
     # resp.set_cookie("session", auth["token"])
     # return resp
-    
+
     emit(
-        "on-authentication", 
+        "on-authentication",
         {"auth": auth, "redirect": url_for("cannettes_bp.index_admin")},
         include_self=True,
     )
@@ -211,7 +208,7 @@ def rredirect(context):
 @cannette.socketio.on("join_lobby")
 def join_lobby():
     cache = current_app.cache
-    print('joining lobby')
+    print("joining lobby")
     context = {
         "room": [],
         "selector": [],
