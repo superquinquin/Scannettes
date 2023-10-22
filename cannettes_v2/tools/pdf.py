@@ -2,6 +2,12 @@ import base64
 from fpdf import FPDF
 from copy import deepcopy
 
+from typing import Dict, List, Tuple, BinaryIO
+from PIL import Image
+
+Caption = Dict[str, str]
+Image = type(Image)
+Payload = Dict[str, List[Tuple[Image,Caption]]]
 
 class PDF(FPDF):
     """PDF BUILDER CLASS INHERITE FROM FPDF CLASS INSTANCE
@@ -71,7 +77,7 @@ class PDF(FPDF):
         else:
             return str
 
-    def generate_pdf(self, qrcode: list, caption: list):
+    def generate_pdf(self, payload: Payload):
         self.set_font("Helvetica", "", 16)
         self.add_page()
 
@@ -79,7 +85,7 @@ class PDF(FPDF):
         y_sep = 20
         place = 0
         n_page = 0
-        for i in range(len(qrcode)):
+        for qrcode, caption in payload["qrcodes"]:
             if (space - y_sep + 50) <= y_sep + 50:
                 space = self.height
                 place = 0
@@ -87,12 +93,12 @@ class PDF(FPDF):
                 self.add_page()
 
             if place == 0:
-                self.draw_qrcode_box(20, y_sep, qrcode[i], caption[i])
+                self.draw_qrcode_box(20, y_sep, qrcode, caption)
                 space -= y_sep + 50
                 place += 1
             elif i > 0:
                 self.draw_qrcode_box(
-                    20, y_sep + place * 50 + place * y_sep, qrcode[i], caption[i]
+                    20, y_sep + place * 50 + place * y_sep, qrcode, caption
                 )
                 space -= y_sep + 50
                 place += 1

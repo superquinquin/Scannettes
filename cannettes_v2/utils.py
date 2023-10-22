@@ -5,6 +5,15 @@ from glob import glob
 from typing import Dict, Union, Tuple, List
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
+from string import ascii_lowercase, ascii_uppercase, digits
+from random import choices
+
+CHARS = ascii_lowercase + ascii_uppercase + digits
+
+def generate_uuid() -> str:
+    """fewer collisions method"""
+    return ''.join(choices(CHARS, k=8))
+
 
 
 def generate_token(size: int):
@@ -123,23 +132,15 @@ def get_ceiling_date(timeDelta: list, data: dict, key: str) -> str:
     return date_ceiling
 
 
-def is_too_old(date: object, ceiling: int) -> bool:
-    """look if date is < a ceiling date
-
-    Args:
-        date (object): datetime object
-        ceiling (int): ceiling delta in sec
-
-    Returns:
-        bool: if date < ceiling date
-    """
+def is_too_old(date: datetime, ceiling: int) -> bool:
+    """check if time delta > ceiling in sec"""
+    too_old = False
     now = datetime.now()
     delta = int((now - datetime.strptime(date, "%Y-%m-%d %H:%M:%S")).total_seconds())
-
     if delta > ceiling:
-        return True
-    else:
-        return False
+        too_old = True
+    return too_old
+
 
 
 def standart_name(name: str, id: str) -> str:

@@ -67,7 +67,20 @@ class Odoo(object):
                     barcode = p.barcode
                     break
         return barcode
+    
+    def get_barcodes(self, product: Record) -> Union[List[int], List[bool]]:
+        main = product.product_id.barcode
+        alt = self.browse(
+            "product.multi.barcode",
+            [("product_id", "=", product.product_id.id)]
+        )
+        barcodes = [main] + alt
+        return barcodes
+        
 
+    def search_product_from_barcode(self, barcode: str) -> Record:
+        return self.browse("product.product", [("barcode", "=", barcode)])
+    
     def get_name_translation(self, product: Record) -> str:
         """
         search product translated name
