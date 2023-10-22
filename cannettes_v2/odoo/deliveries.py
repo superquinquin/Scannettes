@@ -1,3 +1,114 @@
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>> new version (unfinished)
+import re
+from erppeek import Record, RecordList
+from typing import Optional, Any, List, Dict
+from datetime import datetime, timedelta
+
+from cannettes_v2.odoo.odoo import Odoo
+from cannettes_v2.odoo.lobby import Lobby
+from cannettes_v2.models.product import Product
+from cannettes_v2.models.purchase import Purchase, Supplier
+from cannettes_v2.models.state_handler import State, PURCHASE_STATE, PROCESS_STATE, PRODUCT_STATE
+
+cache = Dict[str, Any]
+
+class Deliveries(Odoo):
+    def __init__(self) -> None:
+        super().__init__()
+        self.purchases: Dict[int, Optional[Purchase]] = {}
+        self.last_update: datetime = None
+
+    def fetch_purchases(self, cache: cache) -> None:
+        delta = cache["config"]["time_delta"]
+        lobby = cache.cache["lobby"]
+
+        date_ceiling = self.get_update_time_ceiling(delta)
+        purchases = self.browse(
+            "purchase.order", 
+            [
+                ("create_date", ">", date_ceiling),
+                ("id", "in", self.purchases.keys())
+            ]
+        ) 
+        self.purchase_factory(purchases, lobby)
+        self.last_update = datetime.now().date().strftime("%Y-%m-%d %H:%M:%S")
+    
+    def get_update_time_ceiling(self, delta: List[int]) -> datetime:
+        ceiling = self.last_update
+        if ceiling is None:
+            Y, M, W, D = delta
+            now = datetime.now().date()
+            ceiling = now + timedelta(years=-Y, months=-M, weeks=-W, days=-D)
+            ceiling = ceiling.strftime("%Y-%m-%d %H:%M:%S")
+        return ceiling
+    
+    def purchase_factory(self, purchases: RecordList, lobby: Lobby) -> None:
+        
+        for pur in purchases:
+            oid = pur.oid
+            name = pur.name
+            _state = pur.state
+
+            if _state == "draft":
+                self.purchases[oid] = None
+
+            elif _state == "purchase":
+                _picking_state = self.get_picking_state(name)
+                
+                if _picking_state == "cancel":
+                    self.purchases.pop(oid)
+                    rid = lobby.find_room_associated_to_purchase(oid)
+                    if rid:
+                        lobby.delete_room(rid) # find room_id
+                    
+                elif _picking_state == "done":
+                    purchase = self.purchases.get(oid)
+                    purchase.state.bump_to("received")
+                    purchase.process_state.bump_to("done")
+                    rid = lobby.find_room_associated_to_purchase(oid)
+                    if rid:
+                        room = lobby.rooms.get(rid)
+                        room.state.bump_to("done")
+                elif _picking_state == "assigned" and self.purchases.get(oid, False):
+                    purchase = self.purchases.get(oid)
+                    products = self.fetch_products(purchase.name)
+                    purchase.rebase_products(products, self)
+                
+                elif _picking_state == "assigned" and self.purchases.get(oid, False) is False:
+                    purchase = {
+                        "oid": oid,
+                        "name": name,
+                        "create_date": pur.create_date,
+                        "added_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "supplier": Supplier(pur.partner_id),
+                        "_initial_products": self.fetch_products(name),
+                        "state": State(PURCHASE_STATE),
+                        "process_state": State(PROCESS_STATE),
+                    }
+                    self.purchases[oid] = Purchase(**purchase)
+
+    
+    def fetch_products(self, purchase_name: str) -> List[Product]:
+        moves = self.browse("stock.move", [("origin", "=", purchase_name)])
+        return [self.product_factory(product) for product in moves if product.state == "assigned"]
+
+    def product_factory(self, product: Record):
+        payload = {
+            "pid": product.product_id.id,
+            "name": re.sub("\[.*?\]", "", self.get_name_translation(product.product_id)),
+            "barcode": self.get_barcodes(product),
+            "qty": product.product_qty,
+            "qty_virtual": None,
+            "qty_package": product.product_qty_package,
+            "state": State(PRODUCT_STATE)
+        }
+        return Product(**payload)
+
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> (old version)
 import re
 import pandas as pd
 from datetime import datetime
@@ -7,6 +118,7 @@ from cannettes_v2.models.purchase import Purchase
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.utils import get_ceiling_date, format_error_cases
+
 
 class Deliveries(Odoo):
 
@@ -589,3 +701,6 @@ class Deliveries(Odoo):
     ) -> Dict[str, Any]:
         self.connect(**erp)
         return self.get_purchase(delta_search_purchase, cache)
+
+
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
