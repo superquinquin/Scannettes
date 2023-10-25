@@ -874,11 +874,13 @@ class Odoo:
     name = f'{inventory.name} {date}'
     validity = True
     try:
-      container = self.create('stock.inventory', 
-                              {'name': name,
-                                'filter': 'categories',
-                                'location_id': 12
-                                })
+      container = self.create(
+        'stock.inventory', 
+        {
+          'name': name,
+          'location_id': 12
+        }
+      )
     except Exception:
       # handle odoo errors on row creation 
       container = None
