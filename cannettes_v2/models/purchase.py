@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
-
+from collections import defaultdict
 from erppeek import Record, RecordList
+from typing import Any, Dict, List, Optional
 
 from cannettes_v2.models.product import Product
-from cannettes_v2.models.state_handler import PRODUCT_STATE, State
-from cannettes_v2.odoo.deliveries import Deliveries
-from cannettes_v2.odoo.inventories import Inventories
+from cannettes_v2.models.state_handler import PRODUCT_STATE, State, PROCESS_STATE, PURCHASE_STATE
 from cannettes_v2.odoo.odoo import Odoo
 
 Uuid = str
@@ -19,7 +16,8 @@ Payload = Dict[str, Any]
 
 
 class Supplier(object):
-    def __init__(self, *partner_id: Optional[Record]) -> None:
+    """parse Supplier record"""
+    def __init__(self, *, partner_id: Optional[Record]) -> None:
         self.id = None
         self.name = None
         if partner_id:
@@ -50,22 +48,21 @@ class Purchase(object):
         self,
         *,
         oid: int,
-        name: str,
+        name: str = "",
         supplier: Optional[Supplier] = None,
-        create_date: datetime,
         added_date: datetime,
-        state: State,
-        process_state: State,
+        state: State = State(PURCHASE_STATE),
+        process_state: State = State(PROCESS_STATE),
         _initial_products: List[Product],
     ) -> None:
         self.oid = oid
         self.name = name
         self.supplier = supplier
-        self.create_date = create_date
         self.added_date = added_date
         self._initial_products = _initial_products
         self.state = state
         self.process_state = process_state
+        self.create_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.build_registeries()
 
     def __repr__(self) -> str:
@@ -124,7 +121,7 @@ class Purchase(object):
         if with_initial:
             self._initial_products.append(deepcopy(product))
 
-    def del_product(self, product: Product, with_initial=False) -> None:
+    def del_product(self, product: Product, with_initial: bool = False) -> None:
         self.uuid_registry.pop(product.uuid, None)
         [self.barcode_registry.pop(brcd) for brcd in product.barcodes]
         self.pid_registry.pop(product.pid, None)
@@ -135,15 +132,17 @@ class Purchase(object):
             self._initial_products.pop(index)
 
     def update_product(
-        self, product: Product, payload: Payload, with_initial=False
+        self, product: Product, payload: Payload, with_initial: bool = False
     ) -> None:
-        barcodes = payload.get("barcodes", None)
-        if barcodes and barcodes != product.barcodes:
-            [self.barcode_registry.pop(brcd) for brcd in product.barcodes]
-            self.register_barcodes(barcodes)
         if with_initial:
             initial_product = self.retrieve_initial_product(product)
             initial_product.update(payload)
+            
+        barcodes = payload.pop("barcodes", None)
+        if barcodes and barcodes != product.barcodes:
+            [self.barcode_registry.pop(brcd) for brcd in product.barcodes]
+            product.update({"barcodes": barcodes})
+            self.register_barcodes(product)
         product.update(payload)
 
     def build_initial_payload(self) -> Payload:
@@ -152,7 +151,7 @@ class Purchase(object):
         return payload
 
     def rebase_products(
-        self, products: List[RecordList], api: Union[Odoo, Deliveries, Inventories]
+        self, products: List[RecordList], api: Odoo
     ) -> Payload:
         """Pid are supposed to be unique accross the purchased product list."""
         for pur in products:
@@ -190,31 +189,48 @@ class Purchase(object):
         return context
 
     def search_scanned_in_self(self, context: Payload, **kwargs) -> Payload:
-        product = self.barcode_registry(context["barcode"], None)
+        product = self.barcode_registry.get(context["barcode"], None)
+        print("self ", product)
         if product:
-            context.update({"res": {"product": product.to_payload()}})
+            product.update({"_scanned": True})
+            product.state.bump()
+            context.update({
+                "flag": False,
+                "res": {"product": product}
+            })
         return context
 
     def search_scanned_in_odoo(
-        self, context: Payload, api: Union[Odoo, Deliveries], **kwargs
+        self, context: Payload, api: Odoo, **kwargs
     ) -> Payload:
         product = api.search_product_from_barcode(context["barcode"])
         if product:
-            product = api.product_factory(product)
-            product.update({"_new": True})
-            self.add_product(product)
-            context.update({"res": {"product": product.to_payload()}})
+            payload = api.prepare_product_from_record(
+                product, 
+                _new=True, 
+                _scanned=True,
+                state = State(PRODUCT_STATE, 2)
+            )
+            context.update({
+                "flag": False,
+                "external": True,
+                "res": {"product": Product(**payload)}
+            })
         return context
 
-    def add_external_product(self, context: Payload, **kwargs) -> Payload:
+    def build_external_product(self, context: Payload, **kwargs) -> Payload:
         product = Product(
             barcodes=[context["barcode"]],
-            state=State(PRODUCT_STATE),
+            state=State(PRODUCT_STATE, 2),
             _new=True,
+            _scanned=True,
             _unknown=True,
         )
-        self.add_product(product)
-        context.update({"res": {"product": product.to_payload()}})
+        context.update({
+            "flag": False,
+            "external": True,
+            "res": {"product": product}
+        })
         return context
 
     def update_scanned_product(self, context: Payload, **kwargs) -> Payload:
@@ -249,4 +265,12 @@ class Inventory(Purchase):
     def nullifier(self) -> None:
         for product in self.products:
             if product.state != "done":
-                product.update({"qty_received": 0})
+                product.update({"qty_received": 0, "_scanned": True})
+                product.state.bump_to("done")
+
+
+class PseudoPurchase(Purchase):
+    pass
+
+class PseudoInventory(Inventory):
+    pass

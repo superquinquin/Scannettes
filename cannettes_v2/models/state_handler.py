@@ -7,9 +7,9 @@ PRODUCT_STATE = Enum("ProductState", ["initial", "queue", "done"])
 
 
 class State(object):
-    def __init__(self, states: Enum) -> None:
+    def __init__(self, states: Enum, active:int = 1) -> None:
         self.states = states
-        self.active = 1
+        self.active = active
 
     def __repr__(self) -> str:
         return str(self.states(self.active))

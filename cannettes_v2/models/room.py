@@ -1,15 +1,11 @@
 import base64
+import numpy as np
 from datetime import datetime
+from pyzbar.pyzbar import decode
 from typing import Any, Dict, Literal, Optional, Union
 
-import numpy as np
-from pyzbar.pyzbar import decode
-
-# from cannettes_v2.models.product import Product
 from cannettes_v2.models.purchase import Inventory, Purchase
 from cannettes_v2.models.state_handler import ROOM_STATE, State
-from cannettes_v2.odoo.deliveries import Deliveries
-from cannettes_v2.odoo.inventories import Inventories
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.utils import generate_uuid
 
@@ -27,7 +23,7 @@ class Room(object):
         password: Optional[str] = None,
         type: RoomType,
         data: Union[Purchase, Inventory],
-        creating_date: datetime,
+        state: State = State(ROOM_STATE),
         **kwargs,
     ) -> None:
         self.rid = rid
@@ -35,9 +31,9 @@ class Room(object):
         self.password = password
         self.type = type
         self.data = data
-        self.creating_date = creating_date
+        self.state = state
         self.closing_date = None
-        self.state = State(ROOM_STATE)
+        self.creating_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.token = generate_uuid()
         self.__dict__.update(**kwargs)
 
@@ -46,16 +42,14 @@ class Room(object):
             self._is_not_scanned_yet,
             self.data.search_scanned_in_self,
             self.data.search_scanned_in_odoo,
-            self.data.add_external_product,
-            self.data.update_scanned_product,
+            self.data.build_external_product
         ]
 
         self._laser_handler = [
             self._is_not_scanned_yet,
             self.data.search_scanned_in_self,
             self.data.search_scanned_in_odoo,
-            self.data.add_external_product,
-            self.data.update_scanned_product,
+            self.data.build_external_product
         ]
 
     def __repr__(self) -> str:
@@ -85,12 +79,16 @@ class Room(object):
         self,
         stype: SearchType,
         context: Payload,
-        api: Union[Odoo, Deliveries, Inventories],
+        api: Odoo,
     ) -> Payload:
-        handlers = iter(getattr(self, f"_{stype}_handlers"))
-        while context["res"] is None:
+        
+        context.update({"flag": True})
+        handlers = iter(getattr(self, f"_{stype}_handler"))
+        while context["flag"]:
             handler = next(handlers)
             context = handler(context=context, api=api)
+        if context.pop("external", True):
+            self.data.add_product(context["res"]["product"])
         return context
 
     def _decoder(self, context: Payload, **kwargs) -> np.ndarray:
@@ -110,6 +108,8 @@ class Room(object):
         return context
 
     def _is_not_scanned_yet(self, context: Payload, **kwargs) -> Payload:
+        """payload : {"barcode"(str), "flag"(bool) res(payload)}"""
         if context["barcode"] in self.data.get_scanned_products():
-            context["res"] = {"msg": ""}
+            context["flag"] = False
+            context["res"] = {"msg": f"{context['barcode']} is already scanned"}
         return context
