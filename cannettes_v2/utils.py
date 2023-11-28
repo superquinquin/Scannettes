@@ -21,6 +21,31 @@ def generate_token(size: int):
     return binascii.hexlify(os.urandom(size)).decode()
 
 
+def get_update_time_ceiling(last_update: datetime, delta: List[int]) -> datetime:
+    ceiling = last_update
+    if ceiling is None:
+        Y, M, W, D = delta
+        now = datetime.now().date()
+        ceiling = now + timedelta(years=-Y, months=-M, weeks=-W, days=-D)
+        ceiling = ceiling.strftime("%Y-%m-%d %H:%M:%S")
+    return ceiling
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_passer(suffix: str) -> dict:
     """decompose suffix str into args"""
     passer = {}
