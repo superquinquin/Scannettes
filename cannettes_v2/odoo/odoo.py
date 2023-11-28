@@ -1,3 +1,4 @@
+import re
 import time
 from erppeek import Client, Record, RecordList
 from typing import Dict, List, Tuple, Union, Any
@@ -69,33 +70,42 @@ class Odoo(object):
         return barcode
     
     def get_barcodes(self, product: Record) -> Union[List[int], List[bool]]:
-        main = product.product_id.barcode
+        main = product.barcode
         alt = self.browse(
             "product.multi.barcode",
-            [("product_id", "=", product.product_id.id)]
+            [("product_id", "=", product.id)]
         )
-        barcodes = [main] + alt
+        barcodes = [main] + alt.barcode
         return barcodes
         
 
     def search_product_from_barcode(self, barcode: str) -> Record:
-        return self.browse("product.product", [("barcode", "=", barcode)])
+        return self.get("product.product", [("barcode", "=", barcode)])
     
-    def get_name_translation(self, product: Record) -> str:
-        """
-        search product translated name
-        """
-        name = None
-        irt = self.browse(
-            "ir.translation", [("res_id", "=", product.product_tmpl_id.id)]
-        )
-        for t in irt:
-            if t.name == "product.template,name":
-                name = t.value
-                break
-        if not name:
-            name = product.name
+    
+    def get_name_translation(self, pt: Record) -> str:
+        name = pt.name
+        irt = self.browse("ir.translation", [("res_id", "=", pt.id), ("name", "=", "product.template,name")])
+        if irt:
+            name = irt[0].value
         return name
+    
+    
+    # def get_name_translation(self, product: Record) -> str:
+    #     """
+    #     search product translated name
+    #     """
+    #     name = None
+    #     irt = self.browse(
+    #         "ir.translation", [("res_id", "=", product.product_tmpl_id.id)]
+    #     )
+    #     for t in irt:
+    #         if t.name == "product.template,name":
+    #             name = t.value
+    #             break
+    #     if not name:
+    #         name = product.name
+    #     return name
 
     def get_picking_state(self, name: str) -> str:
         """try to search picking state of a purchase
@@ -186,3 +196,22 @@ class Odoo(object):
                     item_state = item.state
 
         return item_state
+
+
+
+
+
+
+
+    def prepare_product_from_record(self, product: Record, **kwargs) -> Dict[str, Any]:
+        """from product.product and external to the purchase"""
+        payload = {
+            "pid": product.id,
+            "name": re.sub("\[.*?\]", "", self.get_name_translation(product)),
+            "barcodes": self.get_barcodes(product),
+            "qty": 0,
+            "qty_virtual": 0,
+            "qty_package": 0,
+        }
+        payload.update(kwargs)
+        return payload

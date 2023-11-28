@@ -1,224 +1,158 @@
-
-import pandas as pd
+import re
+from erppeek import Record
 from datetime import datetime
-from typing import Dict, List, Tuple, Any, Union
+from typing import List, Dict, Tuple, Any, Optional
 
 from cannettes_v2.odoo.odoo import Odoo
-from cannettes_v2.models.purchase import Purchase, Supplier
-from cannettes_v2.utils import format_error_cases
+from cannettes_v2.models.purchase import Inventory
+from cannettes_v2.models.product import Product
+
+payload = Dict[str, Any]
 
 class Inventories(Odoo):
+    """
+    main and only interaction between inventories and Odoo is done during exportation
+    !! Odoo reference for inventories is obly created during exportation   !!
+    !! For an inventory to be valid, please note that you shouldn't affect !!
+    !! any of its product ouside of the inventory scope                    !!
+    """
+    
+    def __init__(self) -> None:
+        super().__init__()
+        self.categories: List[Tuple[str, int]]
+        self.inventories: Dict[int, Optional[Inventory]] = {}
+        self.last_update: datetime = None
+        
+        self.export_pipeline = [
+            self._check_product_odoo_existence,
+            self._create_stock_inventory_row,
+            self._create_stock_inventory_line_row,
+            self._propagate_start
+        ]
 
-    def get_product_categories(self, cache: Dict[str, Any]) -> Dict[str, Any]:
-        """fill cache with exist categories"""
+    def build(self, erp: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+        self.connect(**erp)
+        return self.import_categories()
 
-        categories = self.browse(
-            "product.category", [(["create_date", ">", "1900-01-01 01:01:01"])]
-        )
-        cat = sorted(
-            [(c.complete_name, c.id) for c in categories],
+    def import_categories(self) -> None:
+        cats = self.browse("product.category", [("create_date", ">", "1900-01-01 01:01:01")])
+        self.categories = sorted(
+            [(c.complete_name, c.id) for c in cats],
             key=lambda x: x[0],
             reverse=False,
         )
-        cache["odoo"]["inventory"]["type"] = cat
-        return cache
 
-    def generate_inv_product_table(self, cat_id: int) -> pd.DataFrame:
-        """takes a category id as input, generate list of product records from this categ
-            products records are : pp id, pt name, pp or pmb barcode, pt stock qty
+    def define_inventory_id(self) -> int:
+        return max(self.inventories.keys()) + 1
 
-        Args:
-            cat_id (int): reference to a category
-
-        Returns:
-            List: list of all products records with input cat id.
-        """
-
-        def get_barcode() -> Union[str, bool]:
-            barcode = pp.barcode
-            if not barcode and pmb:
-                for p in pmb:
-                    if p.barcode:
-                        barcode = p.barcode
-                        break
-            return barcode
-
-        def get_name_translation() -> str:
-            name = None
-            for t in irt:
-                if t.name == "product.template,name":
-                    name = t.value
-                    break
-            if not name:
-                name = pt.name
-            return name
-
-        # name, barcode or multiple barcode, theoric qty, real quantity
-        product_list = []
-        products = self.browse(
-            "product.template", [("categ_id", "=", cat_id), ("active", "=", True)]
+    def inventory_factory(self, catid: int, name: str = "", **kwargs) -> Inventory:
+        oid = self.define_inventory_id()
+        inventory = Inventory(
+            oid= oid,
+            catid= catid,
+            name= name,
+            _initial_products= self.fetch_products(catid)
         )
-        for pt in products:
-            tmpl_id = pt.id
-            irt = self.browse("ir.translation", [("res_id", "=", tmpl_id)])
-            pp = self.get("product.product", [(["product_tmpl_id", "=", tmpl_id])])
-            pmb = self.browse("product.multi.barcode", [(["product_id", "=", pp.id])])
-            name = get_name_translation()
-            qty = pt.qty_available
-            virtual = pt.virtual_available
-            id = pp.id
-            barcode = get_barcode()
-            product_list.append([barcode, id, name, qty, virtual, qty])
+        inventory.update(kwargs)
+        self.inventories[oid] = inventory
+        return inventory
 
-        columns = ["barcode", "id", "name", "qty", "virtual_qty", "qty_received"]
-        table = pd.DataFrame(product_list, columns=columns)
-        table.fillna(0, inplace=True)
-        return table
 
-    def create_inventory(self, input: Dict[str, Any], cache: Dict[str, Any], table: pd.DataFrame) -> int:
-        """CREATE A PURCHASE OBJECT
+    def fetch_products(self, catid: int) -> List[Product]:
+        products = self.browse("product.template", [("categ_id", "=", catid), ("active", "=", True)])
+        return [self.product_factory(product) for product in products]
 
-        Args:
-            input (dict): odoo cat_id
-            data (dict): cache data dict
-            table (pd.DataFrame): object origin table
+    def product_factory(self, product: Record, **kwargs):
+        name = self.get_name_translation(product.product_id.product_tmpl_id)
+        prod = Product({
+            "pid": product.product_id.id,
+            "name": re.sub("\[.*?\]", "", name).strip(),
+            "barcode": self.get_barcodes(product),
+            "qty": product.product_qty,
+            "qty_virtual": None,
+            "qty_package": product.product_qty_package,
+        })
+        prod.update(kwargs)
+        return prod
 
-        Returns:
-            int: object_id that reference the object into
-                cache['odoo']['inventory']['ongoing'][object_id]
+
+    def export_to_odoo(self, oid: int, autoval: bool= False) -> payload:
         """
-
-        def get_id() -> int:
-            ongoing = list(cache["odoo"]["inventory"]["ongoing"].keys())
-            processed = list(cache["odoo"]["inventory"]["processed"].keys())
-            done = list(cache["odoo"]["inventory"]["done"].keys())
-            m = max(ongoing + processed + done, default=0)
-            return m + 1
-
-        object_id = get_id()
-        cat_id = input["object_id"]
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        inventory = Purchase(
-            object_id,
-            [x[0] for x in cache["odoo"]["inventory"]["type"] if x[1] == cat_id][
-                0
-            ],  # get name from the categ type list
-            Supplier(None, "inventaire"),
-            True,
-            "inventory",
-            now,
-            now,
-            "incoming",
-            table,
-        )
-
-        cache["odoo"]["inventory"]["ongoing"][object_id] = inventory
-        return object_id
-
-    def post_inventory(self, inventory: Purchase, cache: Dict[str, Any], autoval: bool) -> bool:
-        """MAIN AND ONLY INTERACTION PROCESS WITH ODOO FOR INVENTORIES OTHER THAN
-          THAN FETCHING TEMPLATE DATA
-          INVENTORIES ARE ONLY ADDED INTO ODOO AT VALIDATION PROCESS
-
-        THUS
-        !!! PRODUCTS ARE NOT BLOCKED IN ODOO AND CAN BE MANIPULATED, SALED...       !!!
-        !!! IT IS STRONGLY RECOMMENDED DURING INVENTORIES TO STOP ANY OTHER PROCESS !!!
-        !!! THAT COULD AFFECT INVENTORIED PRODUCTS                                  !!!
-
-        STEPS
-        @CHECKS if products do exist in odoo product.product table, break the process
-                if product is found unmatched. A manual add is recquired to be abble to complete this check
-        @CREATE A 'stock.inventory' row that will be used as a container for uour inventoried products
-        @CREATE 'stock.inventory/line' for each purchase table_done products
-
-        @PROPAGATE START, validate the inventory and its lines.
-        @PROPAGATE VALIDATION, optionnal input from user, remove recquired manual validation
-
-        Args:
-            inventory (Purchase): purchase object containing related inventory data
-            data (Dict): cache data dict
-
-        Returns:
-            bool: process state record
+        payload:
+            :flag: stop process when raised
+            :valid: track the process validity. Unvalid process must stop and hint the users about the problems
+            :inventory: current app inventory object
+            :container: the inventory reference newly created in Odoo. This very reference is going to be populated with the inventory products data.
+            :failing: list of items failing the process
+            :error_code: hint the error formating system
+            
+        process_steps:
+            :_check_product_odoo_existence:
+                verify that every product scanned by the app have an Odoo reference.
+            :_create_stock_inventory_row:
+                Try to create a stock.inventory reference
+            :_create_stock_inventory_row:
+                Try to populate the created reference with the scanned items
+            :_propagate_start:
+                Simulate inventory creation action on Odoo interface
+            :_propagate_validate:
+                deactivated by default. Validate automatically the created inventory.
+                
+        
         """
-        odoo_exist = self.check_item_odoo_existence(inventory.table_done)
-        if odoo_exist["validity"] == False:
-            # DATA VALIDITY IS TO BE PASSED TO ODOO
-            return {
-                "validity": False,
-                "failed": "odoo_exist",
-                "errors": odoo_exist["errors"],
-            }
+        payload = {"inventory":self.inventories.get(oid),"valid": True, "flag": True}
+        handlers = iter(self.export_pipeline)
+        while payload["flag"]:
+            handler = next(handlers)  
+            payload = handler(payload)
+            if payload["valid"] is False:
+                return payload
+        self._propagate_validate(payload, autoval)
+        return payload
 
-        print("test1 passed")
-        p1 = self.create_stock_inventory_row(inventory)
-        if p1["validity"] == False:
-            # fail at creating a stock.inventory row
-            return {"validity": False, "failed": "inv_row", "errors": p1["errors"]}
-
-        p2 = self.create_stock_inventory_line_row(inventory, p1["container"])
-        if p2["validity"] == False:
-            # fail at creating one or more stock.inventory.line
-            return {"validity": False, "failed": "inv_line_row", "errors": p2["errors"]}
-
-        c = self.propagate_start(p2["container"])
-        self.propagate_validate(c, autoval)
-        return {"validity": True, "failed": "none", "errors": []}
-
-    def create_stock_inventory_row(self, inventory: Purchase):
+        
+    def _check_product_odoo_existence(self, payload: payload) -> payload:
+        outsiders = payload["inventory"].get_unknown_products()
+        payload.update({"valid": not any(outsiders), "failing": outsiders, "error_code": "odout"})
+        return payload
+        
+    def _create_stock_inventory_row(self, payload: payload) -> payload:
         """create a 'stock.inventory' container to be filled with inventory lines"""
         date = datetime.now().strftime("%d-%m-%Y")
-        name = f"{inventory.name} {date}"
-        validity = True
+        name = f"{payload['inventory'].name} {date}"
+        container = None
         try:
             container = self.create(
                 "stock.inventory",
-                {"name": name, "filter": "categories", "location_id": 12},
+                {"name": name, "location_id": 12},
             )
         except Exception:
-            # handle odoo errors on row creation
-            container = None
-            validity = False
+            payload.update({"valid": False, "container": None, "error_code":"odostockinvfail"})
+        payload.update({"container": container})
+        return payload
 
-        return {"validity": validity, "container": container, "errors": []}
-
-    def create_stock_inventory_line_row(self, inventory: Purchase, container: object):
+    def _create_stock_inventory_line_row(self, payload: payload) -> payload:
         """Fill the odoo 'stock.inventory' container with 'stock.inventory.line'
         records from purchase.table_done"""
-        validity, errors = True, []
-        _, _, records = inventory.get_table_records()
-        for r in records:
-            product = self.get("product.product", [("id", "=", r["id"])])
-            uom = product.product_tmpl_id.uom_id.id
+        valid, failing = True, []
+        oid = payload["container"].id
+        products = [p for p in payload["inventory"].products if p.state.current() == "done"]
+        for product in products:
             try:
-                self.create(
-                    "stock.inventory.line",
-                    {
-                        "product_qty": r["qty_received"],
-                        "product_id": r["id"],
-                        "product_uom_id": uom,
-                        "location_id": 12,
-                        "inventory_id": container.id,
-                    },
-                )
-
+                self.create("stock.inventory.line", product.as_inventory_payload(oid))
             except Exception:
-                # handle odoo erppeek erros
-                validity = False
-                errors.append(
-                    format_error_cases(
-                        "inv_block", {"barcode": product.barcode, "product": product}
-                    )
-                )
+                payload.update({"valid": False, "error_code": "odostockinvlinefail"})
+                failing.append(product)
+        payload.update({"failing": failing})
+        return payload    
 
-        return {"validity": validity, "container": container, "errors": errors}
-
-    def propagate_start(self, container: object):
+    def _propagate_start(self, payload: payload) -> payload:
         """use odoo action_start method to propagate inventory creation events"""
-        container.action_start()
-        return container
+        payload["container"].action_start()
+        payload["flag"] = False
+        return payload
 
-    def propagate_validate(self, container: object, autoval: bool):
+    def _propagate_validate(self, container: Record, autoval: bool) -> None:
         """use odoo action_validate methdod to automaticaly validate an inventory"""
         if autoval:
             try:
@@ -227,13 +161,6 @@ class Inventories(Odoo):
                 # catch marshall error & pass it
                 pass
 
-    def build(
-        self,
-        cache: Dict[str, Any],
-        erp: Dict[str, Any],
-        **kwargs
-    ) -> Dict[str, Any]:
-        self.connect(**erp)
-        return self.get_product_categories(cache)
+
 
 
