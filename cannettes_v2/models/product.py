@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
@@ -118,3 +119,31 @@ class Product(object):
         if single_brcd:
             payload["barcodes"] = payload.get("barcodes")[0]
         return payload
+
+    def as_inventory_payload(self, oid:int, location: int= 12) -> Payload:
+        return {
+            "product_qty": self.qty_received,
+            "product_id": self.pid,
+            "product_uom_id": self.uomid,
+            "location_id": location,
+            "inventory_id": oid,
+        }
+
+    def as_purchase_payload(self, oid: int, price: int, name: str) -> Payload:
+        return {
+            "order_id": oid,
+            "product_uom": self.uomid,
+            "price_unit": price,
+            "product_qty": 1,
+            "name": name,
+            "product_id": self.pid,
+            "date_planned": datetime.now(),
+        }
+
+    def fmt_display_name(self) -> str:
+        if self.name == "":
+            return f"{self.barcode} (nom absent)"
+        elif self.barcodes == [False]:
+            return f"{self.name} (code-barres absent)"
+        else:
+            return f"{self.name} ({self.barcodes})"

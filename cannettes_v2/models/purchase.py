@@ -50,7 +50,7 @@ class Purchase(object):
         oid: int,
         name: str = "",
         supplier: Optional[Supplier] = None,
-        added_date: datetime,
+        create_date: datetime,
         state: State = State(PURCHASE_STATE),
         process_state: State = State(PROCESS_STATE),
         _initial_products: List[Product],
@@ -58,11 +58,11 @@ class Purchase(object):
         self.oid = oid
         self.name = name
         self.supplier = supplier
-        self.added_date = added_date
+        self.create_date = create_date
         self._initial_products = _initial_products
         self.state = state
         self.process_state = process_state
-        self.create_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.build_registeries()
 
     def __repr__(self) -> str:
@@ -251,7 +251,25 @@ class Purchase(object):
 
 
 class Inventory(Purchase):
-    # -- init
+    def __init__(
+        self,
+        *,
+        oid: int,
+        catid: Optional[int] = None, 
+        name: str = "",
+        state: State = State(PURCHASE_STATE),
+        process_state: State = State(PROCESS_STATE),
+        _initial_products: List[Product],
+    ) -> None:
+        self.oid = oid
+        self.catid = catid
+        self.name = name
+        self.create_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self._initial_products = _initial_products
+        self.state = state
+        self.process_state = process_state
+        self.added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.build_registeries()
 
     def assembler(self, other: Inventory) -> None:
         """Product of both should be deepcopy do that uuid are the same."""
