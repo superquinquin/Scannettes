@@ -54,6 +54,28 @@ version_files = [
 major_version_zero = true
 update_changelog_on_bump = true
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -v --flakes --cov cannettes_v2"
+testpaths = [
+   "tests"
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:tensorflow.*:",
+    "ignore::DeprecationWarning:keras_preprocessing.*:",
+    "ignore::DeprecationWarning:flatbuffers.*:",
+    "ignore::UserWarning:tensorflow.*:",
+    "ignore::DeprecationWarning:future.*:"
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
 [tool.black]
 line-length = 90
 target-version = ["py37", "py38", "py39", "py310"]
