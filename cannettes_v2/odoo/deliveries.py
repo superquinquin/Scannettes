@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Tuple, Optional
@@ -12,14 +14,18 @@ from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.utils import get_update_time_ceiling
 
 payload = Dict[str, Any]
-cache = Dict[str, Any]
 
 
 class Deliveries(Odoo):
-    def __init__(self) -> None:
+    def __init__(
+        self, 
+        *, 
+        purchases: Dict[str, Any]= {}, 
+        last_update: Optional[datetime]= None
+        ) -> None:
         super().__init__()
-        self.purchases: Dict[int, Optional[Purchase]] = {}
-        self.last_update: datetime = None
+        self.purchases: Dict[int, Optional[Purchase]] = purchases
+        self.last_update: datetime = last_update
         
         self.export_pipeline = [
             self._check_product_odoo_existence,
@@ -28,7 +34,17 @@ class Deliveries(Odoo):
             self._export_products
         ]
 
-    def fetch_purchases(self, cache: cache) -> None:
+    @classmethod
+    def build(cls, cache: type,  erp: Dict[str, Any], **kwargs) -> Deliveries:
+        if erp.get("build_update_time", False):
+            raise ValueError("please configure odoo.build_update_time")
+        delta = erp.get("build_update_time")
+        deliveries = cls()
+        deliveries.connect(**erp)
+        deliveries.get_purchase(delta, cache)
+        return deliveries
+    
+    def fetch_purchases(self, cache: type) -> None:
         """
         collect purchases from "purchase.order"
         :states:
@@ -52,13 +68,13 @@ class Deliveries(Odoo):
         """        
 
         delta = cache["config"]["time_delta"]
-        lobby = cache.cache["lobby"]
+        lobby = cache["lobby"]
 
         date_ceiling = get_update_time_ceiling(self.last_update, delta)
-        purchases = self.browse(
-            "purchase.order",
-            [("create_date", ">", date_ceiling), ("id", "in", self.purchases.keys())],
-        )
+        cached_drafts = self.browse("purchase.order", [("id", "in", list(self.purchases.keys()))])
+        new_purchases = self.browse("purchase.order", [("create_date", ">", date_ceiling)])
+        purchases = cached_drafts + new_purchases
+        
         self.purchase_factory(purchases, lobby)
         self.last_update = datetime.now().date().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -66,9 +82,10 @@ class Deliveries(Odoo):
 
     def purchase_factory(self, purchases: RecordList, lobby: Lobby) -> None:
         for pur in purchases:
-            oid = pur.oid
+            oid = pur.id
             name = pur.name
             _state = pur.state
+            print(f"<{oid} - {name} : {_state}>")
 
             if _state == "draft":
                 self.purchases[oid] = None
@@ -76,21 +93,22 @@ class Deliveries(Odoo):
             elif _state == "purchase":
                 _picking_state = self.get_picking_state(name)
 
-                if _picking_state == "cancel":
-                    self.purchases.pop(oid)
+                if _picking_state == "cancel": # -- UNTESTED
+                    self.purchases.pop(oid, None)
                     rid = lobby.find_room_associated_to_purchase(oid)
                     if rid:
                         lobby.delete_room(rid)  # find room_id
 
-                elif _picking_state == "done":
+                elif _picking_state == "done": 
                     purchase = self.purchases.get(oid)
                     rid = lobby.find_room_associated_to_purchase(oid)
                     if rid:
                         lobby.rooms.get(rid).is_validated()
-                    else:
+                    if rid is None and purchase:
                         purchase.is_validated()
+                        self.purchases.pop(oid) # -- ?
                         
-                elif _picking_state == "assigned" and self.purchases.get(oid, False):
+                elif _picking_state == "assigned" and self.purchases.get(oid, False): # -- UNTESTED
                     purchase = self.purchases.get(oid)
                     products = self.fetch_products(purchase.name)
                     purchase.rebase_products(products, self)
@@ -103,7 +121,7 @@ class Deliveries(Odoo):
                         oid= oid,
                         name= name,
                         create_date= pur.create_date,
-                        supplier= Supplier(pur.partner_id),
+                        supplier= Supplier(partner=pur.partner_id),
                         _initial_products = self.fetch_products(name)
                     )
 
@@ -113,12 +131,12 @@ class Deliveries(Odoo):
 
     def product_factory(self, product: Record, **kwargs):
         name = self.get_name_translation(product.product_id.product_tmpl_id)
-        prod = Product({
+        print(name)
+        prod = Product(**{
             "pid": product.product_id.id,
             "name": re.sub("\[.*?\]", "", name).strip(),
-            "barcode": self.get_barcodes(product),
+            "barcodes": self.get_barcodes(product.product_id),
             "qty": product.product_qty,
-            "qty_virtual": None,
             "qty_package": product.product_qty_package,
         })
         prod.update(kwargs)

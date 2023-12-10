@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from erppeek import Record
 from datetime import datetime
@@ -30,9 +32,13 @@ class Inventories(Odoo):
             self._propagate_start
         ]
 
-    def build(self, erp: Dict[str, Any], **kwargs) -> Dict[str, Any]:
-        self.connect(**erp)
-        return self.import_categories()
+
+    @classmethod
+    def build(cls, erp: Dict[str, Any], **kwargs) -> Inventories:
+        inventories = cls()
+        inventories.connect(**erp)
+        inventories.import_categories()
+        return inventories
 
     def import_categories(self) -> None:
         cats = self.browse("product.category", [("create_date", ">", "1900-01-01 01:01:01")])
