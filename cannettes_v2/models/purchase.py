@@ -17,12 +17,12 @@ Payload = Dict[str, Any]
 
 class Supplier(object):
     """parse Supplier record"""
-    def __init__(self, *, partner_id: Optional[Record]) -> None:
+    def __init__(self, *, partner: Optional[Record]= None) -> None:
         self.id = None
         self.name = None
-        if partner_id:
-            self.id = partner_id.id
-            self.name = partner_id.name
+        if partner:
+            self.id = partner.id
+            self.name = partner.name
 
 
 class Purchase(object):
@@ -248,7 +248,6 @@ class Purchase(object):
     def is_validated(self):
         self.state.bump_to("received")
         self.process_state.bump_to("done")
-
 
 class Inventory(Purchase):
     def __init__(
