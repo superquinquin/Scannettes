@@ -1,8 +1,7 @@
 import os
 import binascii
-import pandas as pd
 from glob import glob
-from typing import Dict, Union, Tuple, List
+from typing import Dict, Union, Tuple, List, Any
 from dateutil.relativedelta import *
 from datetime import datetime, timedelta
 from string import ascii_lowercase, ascii_uppercase, digits
@@ -14,8 +13,6 @@ def generate_uuid() -> str:
     """fewer collisions method"""
     return ''.join(choices(CHARS, k=8))
 
-
-
 def generate_token(size: int):
     """generate hex token of size "size" """
     return binascii.hexlify(os.urandom(size)).decode()
@@ -26,17 +23,35 @@ def get_update_time_ceiling(last_update: datetime, delta: List[int]) -> datetime
     if ceiling is None:
         Y, M, W, D = delta
         now = datetime.now().date()
-        ceiling = now + timedelta(years=-Y, months=-M, weeks=-W, days=-D)
+        ceiling = now + timedelta(weeks= -W, days= -D)
         ceiling = ceiling.strftime("%Y-%m-%d %H:%M:%S")
     return ceiling
 
+def get_best_state(states: List[str]) -> str:
+    """used for stock.move ; stock.picking status system"""
+    status = {"cancel": 0, "assigned": 1, "done": 2}
+    return max([(s, status.get(s)) for s in states], key= lambda x: x[1])[0]
 
 
 
-
-
-
-
+def unpacker(cls: Union[type, dict]) -> Dict[str, Any]:
+    if isinstance(cls, type):
+        cls = cls.__dict__
+    
+    pack = {}
+    for k,v in cls.items():
+        if isinstance(v, type):
+            pack.update({k:v.unpacker()})
+        elif isinstance(v, list) and v is not None and isinstance(v[0], type):
+            pack.update({k:_list_unpacker(v)})
+        elif isinstance(v, dict):
+            pack.update({k:unpacker(v)})
+        else:
+            pack.update({k:v})
+    return pack
+            
+def _list_unpacker(items: List[type]) -> List[Dict[str, Any]]:
+    return [unpacker(item) for item in items]
 
 
 

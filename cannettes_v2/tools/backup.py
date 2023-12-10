@@ -1,65 +1,82 @@
-
-
 import time
+import glob
 from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
-from typing import List, Dict, Any
-
+from typing import List, Dict, Any, Optional
 
 from cannettes_v2.odoo.deliveries import Deliveries
+from cannettes_v2.odoo.inventories import Inventories
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.utils import get_delay
 
+Payload = Dict[str, Any]
 
-class Caching(object):
-    def init_cache(self) -> Dict[str, Any]:
-        self.cache = {
-                "config": None,
-                "odoo": {
-                    "history": {"update_purchase": [], "update_inventory": []},
-                    "purchases": {
-                        "incoming": {},
-                        "received": {},
-                        "done": {},
-                        "draft": {},
-                        "pseudo-purchase": {},
-                    },
-                    "inventory": {
-                        "type": {},  # all type of inventory, for selection purpose.
-                        "ongoing": {},
-                        "processed": {},
-                        "done": {},
-                    },
-                },
-                "lobby": {"rooms": {}, "users": {"admin": {}}},
-        }
+class Cache(object):
+    config: Dict[str, Any]
+    deliveries: Deliveries
+    inventories: Inventories
+    lobby: Lobby
     
-    def load_cache(self, filename: str) -> Dict[str, Any]:
-        try:
-            with open(filename, "rb") as f:
-                self.cache = load(f)
+    def __init__(
+        self, 
+        *, 
+        config: Optional[Dict[str, Any]]= None, 
+        deliveries: Optional[Deliveries]= None, 
+        inventories: Optional[Inventories]= None, 
+        lobby: Optional[Lobby]= None
+        ) -> None:
+        self.config = config
+        self.deliveries = deliveries
+        self.inventories = inventories
+        self.lobby = lobby
 
-        except FileNotFoundError or EOFError as e:
-            self.cache = self.init_cache()
+    @classmethod
+    def initialize(cls, backend: Optional[Dict[str, Any]]= None, backup: Optional[str]= None):
+        cache = None
+        if backend is None and backup is None:
+            raise ValueError("you must pack the backend or the backup for initialization")
+        if backend and backup:
+            raise ValueError("you must choose between backend and backup initialization")
+        
+        if backup:
+            if bool(glob.glob(backup)) is False:
+                raise ValueError("your backup file has not been found")
+            if backup.split('.')[-1] != "pickle":
+                raise ValueError("Cache currently only handle pickle files")
+            with open(backup, "rb") as f:
+                cache = load(f)
 
-    def set_config(self, config: Dict[str, Any]):
-        self.cache["config"] = config
+        elif backend:
+            cache = cls(**backend)
+        return cache
 
-    def __call__(self) -> Dict[str, Any]:
-        return self.cache
+    def to_backup(self, fname: str) -> None:
+        with open(fname, "wb") as f:
+            dump(self, f, protocol= HIGHEST_PROTOCOL)
+            
+    def set_config(self, config: Dict[str, Any]) -> None:
+        self.config = config
+        
+    def check_integrity(self) -> bool:
+        return any([attr for attr in self.__dict__ if attr is None])
     
+    def update(self, payload: Payload) -> None:
+        for k, v in payload.items():
+            current = getattr(self, k, None)
+            if current is None:
+                raise KeyError(f"{self} : {k} attribute doesn't exist")
+            if type(current) != type(v) and current is not None:
+                raise TypeError(
+                    f"{self} : field {k} value {v} ({type(v)}) does not match current type : {type(current)}"
+                )
+            setattr(self, k, v)
+
 class BackUp:
     def __init__(self, filename: str, frequency: List[int]) -> None:
         self.filename = filename
         self.frequency = frequency
     
-    def save_backup(self, cache: Dict[str, Any]):
-        """dump cache data dict into pickle file"""
-        with open(self.filename, "wb") as f:
-            dump(cache, f, protocol=HIGHEST_PROTOCOL)
-            # json.dump(data, fileName)
-
-    def BACKUP_RUNNER(self, cache: Dict[str, Any]):
+    def BACKUP_RUNNER(self, cache: Cache):
         """backup thread timer runner
         select delay and prepare backup thread to run"""
         delay = get_delay(delta=self.frequency)
@@ -67,9 +84,9 @@ class BackUp:
         timer = Timer(delay, self.BACKUP, cache)
         timer.start()
 
-    def BACKUP(self, cache):
+    def BACKUP(self, cache: Cache):
         """BACKUP THREAD"""
-        self.save_backup(cache, self.filename)
+        cache.to_backup(self.filename)
         self.BACKUP_RUNNER(cache)
 
 
@@ -96,19 +113,16 @@ class Update:
         timer = Timer(delay, self.update_build, cache)
         timer.start()
 
-    def update_build(self, cache):
+    def update_build(self, cache: Cache):
         """try to update purchase list"""
 
         while True:
             try:
-                cache = self.odoo.get_purchase(
-                    self.delta, cache
-                )
-                cache = self.lobby.remove_historic_room(self.odoo, cache)
-                cache = self.lobby.force_room_status_update(cache)
+                deliveries = cache.get("deliveries")
+                lobby = cache.get("lobby")
+                deliveries.fetch_purchases(cache)
+                lobby.remove_outdated_rooms()
                 self.UPDATE_RUNNER(cache)
-                break
-
             except KeyError as e:
                 print("__ BUILD UPDATE KEY ERROR\n", e)
                 self.UPDATE_RUNNER(cache)
