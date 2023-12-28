@@ -1,28 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" media="all" href="/static/css/login.css">
-    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
-
-    <title>Login</title>
-  </head>
-  <body>
-    <form action = "/setJWT" method = "POST">
-      <div id="logger">
-        <div class="field">
-          <label for="identifiant">Identifiant: </label>
-          <input id="identifiant" name="username" type="text" value="">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" media="all" href="/static/css/login.css">
+        <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+        <title>Scannettes | login</title>
+    </head>
+    <body>
+        <div id="head">
+            <div id="head-container">
+                <img class="head-content" src="../static/misc/superquinquin_logo2.png"><!--  {{url_for('static', filename='misc/superquinquin_logo2.png')}} -->
+                <h1 id="title" class="head-content">Scannettes</h1>
+                <div id="fields-container">
+                    <ul id="head-fields">
+                        <li><a id="doc" class="head-content" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
+                        <!-- <li><a id="login" class="head-content" href="{{ url_for('cannettes_bp.login') }}"><strong>Se connecter</strong></a></li> -->
+                    </ul>
+                </div>
+            </div>
         </div>
-        <div class="field">
-          <label for="password">Mot de passe: </label>
-          <input id="password" name="password" type="password" value="">
-        </div>
-        <button id="connection-btn" type="submit">Connexion</button>
-        <p id="error-msg"></p>
-      </div>
-    </form>
-    <script type="text/javascript" src="/static/js/login/unified.js"></script>
-  </body>
+        <main>
+            <form action = "/setJWT" method = "POST">
+                <div id="logger">
+                    <div class="field">
+                        <label class="field-comp" for="identifiant">Identifiant :</label>
+                        <input class="field-comp" id="identifiant" name="username" type="text" value="" placeholder="Identifiant...">
+                    </div>
+                    <div class="field">
+                        <label class="field-comp" for="password">Mot de passe :</label>
+                        <input class="field-comp" id="password" name="password" type="password" value="" placeholder="Mot de passe...">
+                    </div>
+                    <div class="btn-container">
+                        <button id="connection-btn" type="submit">Connection</button>
+                    </div>
+                </div>
+            </form>
+        </main>
+        <script type="text/javascript" src="/static/js/login/unified.js"></script>
+    </body>
 </html>

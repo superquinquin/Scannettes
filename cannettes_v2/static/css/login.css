@@ -1,46 +1,179 @@
 
+:root {
+    --primary: #CDE6F5;
+    --primary-shade: #DDEEF8;
+    --secondary: #3C312E;
 
-body {
-    margin: 100px auto;
-    width: 50%;
+    --items-open: #9EE493;  
+    --itemshover-open: #6CD65C;
+
+    --items-close: #F9B5AC;  
+    --itemshover-close: #F47766;
+
+    --items-done: #1AC7C4;  
+    --itemshover-done: #107E7D;
+
+    --head-w: 60%;
+    --main-w: 35%;
+}
+
+html {
+    font-family: 'Raleway', sans-serif;
+    overflow-x: hidden;
+    background-color: var(--primary);
+}
+
+#head {
+    margin: 0 auto;
+    width: var(--head-w);
+}
+
+main {
+    margin: 0 auto;
+    margin-top: 5%;
+    width: var(--main-w);
+}
+
+img {
+    max-width: 100px;
+    max-height: 100px;
+    background-color: #abb8c3;
+    scale: 0.5;
+    border: 3px solid var(--secondary);
+    border-radius: 50%;
 }
 
 
+/* !!!!!!!!!!!!!!!!!!!!!!!!!! HEADER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+#head h1{
+    color: #3C312E;
+}
+
+.head-content {
+    display: inline;
+    vertical-align: middle;
+}
+
+
+#fields-container {
+    text-align: center;
+    vertical-align: middle;
+    align-items: center;
+    justify-content: center;
+    float: right;
+    margin-top: 17px;
+}
+
+#fields-container ul {
+    display: inline-block;
+}
+
+#fields-container li {
+    display: block;
+    position: relative;
+    float: left;
+    text-align: center;
+}
+
+#login {
+    margin-left: 10px;
+}
+
+#login, #doc {
+    vertical-align: middle;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 20px;
+    border-bottom-left-radius: 10px;
+    color: var(--secondary);
+}
+
+#login::after, #doc::after {
+    content: '';
+    position: absolute;
+    margin-left: 15px;
+    width: 85%;
+    transform: scaleX(0);
+    height: 3px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--secondary);
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+}
+
+#login:hover::after, #doc:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
+
+
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! LOGGER FORM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  */
+
 #logger {
     padding: 20px 25px 20px 25px;
-    border: 3px solid black;
+    background-color: var(--primary-shade);
+    border-top: solid 1px var(--secondary);
+    border-right: solid 3px var(--secondary);
+    border-bottom: solid 3px var(--secondary);
+    border-left: solid 1px var(--secondary);
     border-radius: 5px;
 }
 
 .field {
-    margin: 20px 0px 20px 5px;
+    display: block;
+    margin: 30px 20px;
+}
+
+.field-comp {
+    display: block;
 }
 
 #logger label {
-    display: inline-block;
-    clear: left;
-    padding-right: 10px;
-    width: 250px;
-    text-align: right;
+    margin-left: 30px;
+    margin-bottom: 15px;
     font-weight: bold;
     font-size: 18px;
 }
 
 #logger input {
-    width: 300px;
-    height: 30px;
-    border: 3px solid black;
+    width: 90%;
+    height: 50px;
+    padding-left: 20px;
+    border-top: solid 1px var(--secondary);
+    border-right: solid 3px var(--secondary);
+    border-bottom: solid 3px var(--secondary);
+    border-left: solid 1px var(--secondary);
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 500;
 }
 
-#logger button {
+.btn-container {
+    display: block;
+    margin: 30px 20px;
+}
+
+.btn-container button {
+    position: relative;
     font-size: 18px;
     font-weight: bold;
     width: 200px;
     height: 50px;
-    border: 3px solid black;
+    left: calc(90% - 175px);
+    background-color: var(--items-open);
+    border-top: solid 1px var(--secondary);
+    border-right: solid 3px var(--secondary);
+    border-bottom: solid 3px var(--secondary);
+    border-left: solid 1px var(--secondary);
     border-radius: 5px;
+}
+
+.btn-container button:hover {
+    cursor: pointer;
+    background-color: var(--itemshover-open);
+    transition: background-color 0.2s ease;
 }
 
