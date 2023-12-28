@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 from flask import current_app, url_for
@@ -9,7 +10,11 @@ from cannettes_v2.authenticator import Authenticator
 from cannettes_v2.decorators import protected
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.odoo.odoo import Odoo
+from cannettes_v2.odoo.deliveries import Deliveries
+from cannettes_v2.odoo.inventories import Inventories
 from cannettes_v2.tools.pdf import PDF
+from cannettes_v2.tools.backup import Cache
+from cannettes_v2.utils import Response
 from cannettes_v2.utils import (
     format_error_client_message,
     get_passer,
@@ -20,6 +25,169 @@ from cannettes_v2.utils import (
 
 Cache = Dict[str, Any]
 Payload = Dict[str, Any]
+
+
+
+@cannette.socketio.on("message")
+def log_message(msg):
+    print(str(msg))
+    
+@cannette.socketio.on("initialization-call")
+def initialize(context):
+    """
+    must return 
+    
+    app context for LOBBY
+        > list of existing rooms
+        > list of existing purcahases
+        > list of existing categories
+    """    
+    cache: Cache = current_app.cache
+    lobby: Lobby = cache.lobby
+    
+    
+    if context["instance"] == "lobby":
+        context = {
+            "origin": '/room',
+            "rooms": [room.to_payload() for room in lobby.get_open_rooms()]
+        }
+        emit("lobby-initialization", context , include_self=True)
+        
+    elif context["instance"] == "room":
+        rid = context["rid"]
+        print(rid)
+        print(lobby.__dict__)
+        room = lobby.rooms.get(int(rid))
+        print(room)
+        context = {
+            "room": room.to_payload(),
+            "data": [product.to_payload(single_brcd=True) for product in room.data.products]
+        }
+        emit("room-initialization", context , include_self=True)
+    
+
+
+@cannette.socketio.on("admin-initialization-call")
+@protected(auth_level="admin")
+def admin_initialize(context):
+    """
+    must return 
+    
+    app context for LOBBY
+        > list of existing rooms
+        > list of existing purcahases
+        > list of existing categories
+    """  
+    cache: Cache = current_app.cache
+    lobby: Lobby = cache.lobby
+    deliveries: Deliveries = cache.deliveries
+
+    if context["instance"] == "lobby":
+        context = {
+            "origin": f'admin/room',
+            "rooms": [room.to_payload() for room in lobby.get_all_rooms()],
+            "purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()],
+            "categories": cache.inventories.categories,
+        }
+        emit("lobby-initialization", context , include_self=True)
+    elif context["instance"] == "room":
+        rid = context["rid"]
+        room = lobby.rooms.get(rid)
+        context = {
+            "room": room.to_payload(),
+            "data": [product.to_payload(single_brcd=True) for product in room.data.products]
+        }        
+        emit("room-initialization", context , include_self=True)
+    
+
+@cannette.socketio.on("add-rooms")
+@protected(auth_level="admin")
+def add_room(context):
+    cache: Cache = current_app.cache
+    lobby: Lobby = cache.lobby
+    inventories: Inventories = cache.inventories
+    deliveries: Deliveries = cache.deliveries
+    erp = cache.config["odoo"]["erp"]
+    
+    adding_type = context.get("type", None)
+    std_payload = {"state": "ok", "data": {"origin": "/room"}}
+    adm_payload = {"state": "ok", "data": {"origin": "/admin/room"}}
+    sel_payload = {"state": "ok", "data": {}}
+
+    if adding_type == "purchase":
+        oid = context.get("oid")
+        purchase = deliveries.purchases.get(oid, None)
+        context.update({"data": purchase})
+        room = lobby.room_factory(context)
+        rooms = [room.to_payload()]
+        adm_payload["data"]["rooms"] = rooms
+        std_payload["data"]["rooms"] = rooms
+        sel_payload["data"]["purchases"] = [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]
+        emit("add-rooms", std_payload ,include_self=True, broadcast=True)
+        emit("add-rooms-admin", adm_payload ,include_self=True, broadcast=True)
+        emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True)
+    elif adding_type == "inventory":
+        context.update({"catid": context.get("oid")})
+        inventories.connect(**erp)
+        invs = inventories.inventory_siblings_factory(**context)
+        (shelf, stock) = lobby.room_sibling_factory(context, *invs)
+        rooms = [shelf.to_payload(), stock.to_payload()] 
+        adm_payload["data"]["rooms"] = rooms
+        std_payload["data"]["rooms"] = rooms
+        emit("add-rooms", std_payload ,include_self=True, broadcast=True)
+        emit("add-rooms-admin", adm_payload ,include_self=True, broadcast=True)            
+    else:
+        payload = {"state": "err", "data": {"message": "Création de salon: quelque chose n'a pas marché."}}
+        emit("message", payload, include_self=True)
+    emit("close-creation-modal", include_self=True)
+
+
+@cannette.socketio.on("del-rooms")
+@protected(auth_level="admin")
+def del_rooms(context):
+    cache: Cache = current_app.cache
+    lobby: Lobby = cache.lobby
+    deliveries: Deliveries = cache.deliveries
+    for rid in context["rids"]:
+        lobby.delete_room(rid)
+    sel_payload = {"state": "ok", "data": {"purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]}}
+    emit("del-rooms", {"state": "ok", "data": context})
+    emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True)
+    
+@cannette.socketio.on("reinit-rooms")
+@protected(auth_level="admin")
+def reinit_rooms(context):
+    cache: Cache = current_app.cache
+    lobby: Lobby = cache.lobby
+    for rid in context["rids"]:
+        lobby.reset_room(rid)
+    emit("reinit-rooms", {"state": "ok", "data": context})
+    
+
+
+@cannette.socketio.on("generate-qrcodes")
+def generate_qrcodes(context):
+    cache: Cache = current_app.cache
+    lobby: Lobby = cache.lobby
+    payload = lobby.qrcode_iterator(context)
+    
+    pdf = PDF("P", "mm", "A4")
+    output = pdf.generate_pdf(payload)
+    emit("qrcodes-pdf", {"pdf": output})
+
+
+
+
+
+
+
+
+
+
+
+
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>> previous version >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 def task_permission_redirector(data, context) -> bool:
