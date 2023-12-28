@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html id="html" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scannettes admin | Lobby</title>
+    <link rel="stylesheet" media="all" href="/static/css/lobby_v2.css">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div id="head">
+        <div id="head-container">
+            <img class="head-content" src="../static/misc/superquinquin_logo2.png"><!--  {{url_for('static', filename='misc/superquinquin_logo2.png')}} -->
+            <h1 id="title" class="head-content">Scannettes</h1>
+            <div id="fields-container">
+                <ul id="head-fields">
+                    <li><a id="doc" class="head-content" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
+                    <li><a id="login" class="head-content" href="{{ url_for('cannettes_bp.login') }}"><strong>Se connecter</strong></a></li>
+                </ul>
+            </div>
+        </div>
+    </div> 
+    <main>
+        <div id="msg-box">
+            <div class="err msg-container">
+                <img src="../static/misc/err.png" class="msg-symbol msg-comp">
+                <p class="msg msg-comp">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                <div class="quit-container"><button class="msg-quit msg-comp" onclick="closeMsg(this)">x</button></div>
+            </div>
+            <div class="ok msg-container">
+                <img src="../static/misc/ok.png" class="msg-symbol msg-comp">
+                <p class="msg msg-comp">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                <div class="quit-container"><button class="msg-quit msg-comp" onclick="closeMsg(this)">x</button></div>
+                
+            </div>
+        </div>
+
+        <div id="open-container" class="table-container">
+            <div class="table-header-container">
+                <h2>Salons</h2>
+            </div>
+            <div id="admin-wrapper">
+                <div class="admin-container">
+                    <div class="search">
+                        <input id="searchbar" class="searchbar" type="text" placeholder="Rechercher un salon / commande..." onkeyup="searchRoom(event)">
+                        <button id="reset-searchbar" class="reset-searchbar" onclick="resetSearch('purchased')">&#10006</button>
+                    </div>
+                    <div class="wrapper">
+                        <div class="management">
+                            <button id="create" class="mngmnt-btn" onclick="creationModal()">Créer</button>
+                            <button id="del" class="mngmnt-btn" onclick="delSelRooms()">Supprimer</button>
+                            <button id="reset" class="mngmnt-btn" onclick="reInitSelRooms()">Réinitialiser</button>
+                            <button id="qrcode" class="mngmnt-btn" onclick="GenerateQrCode()">QR-code</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="open-table-content-container">
+                    <div class="col-header-container">
+                        <div class="col-header">
+                            <div class="header-cell">&#9989;</div>
+                            <div class="header-cell" onclick="tableSort(this)">Nom&ensp;<span id="rname-order" class="order">-</span></div>
+                            <div class="header-cell" onclick="tableSort(this)">Commande / Inventaire&ensp;<span id="pname-order" class="order">-</span></div>
+                            <div class="header-cell" onclick="tableSort(this)">Statut&ensp;<span id="pstate-order" class="order">-</span></div>
+                            <div class="header-cell" onclick="tableSort(this)">Date&ensp;<span id="pdate-order" class="order">-</span></div>
+                            <div class="header-cell">Mot de passe</div>
+                        </div>
+                    </div>
+                    <div id="room-table"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="creation-modal" class="modal-blur">
+        <div id="back-container" class="modal">
+            <div class="modal-inner-container">
+                <div class="switch-button">
+                    <input id="pType-check" class="switch-button-checkbox" type="checkbox" onclick="switchContainer()">
+                    <label class="switch-button-label" for=""><span class="switch-button-label-span">Commande</span></label>
+                </div>
+                <div id="purchase-container" style="display: flex;">
+                    <div class="selector-container">
+                        <label for="purchases"><strong>Commande :</strong></label>
+                        <select id="purchases" class="inputs selector"></select>  
+                    </div>
+                </div>
+                <div id="inv-container" style="display: none;">
+                    <div class="selector-container">
+                        <label for="categories"><strong>Inventaire :</strong></label>
+                        <select id="categories" class="inputs selector">
+                            <option value="">Aucune</option>
+                        </select>  
+                    </div>        
+                </div>
+                <label for="room-name"><strong>Définir un nom (recommandé) :</strong></label>
+                <input id="room-name" class="inputs" type="text" value="">
+                <label for="room-password"><strong>Définir un mot de passe (facultatif) :</strong></label>
+                <input id="room-password" class="inputs" type="text" value="" autocomplete="off">
+                <p id="creation-info"></p>
+                <div class="modal-button-container">
+                    <button id="CancelRoom" class="modal-button" onclick="creationModal()">Annuler</button>   
+                    <button id="createRoom" class="modal-button" onclick="createRoom()">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmation-modal" style="display: none;">
+        <div id="confirmation-container">
+            <div id="confirmation-container-heading">
+                <p id="heading-message"></p>
+            </div>
+            <div id="confirmation-container-content">
+                <p id="content-message"></p>
+            </div>
+            <div id="confirmation-container-btn">
+                <button id="cancel-confirmation" onclick="CloseCModal()"><strong>Annuler</strong></button>
+                <button id="accept-confirmation"><strong>Confirmer</strong></button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="/static/js/config.js"></script>
+    <script type="text/javascript" src="/static/js/test_admin_v2.js"></script>
+</body>
+</html>

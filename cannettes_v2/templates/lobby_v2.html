@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby</title>
-    <link rel="stylesheet" media="all" href="/cannettes_v2/static/css/lobby_v2.css">
+    <title>Scannettes | Lobby</title>
+    <link rel="stylesheet" media="all" href="/static/css/lobby_v2.css">
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
 </head>
 
 <body>
     <div id="head">
         <div id="head-container">
-            <img class="head-content" src="{{url_for('static', filename='misc/superquinquin_logo2.png')}}">
-            <h1 id="title" class="head-content">Lobby</h1>
+            <img class="head-content" src="../static/misc/superquinquin_logo2.png"><!--  {{url_for('static', filename='misc/superquinquin_logo2.png')}} -->
+            <h1 id="title" class="head-content">Scannettes</h1>
             <div id="fields-container">
                 <ul id="head-fields">
                     <li><a id="doc" class="head-content" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
-                    <li id="field-space"> </li>
                     <li><a id="login" class="head-content" href="{{ url_for('cannettes_bp.login') }}"><strong>Se connecter</strong></a></li>
                 </ul>
             </div>
@@ -28,57 +27,71 @@
                 <h2>Salons Ouverts</h2>
             </div>
             <ul id="open-table-content-container">
+                <div class="col-header-container">
+                    <div class="col-header">
+                        <div class="header-cell">&#9989;</div>
+                        <div class="header-cell">Nom&ensp;<span id="rname-order" class="order">-</span></div>
+                        <div class="header-cell">Commande / Inventaire&ensp;<span id="pname-order" class="order">&#9650;</span></div>
+                        <div class="header-cell">Statut&ensp;<span id="state-order" class="order">&#9660;</span></div>
+                        <div class="header-cell">Date&ensp;<span id="date-order" class="order">-</span></div>
+                        <div class="header-cell">Mot de passe</div>
+                    </div>
+                </div>
                 <li>
-                    <div otype="inv" oid="0" rid="room0" class="purchase">
-                        <input type="checkbox" class="check">
-                        <p class="rname">room0</p>
-                        <p class="pname">PO08210 - Frais</p>
-                        <p class="pstate">Open</p>
-                        <p class="pdate">29/09/2023 10:44</p>
-                        <input class="rpass" type="password" autocomplete="off">
-                        <button>Rejoindre</button>
+                    <div otype="inv" oid="0" rid="room0" class="purchase open">
+                        <div class="grid-cell check"><input type="checkbox"></div>
+                        <div class="separator"></div>
+                        <div class="grid-cell rname">room0</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell long pname">PO08210 - Frais</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell pstate">Open</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell pdate">29/09/2023</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell rpass"><input type="password" autocomplete="off" placeholder="Mot de passe..."></div>
+                        <div class="grid-cell-btn raccess">
+                            <button><i class="arrow right"></i></button>
+                        </div>
+                    </div>
+                    <div otype="inv" oid="0" rid="room0" class="purchase close">
+                        <div class="grid-cell check"><input type="checkbox"></div>
+                        <div class="separator"></div>
+                        <div class="grid-cell rname">room0</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell long pname">PO08210 - Frais</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell pstate">Open</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell pdate">29/09/2023</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell rpass"><input type="password" autocomplete="off" placeholder="Mot de passe..."></div>
+                        <div class="grid-cell-btn raccess">
+                            <button><i class="arrow right"></i></button>
+                        </div>
+                    </div>
+                    <div otype="inv" oid="0" rid="room0" class="purchase done">
+                        <div class="grid-cell check"><input type="checkbox"></div>
+                        <div class="separator"></div>
+                        <div class="grid-cell rname">room0</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell long pname">PO08210 - Frais</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell pstate">Open</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell pdate">29/09/2023</div>
+                        <div class="separator"></div>
+                        <div class="grid-cell rpass"><input type="password" autocomplete="off" placeholder="Mot de passe..."></div>
+                        <div class="grid-cell-btn raccess">
+                            <button><i class="arrow right"></i></button>
+                        </div>
                     </div>
                 </li>
             </ul>
         </div>
     </main>
 
-
-
-
-
-    <div class="shiftHeader">
-        <h2>Lundi 08h45 - 11h30</h2>
-        <button class="catchUpBtn" onclick="askCatchingUp(8577)">S'inscrire</button>
-    </div>
-    <ul>
-        <li shift_id="8577" partner_id="609" state="done" id="107063" onclick="askConfirmationReset(107063)" class="done">
-            <strong>526</strong> - ANDRIS, Isabelle en binôme avec THOMAS, Jerôme<span>✓</span>
-        </li>
-        <li shift_id="8577" partner_id="6062" state="done" id="112328" onclick="askConfirmationReset(112328)" class="done">
-            <strong>2723</strong> - ANICOTTE, Dominique<span>✓</span>
-        </li>
-        <li shift_id="8577" partner_id="3858" state="done" id="107064" onclick="askConfirmationReset(107064)" class="done">
-            <strong>1871</strong> - HAVET, Philippe<span>✓</span>
-        </li>
-        <li shift_id="8577" partner_id="142" state="done" id="107065" onclick="askConfirmationReset(107065)" class="done">
-            <strong>59</strong> - LORIAU, Nicole en binôme avec HANQUEZ, Claude<span>✓</span>
-        </li>
-        <li shift_id="8577" partner_id="778" state="done" id="107066" onclick="askConfirmationReset(107066)" class="done">
-            <strong>695</strong> - MARTEL, Claire en binôme avec LE DORZE, RONAN<span>✓</span>
-        </li>
-        <li shift_id="8577" partner_id="2917" state="done" id="107067" onclick="askConfirmationReset(107067)" class="done">
-            <strong>1459</strong> - MENARD, Nicolas<span>✓</span>
-        </li>
-        <li shift_id="8577" partner_id="3873" state="open" id="107068" onclick="askConfirmation(107068)" class="open">
-            <strong>1848</strong> - RIFF, Bruno en binôme avec LEITE, Sara
-        </li>
-        <li shift_id="8577" partner_id="2992" state="done" id="107069" onclick="askConfirmationReset(107069)" class="done">
-            <strong>1497</strong> - VAISSAIRE, Anne<span>✓</span>
-        </li>
-    </ul>
-
-
-
+    <script type="text/javascript" src="/static/js/config.js"></script>
+    <script type="text/javascript" src="/static/js/test_v2.js"></script>
 </body>
 </html>
