@@ -64,14 +64,14 @@ class Authenticator(object):
             'username': request.form['username'], 
             'password': request.form['password']
         }
-        authenticator = current_app.cache["config"]["authenticator"]
+        authenticator = current_app.cache.config["authenticator"]
         users = current_app.users
         auth = cls(
             **authenticator,
             **users
         ).authenticate(**context)
         
-        response = make_response(redirect(url_for("cannettes_bp.index_admin")))
+        response = make_response(redirect(url_for("cannettes_bp.admin_lobby")))
         if auth.get("status") == "success":
             response.set_cookie('session', auth["token"])
         return response

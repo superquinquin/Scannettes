@@ -10,7 +10,7 @@ def protected(auth_level: Optional[str]):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            authenticator = current_app.cache["config"]["authenticator"]
+            authenticator = current_app.cache.config["authenticator"]
             token = request.cookies.get("session")
             try:
                 auth = Authenticator(
