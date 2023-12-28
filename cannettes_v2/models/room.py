@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union
 from cannettes_v2.models.purchase import Inventory, Purchase
 from cannettes_v2.models.state_handler import ROOM_STATE, State
 from cannettes_v2.odoo.odoo import Odoo
-from cannettes_v2.utils import generate_uuid
+from cannettes_v2.utils import generate_uuid, update_object, restrfmtdate
 
 Payload = Dict[str, Any]
 RoomType = Literal["purchase", "inventory"]
@@ -22,16 +22,18 @@ class Room(object):
         name: str = "",
         password: Optional[str] = None,
         type: RoomType,
+        sibling: Optional[int] = None,
         data: Union[Purchase, Inventory],
-        state: State = State(ROOM_STATE),
+        state: Optional[State] = None,
         **kwargs,
     ) -> None:
         self.rid = rid
         self.name = name
         self.password = password
         self.type = type
+        self.sibling = sibling
         self.data = data
-        self.state = state
+        self.state = state or State(ROOM_STATE)
         self.closing_date = None
         self.creating_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.token = generate_uuid()
@@ -53,18 +55,10 @@ class Room(object):
         ]
 
     def __repr__(self) -> str:
-        return f"<{self.rid} {self.name} ({self.type}) : {self._state}>"
+        return f"<{self.rid} {self.name} ({self.type}) : {self.state}>"
 
     def update(self, payload: Payload) -> None:
-        for k, v in payload.items():
-            current = getattr(self, k, None)
-            if current is None:
-                raise KeyError(f"{self} : {k} attribute doesn't exist")
-            if type(current) != type(v) and current is not None:
-                raise TypeError(
-                    f"{self} : field {k} value {v} ({type(v)}) does not match current type ({type(current)})"
-                )
-            setattr(self, k, v)
+        update_object(self, payload)
 
     def is_finished(self):
         self.state.bump_to("close")
@@ -113,3 +107,17 @@ class Room(object):
             context["flag"] = False
             context["res"] = {"msg": f"{context['barcode']} is already scanned"}
         return context
+
+    
+    def to_payload(self) -> Payload:
+        return {
+            "rid": self.rid,
+            "name": self.name,
+            "type": self.type,
+            "token": self.token,
+            "state": self.state.current(),
+            "sibling": self.sibling,
+            "creating_date": restrfmtdate(self.data.create_date) or restrfmtdate(self.creating_date),
+            "oid": self.data.oid,
+            "display_name": self.data.display_name()
+        }

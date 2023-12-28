@@ -46,3 +46,6 @@ class State(object):
                 f"You must rollback to a previous state than {self} ({existing_states})"
             )
         self.active = self.states[previous_state].value
+
+    def is_passed(self, state: str) -> bool:
+        return self.states[state].value <= self.active

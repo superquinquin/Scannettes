@@ -5,11 +5,12 @@ from copy import deepcopy
 from datetime import datetime
 from collections import defaultdict
 from erppeek import Record, RecordList
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 from cannettes_v2.models.product import Product
 from cannettes_v2.models.state_handler import PRODUCT_STATE, State, PROCESS_STATE, PURCHASE_STATE
 from cannettes_v2.odoo.odoo import Odoo
+from cannettes_v2.utils import update_object
 
 Uuid = str
 Payload = Dict[str, Any]
@@ -18,8 +19,8 @@ Payload = Dict[str, Any]
 class Supplier(object):
     """parse Supplier record"""
     def __init__(self, *, partner: Optional[Record]= None) -> None:
-        self.id = None
-        self.name = None
+        self.id = ""
+        self.name = ""
         if partner:
             self.id = partner.id
             self.name = partner.name
@@ -37,6 +38,7 @@ class Purchase(object):
         :_initial_products: (List[Products]) initial list products. remain immutable.
         :_state: (str) Current state of the purchase -> ['incoming', 'received']
         :_process_state: (str) Current processing state of the purchase -> ["None", "Started", "finished", "done"]
+        :associated_rid: Optional(int) rid of the associated room id if associated
 
         :products: (List[Product])
         :uuid_registry: (Dict[uuid, Product])
@@ -51,17 +53,18 @@ class Purchase(object):
         name: str = "",
         supplier: Optional[Supplier] = None,
         create_date: datetime,
-        state: State = State(PURCHASE_STATE),
-        process_state: State = State(PROCESS_STATE),
+        state: Optional[State] = None,
+        process_state: Optional[State] = None,
         _initial_products: List[Product],
     ) -> None:
         self.oid = oid
         self.name = name
         self.supplier = supplier
         self.create_date = create_date
+        self.associated_rid = None
         self._initial_products = _initial_products
-        self.state = state
-        self.process_state = process_state
+        self.state = state or State(PURCHASE_STATE)
+        self.process_state = process_state or State(PROCESS_STATE)
         self.added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.build_registeries()
 
@@ -105,15 +108,7 @@ class Purchase(object):
         return [p for p in self._initial_products if p.uuid == product.uuid][0]
 
     def update(self, payload: Payload) -> None:
-        for k, v in payload.items():
-            current = getattr(self, k, None)
-            if current is None:
-                raise KeyError(f"{self} : {k} attribute doesn't exist")
-            if type(current) != type(v) and current is not None:
-                raise TypeError(
-                    f"{self} : field {k} value {v} ({type(v)}) does not match current type ({type(current)})"
-                )
-            setattr(self, k, v)
+        update_object(self, payload)
 
     def add_product(self, product: Product, with_initial: bool = False) -> None:
         self.products.append(product)
@@ -239,7 +234,7 @@ class Purchase(object):
         return context
 
     def is_starting(self):
-        self.process_state.bump_to("starting")
+        self.process_state.bump_to("started")
 
     def is_finished(self):
         self.state.bump_to("received")
@@ -248,28 +243,52 @@ class Purchase(object):
     def is_validated(self):
         self.state.bump_to("received")
         self.process_state.bump_to("done")
+        
+    def display_name(self) -> str:
+        return f"{self.name} - {self.supplier.name}"
+    
+    def to_sel_tuple(self) -> Tuple[int, str]:
+        return (self.oid, self.display_name())
+    
 
 class Inventory(Purchase):
+    """
+    
+    Attr:
+        :catid:
+        :catname:
+        :sibling:
+        Purchase attributes
+    
+    """
     def __init__(
         self,
         *,
         oid: int,
         catid: Optional[int] = None, 
         name: str = "",
-        state: State = State(PURCHASE_STATE),
-        process_state: State = State(PROCESS_STATE),
-        _initial_products: List[Product],
+        sibling: Optional[int] = None,
+        state: Optional[State] = None,
+        process_state: Optional[State] = None,
+        _initial_products: List[Product] = [],
     ) -> None:
         self.oid = oid
         self.catid = catid
         self.name = name
+        self.sibling = sibling
         self.create_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self._initial_products = _initial_products
-        self.state = state
-        self.process_state = process_state
+        self.state = state or State(PURCHASE_STATE)
+        self.process_state = process_state or State(PROCESS_STATE)
         self.added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.build_registeries()
 
+    def late_init(self, _initial_products: List[Product]= [], name: str= "", sibling: Optional[int]= None) -> None:
+        self._initial_products = _initial_products
+        self.name = name
+        self.sibling = sibling
+        self.build_registeries()
+    
     def assembler(self, other: Inventory) -> None:
         """Product of both should be deepcopy do that uuid are the same."""
         for product in other.products:
@@ -285,9 +304,9 @@ class Inventory(Purchase):
                 product.update({"qty_received": 0, "_scanned": True})
                 product.state.bump_to("done")
 
-
-class PseudoPurchase(Purchase):
-    pass
-
-class PseudoInventory(Inventory):
-    pass
+    def display_name(self) -> str:
+        if self.name:
+            display = f"Inventaire - {self.name}"
+        else:
+            display = "Inventaire libre"
+        return display

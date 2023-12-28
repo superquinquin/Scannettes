@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 from cannettes_v2.models.state_handler import State, PRODUCT_STATE
-from cannettes_v2.utils import generate_uuid
+from cannettes_v2.utils import generate_uuid, update_object
 
 Payload = Dict[str, Any]
 
@@ -43,11 +43,11 @@ class Product(object):
     name: str = field(compare=True, default="")
     barcodes: List[Union[str, bool]] = field(compare=True)
     qty: int = field(compare=False, default=0)
-    qty_virtual: int =  field(compare=False, default=0)
-    qty_package: int =  field(compare=False, default=0)
-    qty_received: int =  field(compare=False, default=0)
+    qty_virtual: int = field(compare=False, default=0)
+    qty_package: int = field(compare=False, default=0)
+    qty_received: int = field(compare=False, default=0)
     uomid: int = field(compare=True, default=None)
-    state: State = field(compare=False, default=State(PRODUCT_STATE))
+    state: State = field(compare=False, default=None)
     _modified: bool = field(compare=False, default=False),
     _scanned: bool = field(compare=False, default=False),
     _new: bool = field(compare=False, default=False),
@@ -63,7 +63,7 @@ class Product(object):
         qty_virtual: int = 0,
         qty_package: int = 0,
         uomid: Optional[int] = None,
-        state: State = State(PRODUCT_STATE),
+        state: Optional[State] = None,
         _modified: bool = False,
         _scanned: bool = False,
         _new: bool = False,
@@ -78,7 +78,7 @@ class Product(object):
         self.qty_virtual = int(qty_virtual)
         self.qty_package = int(qty_package)
         self.uomid = uomid
-        self.state = state
+        self.state = state or State(PRODUCT_STATE)
         self._modified = _modified
         self._scanned = _scanned
         self._new = _new
@@ -104,20 +104,27 @@ class Product(object):
         return self.name >= other.name
 
     def update(self, payload: Payload) -> None:
-        for k, v in payload.items():
-            current = getattr(self, k, None)
-            if current is None:
-                raise KeyError(f"{self} : {k} attribute doesn't exist")
-            if type(current) != type(v) and current is not None:
-                raise TypeError(
-                    f"{self} : field {k} value {v} ({type(v)}) does not match current type : {type(current)}"
-                )
-            setattr(self, k, v)
+        update_object(self, payload)
 
     def to_payload(self, single_brcd: bool = False) -> Payload:
-        payload = vars(self)
+        payload = {
+            "pid": self.pid,
+            "name": self.name,
+            "barcodes": self.barcodes,
+            "qty": self.qty,
+            "qty_virtual": self.qty_virtual,
+            "qty_package": self.qty_package,
+            "qty_received": self.qty_received,
+            "uomid": self.uuid,
+            "state": self.state.current(),
+            "_modified": self._modified,
+            "_scanned": self._scanned,
+            "_new": self._new,
+            "_unknown": self._unknown,
+            "uuid": self.uuid,
+        }
         if single_brcd:
-            payload["barcodes"] = payload.get("barcodes")[0]
+            payload["barcodes"] = self.barcodes[0]
         return payload
 
     def as_inventory_payload(self, oid:int, location: int= 12) -> Payload:
