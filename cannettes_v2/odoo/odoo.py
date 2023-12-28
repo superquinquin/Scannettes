@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple, Union, Any
 from cannettes_v2.utils import get_best_state
 
 class Odoo(object):
-    connected = False
+    connected: bool = False
     
     def connect(
         self,

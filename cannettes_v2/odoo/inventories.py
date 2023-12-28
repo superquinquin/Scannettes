@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from copy import deepcopy
 from erppeek import Record
 from datetime import datetime
 from typing import List, Dict, Tuple, Any, Optional
@@ -43,41 +44,72 @@ class Inventories(Odoo):
     def import_categories(self) -> None:
         cats = self.browse("product.category", [("create_date", ">", "1900-01-01 01:01:01")])
         self.categories = sorted(
-            [(c.complete_name, c.id) for c in cats],
-            key=lambda x: x[0],
+            [(c.id, c.complete_name) for c in cats],
+            key=lambda x: x[1],
             reverse=False,
         )
 
     def define_inventory_id(self) -> int:
-        return max(self.inventories.keys()) + 1
+        return max(self.inventories.keys(), default=0) + 1
 
-    def inventory_factory(self, catid: int, name: str = "", **kwargs) -> Inventory:
+    def inventory_factory(
+        self, 
+        catid: Optional[int]= None, 
+        from_sibling_factory: bool= True,
+        **kwargs
+        ) -> Inventory:
+        _opt = {}
+        if catid:
+            _opt.update({"catid": catid, "name": [c for c in self.categories if c[0] == catid][0][1]})
+        if from_sibling_factory is False and catid:
+            _opt.update({"_initial_products": self.fetch_products(catid)})
+            
         oid = self.define_inventory_id()
         inventory = Inventory(
             oid= oid,
-            catid= catid,
-            name= name,
-            _initial_products= self.fetch_products(catid)
+            **_opt
         )
         inventory.update(kwargs)
         self.inventories[oid] = inventory
         return inventory
 
+    def inventory_siblings_factory(self, catid: Optional[int]= None, **kwargs) -> Tuple[Inventory, Inventory]:
+        _products = []
+        if catid:
+            _products = self.fetch_products(catid)        
+
+        shelf = self.inventory_factory(catid, kwargs)
+        stock = self.inventory_factory(catid, kwargs)
+        shelf.late_init(
+            deepcopy(_products),
+            shelf.name,
+            stock.oid
+        )
+        stock.late_init(
+            deepcopy(_products),
+            stock.name,
+            shelf.oid
+        )
+        
+        self.inventories[shelf.oid] = shelf
+        self.inventories[stock.oid] = stock
+        return (shelf, stock)
 
     def fetch_products(self, catid: int) -> List[Product]:
-        products = self.browse("product.template", [("categ_id", "=", catid), ("active", "=", True)])
+        tmpl_ids = self.browse("product.template", [("categ_id", "=", catid), ("active", "=", True)]).id
+        products = self.browse("product.product", [("product_tmpl_id", "in", tmpl_ids)])
         return [self.product_factory(product) for product in products]
 
     def product_factory(self, product: Record, **kwargs):
-        name = self.get_name_translation(product.product_id.product_tmpl_id)
-        prod = Product({
-            "pid": product.product_id.id,
-            "name": re.sub("\[.*?\]", "", name).strip(),
-            "barcode": self.get_barcodes(product),
-            "qty": product.product_qty,
-            "qty_virtual": None,
-            "qty_package": product.product_qty_package,
-        })
+        name = self.get_name_translation(product.product_tmpl_id)
+        prod = Product(
+            pid= product.id,
+            name= re.sub("\[.*?\]", "", name).strip(),
+            barcodes= self.get_barcodes(product),
+            qty = product.product_tmpl_id.virtual_available,
+            qty_virtual= product.product_tmpl_id.virtual_available,
+            qty_package= 0
+        )
         prod.update(kwargs)
         return prod
 

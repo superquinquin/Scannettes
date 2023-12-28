@@ -12,6 +12,7 @@ from cannettes_v2.models.purchase import Purchase, Supplier
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.utils import get_update_time_ceiling
+from cannettes_v2.models.state_handler import State, PROCESS_STATE, PURCHASE_STATE
 
 payload = Dict[str, Any]
 
@@ -20,7 +21,7 @@ class Deliveries(Odoo):
     def __init__(
         self, 
         *, 
-        purchases: Dict[str, Any]= {}, 
+        purchases: Dict[str, Purchase]= {}, 
         last_update: Optional[datetime]= None
         ) -> None:
         super().__init__()
@@ -35,13 +36,13 @@ class Deliveries(Odoo):
         ]
 
     @classmethod
-    def build(cls, cache: type,  erp: Dict[str, Any], **kwargs) -> Deliveries:
-        if erp.get("build_update_time", False):
-            raise ValueError("please configure odoo.build_update_time")
-        delta = erp.get("build_update_time")
+    def build(cls, cache: type,  odoo: Dict[str, Any], **kwargs) -> Deliveries:
+        if odoo.get("delta_search_purchase", False) is False:
+            raise ValueError("please configure odoo.delta_search_purchase")
+        delta = odoo.get("delta_search_purchase")
         deliveries = cls()
-        deliveries.connect(**erp)
-        deliveries.get_purchase(delta, cache)
+        deliveries.connect(**odoo["erp"])
+        deliveries.fetch_purchases(cache)
         return deliveries
     
     def fetch_purchases(self, cache: type) -> None:
@@ -66,9 +67,9 @@ class Deliveries(Odoo):
         Collect purchased from last update datetime, if No previous update use config time_delta as floor for the search.
         keep track of purchased in "draft" state by referencing them as self.purchases keys ( value set to None )
         """        
-
-        delta = cache["config"]["time_delta"]
-        lobby = cache["lobby"]
+        
+        delta = cache.config["odoo"]["delta_search_purchase"]
+        lobby = cache.lobby
 
         date_ceiling = get_update_time_ceiling(self.last_update, delta)
         cached_drafts = self.browse("purchase.order", [("id", "in", list(self.purchases.keys()))])
@@ -94,19 +95,19 @@ class Deliveries(Odoo):
                 _picking_state = self.get_picking_state(name)
 
                 if _picking_state == "cancel": # -- UNTESTED
-                    self.purchases.pop(oid, None)
-                    rid = lobby.find_room_associated_to_purchase(oid)
+                    purchase = self.purchases.pop(oid, None)
+                    rid = purchase.associated_rid
                     if rid:
-                        lobby.delete_room(rid)  # find room_id
+                        lobby.delete_room(rid) 
 
                 elif _picking_state == "done": 
                     purchase = self.purchases.get(oid)
-                    rid = lobby.find_room_associated_to_purchase(oid)
+                    rid = purchase.associated_rid
                     if rid:
                         lobby.rooms.get(rid).is_validated()
                     if rid is None and purchase:
                         purchase.is_validated()
-                        self.purchases.pop(oid) # -- ?
+                        self.purchases.pop(oid)
                         
                 elif _picking_state == "assigned" and self.purchases.get(oid, False): # -- UNTESTED
                     purchase = self.purchases.get(oid)
@@ -131,7 +132,6 @@ class Deliveries(Odoo):
 
     def product_factory(self, product: Record, **kwargs):
         name = self.get_name_translation(product.product_id.product_tmpl_id)
-        print(name)
         prod = Product(**{
             "pid": product.product_id.id,
             "name": re.sub("\[.*?\]", "", name).strip(),
@@ -141,6 +141,11 @@ class Deliveries(Odoo):
         })
         prod.update(kwargs)
         return prod
+    
+    def get_associable_purchases(self) -> List[Purchase]:
+        def _associable(pur: Optional[Purchase]) -> bool:
+            return pur and pur.associated_rid is None and pur.process_state.current() != "done"
+        return [pur for pur in self.purchases.values() if _associable(pur)]
     
     def export_to_odoo(self, oid: int, create_missing_product: bool= False, autoval: bool= False) -> payload:
         payload = {"purchase": self.purchases.get(oid), "valid": True, "flag": True, "add_missing": create_missing_product}
@@ -230,14 +235,3 @@ class Deliveries(Odoo):
             except Exception:
                 # catch marshall error & pass it
                 pass
-
-    def build(
-        self,
-        cache: Dict[str, Any],
-        erp: Dict[str, Any],
-        delta_search_purchase: List[int],
-        **kwargs,
-    ) -> Dict[str, Any]:
-        self.connect(**erp)
-        return self.get_purchase(delta_search_purchase, cache)
-
