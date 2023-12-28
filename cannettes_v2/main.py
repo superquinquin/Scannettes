@@ -15,11 +15,11 @@ from cannettes_v2.utils import unify
 
 banner = """\
       ___           ___           ___           ___           ___                                       ___           ___
-     /\__\         /\  \         /\  \         /\  \         /\__\                                     /\__\         /\__\
+     /\__\         /\  \         /\  \         /\  \         /\__\                                     /\__\         /\__\ 
     /:/  /        /::\  \        \:\  \        \:\  \       /:/ _/_         ___           ___         /:/ _/_       /:/ _/_
-   /:/  /        /:/\:\  \        \:\  \        \:\  \     /:/ /\__\       /\__\         /\__\       /:/ /\__\     /:/ /\  \
-  /:/  /  ___   /:/ /::\  \   _____\:\  \   _____\:\  \   /:/ /:/ _/_     /:/  /        /:/  /      /:/ /:/ _/_   /:/ /::\  \
- /:/__/  /\__\ /:/_/:/\:\__\ /::::::::\__\ /::::::::\__\ /:/_/:/ /\__\   /:/__/        /:/__/      /:/_/:/ /\__\ /:/_/:/\:\__\
+   /:/  /        /:/\:\  \        \:\  \        \:\  \     /:/ /\__\       /\__\         /\__\       /:/ /\__\     /:/ /\  \ 
+  /:/  /  ___   /:/ /::\  \   _____\:\  \   _____\:\  \   /:/ /:/ _/_     /:/  /        /:/  /      /:/ /:/ _/_   /:/ /::\  \ 
+ /:/__/  /\__\ /:/_/:/\:\__\ /::::::::\__\ /::::::::\__\ /:/_/:/ /\__\   /:/__/        /:/__/      /:/_/:/ /\__\ /:/_/:/\:\__\ 
  \:\  \ /:/  / \:\/:/  \/__/ \:\~~\~~\/__/ \:\~~\~~\/__/ \:\/:/ /:/  /  /::\  \       /::\  \      \:\/:/ /:/  / \:\/:/ /:/  /
   \:\  /:/  /   \::/__/       \:\  \        \:\  \        \::/_/:/  /  /:/\:\  \     /:/\:\  \      \::/_/:/  /   \::/ /:/  /
    \:\/:/  /     \:\  \        \:\  \        \:\  \        \:\/:/  /   \/__\:\  \    \/__\:\  \      \:\/:/  /     \/_/:/  /
@@ -81,15 +81,15 @@ class Cannettes(object):
 
         if backup:
             cache = self.load_cache(backup)
-            self.start_backup_cycle(backup)
+            self.start_backup_cycle(backup, cache)
 
         if cache is None or cache.check_integrity() is False:
             cache = Cache(config=locals(),lobby=Lobby())
-            deliveries = Deliveries.build(cache, **odoo)
+            deliveries = Deliveries.build(cache, odoo)
             inventories = Inventories.build(**odoo)
             cache.update({"deliveries": deliveries, "inventories": inventories})
         Update(**odoo).UPDATE_RUNNER(cache)
-
+        
         if not flask.get("static_url"):
             raise KeyError("you must set a static path for Flask")
         self.app = Flask(__name__, static_url_path=flask.get("static_url"))
@@ -106,7 +106,7 @@ class Cannettes(object):
         unify("cannettes_v2/static/js/room", "js", "unified_inventory")
 
         self.app.users = users
-        self.app.cache = self.cache
+        self.app.cache = cache
         self.socketio.init_app(self.app)
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
@@ -130,13 +130,13 @@ class Cannettes(object):
             cache = Cache.initialize(fname)
         return cache
     
-    def start_backup_cycle(self, backup: Dict[str, Any]) -> BackUp:
+    def start_backup_cycle(self, backup: Dict[str, Any], cache: Cache) -> BackUp:
         if not backup.get("frequency"):
             raise KeyError("configure backup frequency")
         freq = backup.get("frequency")
         fname = backup.get("filename")
         bckup = BackUp(fname, freq)
-        bckup.BACKUP_RUNNER(self.cache)
+        bckup.BACKUP_RUNNER(cache)
         return bckup
         
 

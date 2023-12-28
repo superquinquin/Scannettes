@@ -62,8 +62,8 @@ class Cache(object):
     
     def update(self, payload: Payload) -> None:
         for k, v in payload.items():
-            current = getattr(self, k, None)
-            if current is None:
+            current = getattr(self, k, "udf")
+            if current == "udf":
                 raise KeyError(f"{self} : {k} attribute doesn't exist")
             if type(current) != type(v) and current is not None:
                 raise TypeError(
