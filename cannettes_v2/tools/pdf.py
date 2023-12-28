@@ -85,7 +85,7 @@ class PDF(FPDF):
         y_sep = 20
         place = 0
         n_page = 0
-        for qrcode, caption in payload["qrcodes"]:
+        for i, (qrcode, caption) in enumerate(payload["qrcodes"]):
             if (space - y_sep + 50) <= y_sep + 50:
                 space = self.height
                 place = 0

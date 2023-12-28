@@ -1,4 +1,5 @@
 import os
+import json
 import binascii
 from glob import glob
 from typing import Dict, Union, Tuple, List, Any
@@ -31,6 +32,41 @@ def get_best_state(states: List[str]) -> str:
     """used for stock.move ; stock.picking status system"""
     status = {"cancel": 0, "assigned": 1, "done": 2}
     return max([(s, status.get(s)) for s in states], key= lambda x: x[1])[0]
+
+
+def update_object(cls: object, payload: Dict[str, Any]) -> None:
+    for k, v in payload.items():
+        current = getattr(cls, k, None)
+        if current is None:
+            raise KeyError(f"{cls} : {k} attribute doesn't exist")
+        if type(current) != type(v) and current is not None:
+            raise TypeError(
+                f"{cls} : field {k} value {v} ({type(v)}) does not match current type ({type(current)})"
+            )
+        setattr(cls, k, v)
+
+def restrfmtdate(date:Union[None, str]) -> str:
+    if date is None:
+        return date
+    date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+    return date.strftime("%d/%m/%Y")
+
+
+class Response(object):
+    def __init__(self, state: str, data: Dict[str, Any], **kwargs) -> str:
+        self.state = state
+        self.data = data
+        self.__dict__.update(**kwargs)
+    
+    def __call__(self) -> str:
+        return json.dumps(self.__dict__)
+
+
+
+
+
+
+
 
 
 
