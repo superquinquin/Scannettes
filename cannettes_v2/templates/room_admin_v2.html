@@ -10,24 +10,31 @@
 <body>
     <div id="head">
         <div id="head-container">
-            <img class="head-content" src="{{url_for('static', filename='misc/superquinquin_logo2.png')}}"><!--   -->
-            <h1 id="title" class="head-content">Scannettes</h1>
-            <div id="fields-container">
-                <ul id="head-fields">
-                    <li><a id="doc" class="head-content" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
-                    <li><a id="login" class="head-content" href="{{ url_for('cannettes_bp.login') }}"><strong>Se connecter</strong></a></li>
-                </ul>
+            <div class="app-header">
+                <img class="head-content" src="{{url_for('static', filename='misc/superquinquin_logo2.png')}}"><!--   -->
+                <h1 id="title" class="head-content">Scannettes</h1>
             </div>
         </div>
     </div> 
     <main>
+        <section id="menu" class="menu-container">
+            <div id="info" class="room-info"></div>
+            <div class="room-menu">
+                <div class="room-scanners">
+                    <button id="camera" class="scanner-btn"><img src="/static/misc/camera-icon.png"></button>
+                    <button id="laser" class="scanner-btn"><img src="/static/misc/laser-icon.png"></button>
+                </div>
+                <div id="actions" class="room-actions"></div>
+            </div>
+        </section>
+
         <section id="initial" class="section-container">
             <button class="collaps-block">Produits Initiaux</button>
             <div class="container">
                 <div class="inner-wrapper">
                     <div class="admin-container">
                         <div class="search">
-                            <input id="searchbar" class="searchbar" type="text" placeholder="Rechercher un salon / commande..." onkeyup="searchRoom(event)">
+                            <input id="searchbar" class="searchbar" type="text" placeholder="Rechercher un produit / code-barres..." onkeyup="searchRoom(event)">
                             <button id="reset-searchbar" class="reset-searchbar" onclick="resetSearch('purchased')">&#10006</button>
                         </div>
                         <div class="wrapper">
@@ -36,45 +43,33 @@
                             </div>
                         </div>
                     </div>
-                    <div class="placeholder-container">
-                        <div class="placeholder"><p>Aucun Produits</p></div>
-                    </div>
-                    <div id="initial-products" class="products-container">
-                        <div class="product" uuid="xx" state="initial">
-                            <div class="grid-cell product-name">Product name qdqdqd qdqdiqdn dniadaiodan....</div>
-                            <div class="grid-cell product-check"><input class="pcheck" type="checkbox"></div>
-                            <div class="grid-cell product-barcode">0000001111119</div>
-                            <div class="grid-cell product-qty-header"><strong>Quantités :</strong></div>
-                            <div class="grid-cell product-qty"><strong>Unités:</strong> <span>10</span></div>
-                            <div class="grid-cell sep1 separator"></div>
-                            <div class="grid-cell product-pkg "><strong>Paquets:</strong> <span>20</span></div>
-                            <div class="grid-cell sep2 separator"></div>
-                            <div class="grid-cell product-rcv"><strong>Reçues:</strong> <span>30</span></div>
-                            <div class="grid-cell product-ask"><strong>La quantité reçue est-elle correcte ?</strong></div>
-                            <div class="grid-cell product-yes"><button class="mngmnt-btn">Oui</button></div>
-                            <div class="grid-cell product-mod"><button class="mngmnt-btn">Modifier</button></div>
-                        </div>
-                        <div class="product" uuid="xx" state="initial">
-                            <p>Product name ....</p>
-                            <p>0000001111119</p>
-                        </div>
-                        <div class="product" uuid="xx" state="initial">
-                            <p>Product name ....</p>
-                            <p>0000001111119</p>
-                        </div>
-                        <div class="product" uuid="xx" state="initial">
-                            <p>Product name ....</p>
-                            <p>0000001111119</p>
-                        </div>
-                        <div class="product" uuid="xx" state="initial">
-                            <p>Product name ....</p>
-                            <p>0000001111119</p>
-                        </div>
-                    </div>
+                    <div class="placeholder-container"></div>
+                    <div id="initial-products" class="products-container"></div>
                 </div>
             </div>
         </section>
-        <section id="done" class="section-container"></section>
+
+        <section id="done" class="section-container">
+            <button class="collaps-block">Produits vérifiés</button>
+            <div class="container">
+                <div class="inner-wrapper">
+                    <div class="admin-container">
+                        <div class="search">
+                            <input id="searchbar" class="searchbar" type="text" placeholder="Rechercher un produit / code-barres..." onkeyup="searchRoom(event)">
+                            <button id="reset-searchbar" class="reset-searchbar" onclick="resetSearch('purchased')">&#10006</button>
+                        </div>
+                        <div class="wrapper">
+                            <div class="management">
+                                <button id="del" class="mngmnt-btn" onclick="delSelRooms()">Supprimer</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="placeholder-container"></div>
+                    <div id="done-products" class="products-container"></div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <script type="text/javascript" src="/static/js/config.js"></script>
