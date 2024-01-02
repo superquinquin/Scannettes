@@ -119,5 +119,6 @@ class Room(object):
             "sibling": self.sibling,
             "creating_date": restrfmtdate(self.data.create_date) or restrfmtdate(self.creating_date),
             "oid": self.data.oid,
-            "display_name": self.data.display_name()
+            "display_name": self.data.display_name(),
+            "supplier": self.data.supplier.name if self.type == "purchase" else None
         }

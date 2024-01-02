@@ -115,7 +115,7 @@ class Product(object):
             "qty_virtual": self.qty_virtual,
             "qty_package": self.qty_package,
             "qty_received": self.qty_received,
-            "uomid": self.uuid,
+            "uomid": self.uomid,
             "state": self.state.current(),
             "_modified": self._modified,
             "_scanned": self._scanned,

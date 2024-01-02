@@ -100,7 +100,7 @@ class Deliveries(Odoo):
                     if rid:
                         lobby.delete_room(rid) 
 
-                elif _picking_state == "done": 
+                elif _picking_state == "done" and self.purchases.get(oid): # -- must contain the purchase
                     purchase = self.purchases.get(oid)
                     rid = purchase.associated_rid
                     if rid:
