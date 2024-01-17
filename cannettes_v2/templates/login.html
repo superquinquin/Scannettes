@@ -3,40 +3,43 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" media="all" href="/static/css/login.css">
+        <link rel="stylesheet" media="all" href="/static/css/login/login.css">
+        <link rel="stylesheet" media="all" href="/static/css/common/header.css">
+        <link rel="stylesheet" media="all" href="/static/css/common/forms.css">
+        <link rel="stylesheet" media="all" href="/static/css/common/components.css">
         <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
         <title>Scannettes | login</title>
     </head>
     <body>
-        <div id="head">
-            <div id="head-container">
-                <img class="head-content" src="../static/misc/superquinquin_logo2.png"><!--  {{url_for('static', filename='misc/superquinquin_logo2.png')}} -->
-                <h1 id="title" class="head-content">Scannettes</h1>
-                <div id="fields-container">
-                    <ul id="head-fields">
-                        <li><a id="doc" class="head-content" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
-                        <!-- <li><a id="login" class="head-content" href="{{ url_for('cannettes_bp.login') }}"><strong>Se connecter</strong></a></li> -->
+        <div class="header">
+            <div class="head-container">
+                <img class="head-elm" src="../static/misc/superquinquin_logo2.png">
+                <h1 id="title" class="head-elm">Scannettes</h1>
+                <div class="nav-container">
+                    <ul class="nav">
+                        <li class="nav-elm"><a id="doc" class="head-elm" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
                     </ul>
                 </div>
             </div>
         </div>
         <main>
             <form action = "/setJWT" method = "POST">
-                <div id="logger">
+                <div class="container border" id="logger">
                     <div class="field">
-                        <label class="field-comp" for="identifiant">Identifiant :</label>
-                        <input class="field-comp" id="identifiant" name="username" type="text" value="" placeholder="Identifiant...">
+                        <label class="fblock field-label" for="identifiant">Identifiant :</label>
+                        <input class="fblock field-text-inp border" id="identifiant" name="username" type="text" value="" autofocus placeholder="Identifiant...">
                     </div>
                     <div class="field">
-                        <label class="field-comp" for="password">Mot de passe :</label>
-                        <input class="field-comp" id="password" name="password" type="password" value="" placeholder="Mot de passe...">
+                        <label class="fblock field-label" for="password">Mot de passe :</label>
+                        <input class="fblock field-text-inp border" id="password" name="password" type="password" value="" placeholder="Mot de passe...">
                     </div>
                     <div class="btn-container">
-                        <button id="connection-btn" type="submit">Connection</button>
+                        <button id="connection-btn" class="btn-large border" type="submit">Connection</button>
                     </div>
                 </div>
             </form>
         </main>
-        <script type="text/javascript" src="/static/js/login/unified.js"></script>
+        <script type="text/javascript" src="/static/js/common/config.js"></script>
+        <script type="text/javascript" src="/static/js/login/login.js"></script>
     </body>
 </html>

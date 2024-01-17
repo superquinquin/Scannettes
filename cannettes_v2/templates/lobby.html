@@ -1,125 +1,135 @@
-<!doctype html>
-
-<html id="html" lang="en">
+<!DOCTYPE html>
+<html id="html" lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Scanner</title>
-  <link rel="stylesheet" media="all" href="/static/css/lobby.css">
-  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scannettes | Lobby</title>
+    <link rel="stylesheet" media="all" href="/static/css/lobby/lobby.css">
+    <link rel="stylesheet" media="all" href="/static/css/common/header.css">
+    <link rel="stylesheet" media="all" href="/static/css/lobby/table.css">
+    <link rel="stylesheet" media="all" href="/static/css/common/notifications.css">
+    <link rel="stylesheet" media="all" href="/static/css/common/components.css">
+    <link rel="stylesheet" media="all" href="/static/css/common/modals.css">
+    <link rel="stylesheet" media="all" href="/static/css/common/forms.css">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
 </head>
 
 <body>
-  <div id="head">
-    <div id="head-container">
-      <img class="head-content" src="{{url_for('static', filename='misc/superquinquin_logo2.png')}}">
-      <h1 id="title" class="head-content">Lobby</h1>
-      <div id="fields-container">
-        <ul id="head-fields">
-          <li><a id="doc" class="head-content" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
-          <li id="field-space"> </li>
-          <li><a id="login" class="head-content" href="{{ url_for('cannettes_bp.login') }}"><strong>Se connecter</strong></a></li>
-        </ul>
-      </div>
-    </div>
-  </div>
+    <main>
+        <div class="header">
+            <div class="head-container">
+                <img class="head-elm" src="../static/misc/superquinquin_logo2.png">
+                <h1 id="title" class="head-elm">Scannettes</h1>
+                <div class="nav-container">
+                    <ul class="nav">
+                        <li class="nav-elm"><a id="doc" class="head-elm" href="{{ url_for('cannettes_bp.doc') }}"><strong>Documentation</strong></a></li>
+                        <li class="nav-elm"><a id="login" class="head-elm" href="{{ url_for('cannettes_bp.login') }}"><strong>Se connecter</strong></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div id="msg-box" class="fx"></div>
+        <div id="open-container" class="table-container">
+            <div class="table-header-container">
+                <h2>Salons</h2>
+            </div>
+            <div id="admin-wrapper">
+                <div class="admin-container">
+                    <div class="search">
+                        <input id="searchbar" class="searchbar border" type="text" placeholder="Rechercher un salon / commande..." onkeyup="searchRoom(event)">
+                        <button id="reset-searchbar" class="reset-searchbar border" onclick="resetSearch('purchased')">&#10006</button>
+                    </div>
+                    <div class="wrapper">
+                        <div id="actions" class="management"></div>
+                    </div>
+                </div>
+                <div class="table border">
+                    <div class="col-header-container">
+                        <div class="col-header">
+                            <div class="header-cell">&#9989;</div>
+                            <div class="header-cell" onclick="tableSort(this)">Nom&ensp;<span id="rname-order" class="order">-</span></div>
+                            <div class="header-cell" onclick="tableSort(this)">Commande / Inventaire&ensp;<span id="pname-order" class="order">-</span></div>
+                            <div class="header-cell" onclick="tableSort(this)">Statut&ensp;<span id="pstate-order" class="order">-</span></div>
+                            <div class="header-cell" onclick="tableSort(this)">Date&ensp;<span id="pdate-order" class="order">-</span></div>
+                            <div class="header-cell">Mot de passe</div>
+                        </div>
+                    </div>
+                    <div id="room-table"></div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-  <div id="creation-modal">
-    <div id="back-container">
-      <div id="container">
-        <div class="switch-button">
-          <input id="pType-check" class="switch-button-checkbox" type="checkbox">
-          <label class="switch-button-label" for=""><span class="switch-button-label-span">Commande</span></label>
-        </div>
-        <div id="purchase-container" style="display: flex;">
-          <div class="type-container">
-            <label for="purchases"><strong>Commande :</strong></label>
-            <select id="purchases" class="inputs">
-              <option value="">Aucune</option>
-            </select>  
-          </div>
-        </div>
-        <div id="inv-container" style="display: none;">
-          <div class="type-container">
-            <label for="rayons"><strong>Inventaire :</strong></label>
-            <select id="rayons" class="inputs">
-              <option value="">Aucun</option>
-            </select>  
-          </div>        
-        </div>
-        <label for="room-name"><strong>Définir un nom (facultatif) :</strong></label>
-        <input id="room-name" class="inputs" type="text" value="">
-        <label for="room-password"><strong>Définir un mot de passe (facultatif) :</strong></label>
-        <input id="room-password" class="inputs" type="text" value="" autocomplete="off">
-        <p id="creation-info"></p>
-        <div id="modal-button">
-          <button id="CancelRoom">Annuler</button>   
-          <button id="createRoom">Confirmer</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div id="creation-modal" class="modal-blur">
+        <div id="back-container" class="creation-modal border">
+            <div class="centered padded">
+                <div class="modal-section">
+                    <div class="switch-button">
+                        <input id="pType-check" class="switch-button-checkbox" type="checkbox" onclick="switchContainer()">
+                        <label class="switch-button-label" for=""><span class="switch-button-label-span">Commande</span></label>
+                    </div>
+                </div>
 
-  <div id="table-container">
-    <div id="room-selection">
-      <h3>Salons ouverts</h3>
-      <table id="room-listing">
-        <tr>
-          <th><button id="checkAll"><span>&#9989;</span> Select</button></th>
-          <th>Nom</th>
-          <th>Commande</th>
-          <th>Etat</th>
-          <th>Date de création</th>
-          <th>Mot de passe</th>
-          <th>Rejoindre</th>
-        </tr>
-      </table>
-      <div id="room-management">
-        <button id="create-btn" class="mngmnt-btn">Créer</button>
-        <button id="del-btn" class="mngmnt-btn">Supprimer</button>
-        <button id="reset-btn" class="mngmnt-btn">Réinitialiser</button>
-        <button id="qrcode-btn" class="mngmnt-btn">QR-code</button>
-      </div>
-    </div>
-
-    <div id="errorBox">
-      <p id="errorText"></p>
-    </div>
-  
-    <div id="room-to-verify">
-      <h3>Vérification</h3>
-      <table id="room-verify-listing">
-        <tr>
-          <th>Select</th>
-          <th>Nom</th>
-          <th>Commande</th>
-          <th>Etat</th>
-          <th>Date de création</th>
-          <th>Mot de passe</th>
-          <th>Rejoindre</th>
-        </tr>
-      </table>
-      <div id="room-assembler">
-        <button id="asmbl-btn" class="mngmnt-btn">Assembler</button>
-      </div>
+                <div class="modal-section">
+                    <div id="purchase-container" class="selector" style="display: block;">
+                        <div class="field fblock">
+                            <label class="field-label fblock" for="purchases">Commande :</label>
+                            <select id="purchases" class="fblock field-sel-inp border"></select>  
+                        </div>
+                    </div>
+                    <div id="inv-container" class="selector" style="display: none;">
+                        <div class="field">
+                            <label class="field-label fblock" for="categories">Inventaire :</label>
+                            <select id="categories" class="field-sel-inp border">
+                                <option value="">Aucune</option>
+                            </select>  
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="room-name">Définir un nom (recommandé) :</label>
+                        <input id="room-name" class="field-text-inp border imargin" type="text" value="" placeholder="Nom de Salon...">
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="room-password">Définir un mot de passe (facultatif) :</label>
+                        <input id="room-password" class="field-text-inp border imargin" type="password" autocomplete="off" value="" placeholder="Mot de passe...">
+                    </div>
+                    <p id="creation-info"></p>
+                </div>
+                <div class="modal-section">
+                    <div class="centered-btn">
+                        <button id="CancelRoom" class="btn-large border margin" onclick="creationModal()">Annuler</button>   
+                        <button id="createRoom" class="btn-large border margin" onclick="createRoom()">Confirmer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="historic">
-      <h3>Historique</h3>
-      <table id="room-historic">
-        <tr>
-          <th>Select</th>
-          <th>Nom</th>
-          <th>Commande</th>
-          <th>Etat</th>
-          <th>Date de validation</th>
-          <th>Mot de passe</th>
-          <th>Rejoindre</th>
-        </tr>
-      </table>
+    <div id="confirmation-modal" class="modal-blur">
+        <div id="confirmation-container" class="confirmation-modal border">
+            <div class="modal-section"><div class="modal-header"><p id="heading-message"></p></div></div>
+            <div class="modal-section modal-content">
+                <p id="content-message"></p>
+                <div id="open-content" class="open-content"></div>
+            </div>
+            <div class="modal-section">
+                <div class="centered-btn">
+                    <button id="cancel-confirmation" class="btn-large border margin" onclick="CloseCModal()">Annuler</button>   
+                    <button id="accept-confirmation" class="btn-large border margin">Confirmer</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <script type="text/javascript" src="/static/js/lobby/unified.js"></script>
+
+    <script type="text/javascript" src="/static/js/common/config.js"></script>
+    <script type="text/javascript" src="/static/js/common/utils.js"></script>
+    <script type="text/javascript" src="/static/js/common/notifications.js"></script>
+    <script type="text/javascript" src="/static/js/common/confmodal.js"></script>
+    <script type="text/javascript" src="/static/js/lobby/table.js"></script>
+    <script type="text/javascript" src="/static/js/lobby/sort.js"></script>
+    <script type="text/javascript" src="/static/js/lobby/searchbar.js"></script>
+    <script type="text/javascript" src="/static/js/lobby/creationmodal.js"></script>
+    <script type="text/javascript" src="/static/js/lobby/utils.js"></script>
+    <script type="text/javascript" src="/static/js/lobby/callbacks.js"></script>
 </body>
 </html>
-
-
