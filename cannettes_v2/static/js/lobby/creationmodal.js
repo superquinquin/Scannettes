@@ -1,0 +1,85 @@
+
+function creationModal() {
+    const page = document.getElementById("html");
+    const modal = document.getElementById("creation-modal");
+    const switcher = document.getElementById("pType-check");
+    const purContainer = document.getElementById('purchase-container');
+    const invContainer = document.getElementById('inv-container');
+    const roomName = document.getElementById('room-name');
+    const roomPassword = document.getElementById('room-password');
+    const purchase = document.getElementById('purchases');
+    const inventory = document.getElementById('categories');
+    const infoContainer = document.getElementById("creation-info");
+
+    let display = modal.style.display;
+    if (display != "flex") {
+        modal.style.top = (window.scrollY - 5).toString() + 'px';
+        modal.style.display = "flex";
+        infoContainer.innerText = "";
+        switcher.checked = false;
+        purContainer.style.display = 'block';
+        invContainer.style.display = 'none';
+        page.style.overflowY = 'hidden';
+    } else {
+        modal.style.display = "none";
+        roomName.value = '';
+        roomPassword.value = '';
+        infoContainer.innerText = "";
+        purchase.selectedIndex = 0;
+        inventory.selectedIndex = 0;
+        switcher.checked = false;
+        page.style.overflowY = 'visible';
+    }
+}
+
+function switchContainer() {
+    const switcher = document.getElementById("pType-check");
+    const purContainer = document.getElementById('purchase-container');
+    const invContainer = document.getElementById('inv-container');
+    if (switcher.checked) {
+        purContainer.style.display = 'none';
+        invContainer.style.display = 'block';
+    } else {
+        purContainer.style.display = 'block';
+        invContainer.style.display = 'none';
+    }
+}
+
+
+
+function getSelectedOptions(type) {
+    const purchase = document.getElementById('purchases');
+    const inventory = document.getElementById('categories');
+    let object_id;
+    let object_name;
+    if (type == 'purchase') {
+        object_id = parseInt(purchase.options[purchase.selectedIndex].value);
+        object_name = purchase.options[purchase.selectedIndex].innerHTML;
+    } else {
+        object_id = parseInt(inventory.options[inventory.selectedIndex].value);
+        object_name = inventory.options[inventory.selectedIndex].innerHTML;
+    }
+    return [object_id, object_name]
+}
+
+function getPType() {
+    let check =  document.getElementById('pType-check').checked;
+    if (check) {
+        var pType = 'inventory';
+    } else {
+        var pType = 'purchase';
+    }
+    return pType
+}
+
+function getSelRids() {
+    let selected = [];
+    const rooms = document.getElementsByClassName("purchase");
+    for (var room of rooms) {
+        let checked = room.getElementsByClassName("selectBox")[0].checked;
+        if (checked) {
+            selected.push(parseInt(room.getAttribute("rid")))
+        }
+    }
+    return selected;
+}

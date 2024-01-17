@@ -1,0 +1,299 @@
+
+:root {
+    --primary: #CDE6F5;
+    --primary-shade: #DDEEF8;
+    --secondary: #3C312E;
+
+    --items-open: #9EE493;  
+    --itemshover-open: #6CD65C;
+
+    --items-close: #F9B5AC;  
+    --itemshover-close: #F47766;
+
+    --items-done: #1AC7C4;  
+    --itemshover-done: #107E7D;
+
+    --product-normal: #F9DBBD;
+    --producthover-normal: #F3B87C;
+
+
+
+    --product-modified: #F55D3E;
+    --producthover-modified: #D52D0B;
+
+    --product-new: #8E5572;
+    --producthover-new: #663D52;
+
+    --product-unknown: #596157;
+    --producthover-unknown: #313630;
+
+
+    --product-sdiff: #FFA5AB;
+    --producthover-sdiff: #FF5C67;
+
+    --product-mdiff: #da627d;
+    --producthover-mdiff: #C62F4F;
+
+    --product-ldiff: #A53860;
+    --producthover-ldiff: #6A243E;
+
+    --product-xldiff: #5C0A28;
+    --producthover-xldiff: #120208;
+
+    --head-w: 90%;
+    --main-w: 90%
+}
+
+
+html {
+    font-family: 'Raleway', sans-serif;
+    overflow-x: hidden;
+    overflow-y: visible;
+    background-color: var(--primary);
+    scroll-behavior: smooth;
+}
+
+main {
+    margin: 100px auto;
+    margin-top: 50px;
+    width: var(--main-w);
+}
+
+@media only screen and (hover: none) and (pointer: coarse){ 
+    :root {
+        --head-w: 100%;
+        --main-w: 99%
+    }
+
+    main {
+        margin-top: 10px;
+    }
+}
+
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COLAPSING SECTIONS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
+.section-container {
+    min-width: 450px;
+    margin: 50px 0;
+    z-index: 1;
+}
+
+.collaps-block {
+    width: 100%;
+    padding: 20px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--secondary);
+    color: var(--primary);
+    font-size: 1.5em;
+    font-weight: bolder;
+    outline: none;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.collaps-block:after {
+    content: '\002B';
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 30px;
+    float: right;
+    margin-left: 5px;
+}
+
+.active:after {
+    content: "\2212";
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.container {
+    display: none;
+    width: 100%;
+    min-height: 30px;
+    margin-top: 10px;
+    background-color: var(--primary-shade);
+    overflow: hidden;
+}
+
+.inner-wrapper {
+    width: 100%;
+    margin: 10px 10px;
+}
+
+@media only screen and (hover: none) and (pointer: coarse){ 
+    .section-container {
+        min-width: 350px;
+    }
+
+    .inner-wrapper {
+        width: 95%;
+        margin: 2.5% 2.5%;
+        font-size: 0.9em;
+    }
+}
+
+
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ADMIN WRAPPER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
+.admin-container {
+    width: 100%;
+}
+
+.search {
+    display: inline-block;
+    width: 70%;
+}
+
+.wrapper {
+    width: 30%;
+    float: right;
+}
+
+.management {
+    display: inline-block;    
+    float: right;
+}
+
+
+
+
+
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PRODUCTS CONTAINER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
+.products-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.scanned-products-container {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+@media only screen and (pointer: fine) and (1460px <= width <= 1900px) { 
+    .products-container {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media only screen and (pointer: fine) and (990px <= width <= 1459px) { 
+    .products-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media only screen and (pointer: fine) and (width <= 989px) { 
+    .products-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media only screen and (hover: none) and (pointer: coarse){ 
+    .products-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!! MODAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+
+
+#laser-output {
+    outline: none;
+    border: 0;
+    opacity: 0;
+    cursor: default;
+}
+
+
+
+/* !!!!!!!!!!!!!!!!!!!!!!! MODIFICATION MODAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
+
+.mod-inp-container {
+    padding: 20px 25px 20px 25px;
+    background-color: var(--primary-shade);
+}
+
+.mod-inp-container label {
+    margin-left: 0px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.mod-inp-container input {
+    width: 95%;
+    height: 50px;
+    margin: 20px auto;
+    padding-left: 20px;
+    border-top: solid 1px var(--secondary);
+    border-right: solid 3px var(--secondary);
+    border-bottom: solid 3px var(--secondary);
+    border-left: solid 1px var(--secondary);
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.centered {
+    width: 100%;
+    margin: 20px auto;
+}
+
+
+
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CONFIRMATION MODAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+
+#confirmation-modal {
+    display: none;
+}
+
+
+
+/* totop */
+.totop-container {
+    position: fixed;
+    top: 100px;
+    right: 1.5%;
+
+    width: 30px;
+    height: 30px;
+
+    border-left: solid 1px var(--secondary);
+    border-top: solid 1px var(--secondary);
+    border-right: solid 3px var(--secondary);
+    border-bottom: solid 3px var(--secondary);
+    border-radius: 50%;
+
+    background-color: var(--items-open);
+}
+
+.totop-container:hover {
+    transition: background-color 0.2s ease;
+    background-color: var(--itemshover-open);
+}
+
+.totop-btn {
+	background: none;
+	color: inherit;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	outline: inherit;
+    margin: -30px auto 0  auto;
+    font-size: 2em;
+    font-weight: bold;
+}
+
+@media only screen and (hover: none) and (pointer: coarse){ 
+    .totop-container {
+        top: 50px;
+    }
+}

@@ -1,0 +1,82 @@
+
+
+.fx {
+    position: fixed;
+    left: 0;
+    top: 30px;
+    width: 100%;
+    margin: 0 auto;
+    z-index: 10;
+}
+
+.msg-container {
+    display: grid;
+    grid-template-columns: 5% 90% 5%;
+    width: var(--main-w);
+    margin: 10px auto;
+    border-radius: 5px;  
+    opacity: 100;
+    z-index: auto;
+}
+
+.msg-symbol {
+    width: 32px;
+    height: 32px;
+    max-width: 100px;
+    max-height: 100px;
+    background-color: #abb8c3;
+    scale: 0.5;
+    border: 3px solid var(--secondary);
+    border-radius: 50%;
+}
+
+.err {
+    background-color: var(--items-close);
+    border-left: solid 1px var(--itemshover-close);
+    border-top: solid 1px var(--itemshover-close);
+    border-right: solid 3px var(--itemshover-close);
+    border-bottom: solid 3px var(--itemshover-close);
+}
+
+.ok {
+    background-color: var(--items-open);
+    border-left: solid 1px var(--itemshover-open);
+    border-top: solid 1px var(--itemshover-open);
+    border-right: solid 3px var(--itemshover-open);
+    border-bottom: solid 3px var(--itemshover-open);
+}
+
+.msg {
+    font-size: 1em;
+    line-height: 1.5em;
+    text-justify: inter-character;
+}
+
+.msg-comp {
+    display: inline-block;
+}
+
+.msg-quit {
+    float: right;
+    border: none;
+    background: none;
+    color: var(--secondary);
+    font-weight: bold;
+    font-size: 1em;
+    vertical-align: top;
+}
+
+.msg-quit:hover {
+    cursor: pointer;
+}
+
+
+@media only screen and (hover: none) and (pointer: coarse){
+    .fx {
+        top: 10px;
+    }
+
+    .msg-container {
+        grid-template-columns: 10% 85% 5%;
+    }
+}

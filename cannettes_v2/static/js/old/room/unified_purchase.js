@@ -769,10 +769,7 @@ function closeLaser() {
 }
 
 
-
-
 function CreateProductBubble(context, tableID, admin) {
-
   let container = document.getElementById(tableID);
   removeEmptyPlaceholder(tableID)
 
@@ -819,16 +816,15 @@ function CreateProductBubble(context, tableID, admin) {
   let qtyData = document.createElement('div');
   qtyData.classList.add('qty-data');
 
-  // let pkgQTY = document.createElement('p');
-  // pkgQTY.classList.add('pkg-qty');
-  // pkgQTY.innerHTML = '<strong>NB Colis : </strong>' + context.pckg_qty;
-  // qtyData.appendChild(pkgQTY);
+  let pkgQTY = document.createElement('p');
+  pkgQTY.classList.add('pkg-qty');
+  pkgQTY.innerHTML = '<strong>NB Colis : </strong>' + context.pckg_qty;
+  qtyData.appendChild(pkgQTY);
 
 
   let QTY = document.createElement('p');
   QTY.classList.add('qty');
-  QTY.innerHTML = '<strong>Quantité théorique : </strong>' + context.qty;
-  QTY.setAttribute('style', 'margin-left: 0;');
+  QTY.innerHTML = '<strong>Quantité : </strong>' + context.qty;
   qtyData.appendChild(QTY);
 
 
@@ -839,7 +835,7 @@ function CreateProductBubble(context, tableID, admin) {
   } else {
     receivedQTY.setAttribute('style', 'display: none;');
   }
-  receivedQTY.innerHTML = '<strong>En stock : </strong> &#xA0 ' + context.qty_received;
+  receivedQTY.innerHTML = '<strong>Reçue : </strong> &#xA0 ' + context.qty_received;
   qtyData.appendChild(receivedQTY);
 
   product.append(qtyData);
@@ -909,7 +905,7 @@ function CreateProductBubble(context, tableID, admin) {
     // }
     
     let QTYQ = document.createElement('p');
-    QTYQ.innerHTML = '<strong>La quantité théorique est-elle correct ?</strong>';
+    QTYQ.innerHTML = '<strong>La quantité reçue est-elle correcte ?</strong>';
     questionQTY.appendChild(QTYQ);
     
     let QTYYBtn = document.createElement('button');
@@ -938,7 +934,7 @@ function CreateProductBubble(context, tableID, admin) {
   
     let labelInput = document.createElement('label');
     labelInput.setAttribute('for', 'mod-input');
-    labelInput.innerHTML = '<strong>Quantité en stock : </strong>';
+    labelInput.innerHTML = '<strong>Nouvelle quantité reçue : </strong>';
     inpBlock.appendChild(labelInput);
   
     let inp = document.createElement('input');
@@ -1225,6 +1221,1036 @@ socket.on('already-scanned-alert', function(context) {
     errorText.innerHTML = "";
   }, 3000);
 });
+
+
+var initialized = false;
+const params = new URLSearchParams(window.location.search);
+const rid = params.get("rid");
+const admin = isAdmin();
+var state;
+var type;
+
+const socket = io.connect(config.address);
+
+socket.on("connect", function() {
+    if (!initialized) {
+        initialized = true;
+        socket.emit('admin-initialization-call', {"instance": "room", "rid": parseInt(rid)});
+    }
+});
+
+socket.on("room-initialization", function(context) {
+    console.log(context);
+    state = context.room.state;
+    type = context.room.type;
+    new MenuFactory(context.room);
+    addProducts(context.data);
+    addPlaceholder("initial");
+    addPlaceholder("done");
+});
+
+
+// 
+
+function isAdmin() {
+    let admin = false;
+    if (location.pathname.split('/')[1] === "admin") {
+        admin = true
+    }
+    return admin;
+}
+
+//////////////////////////////  COLLAPSING BLOCKS
+
+const collapser = document.getElementsByClassName("collaps-block");
+for (var i = 0; i < collapser.length; i++) {
+    collapser[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.display == 'flex') {
+            content.style.display = 'none';
+        } else {
+            content.style.display = 'flex';
+        } 
+    });
+}
+
+
+///////////////////////////// MENU BUILDER
+
+class MenuFactory {
+    constructor(payload) {
+        this.infosContainer(payload);
+        this.actionsContainer(payload);
+    }
+
+    infosContainer(payload) {
+        let container = document.getElementById("info");
+        container.appendChild(this.nameBuilder(payload.name, payload.rid));
+        container.appendChild(this.typeBuilder(payload.type));
+        container.appendChild(this.oidBuilder(payload.type, payload.oid));
+        if (payload.type === "purchase") {
+            container.appendChild(this.supplierBuilder(payload.supplier));
+        }
+        container.appendChild(this.dateBuilder(payload.creating_date));
+        container.appendChild(this.stateBuilder(payload.state));
+    }
+
+    actionsContainer(payload) {
+        let container = document.getElementById("actions");
+        if (admin === false & payload.state === "open") {
+            container.appendChild(this.btnBuilder("Terminer", "closeRoom()"));
+        } else if (admin === true & payload.state === "open" & payload.type === "purchase") {
+            container.appendChild(this.btnBuilder("Terminer", "closeRoom()"));
+            container.appendChild(this.btnBuilder("Suspendre", "suspendRoom()"));
+            container.appendChild(this.btnBuilder("Recharger", "rebaseRoom()"));
+        } else if (admin === true & payload.state === "close" & payload.type === "purchase") {
+            container.appendChild(this.btnBuilder("Valider", "validateRoom()"));
+        } else if (admin === true & payload.state === "open" & payload.type === "inventory") {
+            container.appendChild(this.btnBuilder("Terminer", "closeRoom()"));
+            container.appendChild(this.btnBuilder("Suspendre", "suspendRoom()"));
+        } else if (admin === true & payload.state === "close" & payload.type === "inventory") {
+            container.appendChild(this.btnBuilder("Nullifier", "validateRoom()"));
+            container.appendChild(this.btnBuilder("Valider", "validateRoom()"));
+        }
+    }
+
+    btnBuilder(text, onclick) {
+        let btn = document.createElement("button");
+        btn.classList.add("mngmnt-btn", "stack");
+        btn.innerText = text;
+        btn.setAttribute("onclick", onclick);
+        return btn;
+    }
+
+    infoBuilder(content) {
+        let info = document.createElement("p");
+        info.innerHTML = content;
+        return info;
+    }
+
+    nameBuilder(name, rid) {
+        let content = "<strong>Salon : </strong>";
+        if (name === "") {
+            name = "Salon n° " + rid;
+        }
+        content = content + name;
+        return this.infoBuilder(content);
+    }
+
+    typeBuilder(type) {
+        let content;
+        if (type === "purchase") {
+            content = "<strong>Type : </strong>Commande";
+        } else if (type === "inventory") {
+            content = "<strong>Type : </strong>Inventaire";
+        }
+        return this.infoBuilder(content);
+    }
+
+    oidBuilder(type, oid) {
+        let content;
+        if (type === "purchase") {
+            content = "<strong>Commande : </strong>" + oid;
+        } else if (type === "inventory") {
+            content = "<strong>Inventaire : </strong>" + oid;
+        }
+        return this.infoBuilder(content);
+    }
+
+    supplierBuilder(fname) {
+        let content = "<strong>Fournisseur : </strong>" + fname;
+        return this.infoBuilder(content);
+    }
+
+    stateBuilder(state) {
+        let content;
+        if (state === "open") {
+            content = "<strong>Statut : </strong> réception";
+        } else if (state === "close") {
+            content = "<strong>Statut : </strong> vérification";
+        } else if (state === "done") {
+            content = "<strong>Statut : </strong> archivé";
+        }
+        return this.infoBuilder(content);
+    }
+
+    dateBuilder(date) {
+        let content = "<strong>Date : </strong>" + date;
+        return this.infoBuilder(content);
+    }
+}
+
+class ProductFactory {
+    constructor(payload) {
+        if (typeof payload === "string" || payload instanceof String) {
+            let containerId = payload.split("-")[0];
+            let container = document.getElementById(containerId);
+            let placeholder = container.getElementsByClassName("placeholder-container")[0];
+            placeholder.appendChild(this.placeHolder())
+            return;
+        }
+        let container = document.getElementById(payload.state + "-products");
+        let product = this.productBuilder(payload);
+
+        product.appendChild(this.textCellBuilder(payload.name, "product-name"));
+        product.appendChild(this.boxCellBuilder());
+        product.appendChild(this.textCellBuilder(payload.barcodes, "product-barcode"));
+        if (type === "purchase") {
+            product.appendChild(this.textCellBuilder(
+                "<strong>Unités:</strong> <span>"+payload.qty+"</span>",
+                 "product-qty"
+            ));
+            product.appendChild(this.seperatorBuilder("sep1"));
+            product.appendChild(this.textCellBuilder(
+                "<strong>Paquets:</strong> <span>"+payload.qty_package+"</span>",
+                "product-pkg"
+            ));
+            product.appendChild(this.seperatorBuilder("sep2"));
+            product.appendChild(this.textCellBuilder(
+                "<strong>Reçus:</strong> <span>"+payload.qty_received+"</span>",
+                 "product-rcv"
+            ));
+
+        } else if (state === "inventaire") {
+            product.appendChild(this.textCellBuilder(
+                "<strong>Unités:</strong> <span>"+payload.qty_virtual+"</span>",
+                 "product-qty"
+            ));
+            product.appendChild(this.textCellBuilder(
+                "<strong>Reçus:</strong> <span>"+payload.qty_received+"</span>",
+                 "product-rcv"
+            ));
+        }
+
+        product.appendChild(this.textCellBuilder("<strong>Quantité Ok?</strong>", "product-ask"));
+        product.appendChild(this.btnCellBuilder("Ok", "product-yes", "correctProductQty(this)"));
+        product.appendChild(this.btnCellBuilder("Modifier", "product-mod", "modifyProductQty(this)"));
+        
+        this.visibility(product, payload);
+        container.appendChild(product);
+    }
+
+    productBuilder(payload) {
+        let product = document.createElement("div");
+        let nonAttr = ["name", "barcode", "qty", "qty_package", "qty_preceived", "qty_virtual"];
+        for (var key in payload) {
+            if (!nonAttr.includes(key)) {
+                product.setAttribute(key, payload[key]);
+            }
+        }
+        product.setAttribute("id", payload.uuid);
+        product.classList.add("product", this._dstate(payload));
+        return product;
+    }
+
+    textCellBuilder(text, cls) {
+        let cell = document.createElement("div");
+        cell.classList.add("grid-cell", cls);
+        cell.innerHTML = text;
+        return cell;
+    }
+
+    boxCellBuilder() {
+        let cell = document.createElement("div");
+        cell.classList.add("grid-cell", "product-check");
+
+        let inp = document.createElement("input");
+        inp.setAttribute("type", "checkbox");
+        inp.classList.add("pcheck");
+
+        cell.appendChild(inp);
+        return cell;
+    }
+
+    seperatorBuilder(cls) {
+        let cell = document.createElement("div");
+        cell.classList.add("grid-cell", cls);
+
+        let sep = document.createElement("div");
+        sep.classList.add("separator");
+
+        cell.appendChild(sep);
+        return cell;
+    }
+
+    btnCellBuilder(text, cls, onclick) {
+        let cell = document.createElement("div");
+        cell.classList.add("grid-cell", cls);
+
+        let btn = document.createElement("button");
+        btn.setAttribute("onclick", onclick);
+        btn.classList.add("mngmnt-btn");
+        btn.innerText = text;
+
+        cell.appendChild(btn);
+        return cell;
+    }
+
+    visibility(product, payload) {
+        // from room status
+        if (state === "done") {
+            product.getElementsByClassName("product-ask")[0].style.display = "none";
+            product.getElementsByClassName("product-yes")[0].style.display = "none";
+            product.getElementsByClassName("product-mod")[0].style.display = "none";
+            return product;
+        }
+
+        // from item state
+        if (payload.state === "open" & state === "purchase") {
+            product.getElementsByClassName("sep2")[0].style.display = "none";
+            product.getElementsByClassName("product-rcv")[0].style.display = "none";
+        } else if (payload.state === "open" & state === "inventory") {
+            product.getElementsByClassName("product-rcv")[0].style.display = "none";
+        } else if (payload.state === "done") {
+            product.getElementsByClassName("product-yes")[0].style.display = "none";
+        }
+
+        // admin and uomid is not units (can be enlarged).
+        if (!admin & [1].includes(payload.uomid)) {
+            product.getElementsByClassName("product-ask")[0].style.display = "none";
+            product.getElementsByClassName("product-yes")[0].style.display = "none";
+            product.getElementsByClassName("product-mod")[0].style.display = "none";
+        }
+        return product;
+    }
+
+    _dstate(payload) {
+        let cls = {0: "normal", 1: "new", 2: "modified", 3: "unknown"};
+        let values = {"_new": 1, "_modified": 2, "_unknown": 3}
+        let maxx = 0;
+        for (var key in payload) {
+            if (
+                Object.keys(values).includes(key) 
+                & payload[key]
+                & values[key] > maxx
+                ) 
+                {
+                    maxx = values[key];
+            } 
+        }
+        return cls[maxx];
+    }
+
+    placeHolder() {
+        let elm = document.createElement("div");
+        elm.classList.add("placeholder");
+
+        let text = document.createElement("p");
+        text.innerText = "Aucun produit";
+
+        elm.appendChild(text);
+        return elm;
+    }
+}
+
+
+function addProducts(products) {
+    for (product of products) {
+        new ProductFactory(product);
+    }
+}
+
+function rmPlaceholder(containerId) {
+    const container = document.getElementById(containerId);
+    let placeholder = container.getElementsByClassName("placeholder");
+    if (placeholder.length > 0) {
+        placeholder[0].remove();
+    }
+}
+
+function addPlaceholder(containerId) {
+    const container = document.getElementById(containerId);
+    let purchases = container.getElementsByClassName("product");
+    let placeholder = container.getElementsByClassName("placeholder");
+    if (purchases.length === 0 & placeholder.length === 0) {
+        new ProductFactory(containerId+"-placeholder");
+    }
+}
+
+
+var initialized = false;
+const admin = isAdmin();
+const socket = io.connect(config.address);
+
+
+
+
+
+socket.on("connect", function() {
+    if (!initialized) {
+        initialized = true;
+        socket.emit('admin-initialization-call', {"instance": "lobby"});
+    }
+});
+
+socket.on("lobby-initialization", function(context) {
+    let base = context.origin;
+    if (admin) {
+        new MenuFactory();
+        addOptions(context.purchases, "purchases");
+        addOptions(context.categories, "categories");
+    }
+    if (context.rooms.length > 0) {
+        addRooms(context.rooms, base, "room-table");
+    } else {
+        new RoomFactory("placeholder");
+    }
+});
+
+socket.on("update-purchase-selector", function(context) {
+    let data = unwrap_or_else(context, "erreur 0");
+    if (data === null) {
+        return;
+    }
+    addOptions(data.purchases, "purchases");
+});
+
+socket.on("add-rooms-admin", function(context) {
+    let data = unwrap_or_else(context, "erreur 1");
+    if (data === null) {
+        return;
+    }
+
+    rmPlaceholder();
+    let rooms = data.rooms;
+    let base = data.origin;
+    for (room of rooms) {
+        room.origin = base;
+        new RoomFactory(room);    
+    }
+    new MsgFactory("ok", "Salons crées");
+});
+
+socket.on("close-creation-modal", function() {
+    creationModal();
+});
+
+socket.on("del-rooms", function(context) {
+    const rooms = document.getElementById("room-table").getElementsByClassName("purchase");
+    const state = context.state;
+    let rids = context.data.rids;
+    Array.from(rooms).forEach( function(room) {
+        let rid = parseInt(room.getAttribute("rid"));
+        console.log(rid);
+        if (rids.includes(rid)) {
+            console.log(rid, "included");
+            room.remove();
+        }
+    });
+    addPlaceholder();
+    new MsgFactory(state, "<strong>Suppression</strong> : Salons supprimés");
+});
+
+socket.on("reinit-rooms", function(context) {
+    const state = context.state;
+    new MsgFactory(state, "<strong>Réinitialisation</strong> : Salons Réinitialisés");
+});
+
+socket.on("qrcodes-pdf", function(context) {
+    let buffer = context.pdf;
+    let pdfWindow = window.open("");
+    pdfWindow.document.write(
+        "<iframe width='100%' height='100%' src='data:application/pdf;base64, " +
+        encodeURI(buffer) + "'></iframe>"
+    );
+});
+
+function isAdmin() {
+    let admin = false;
+    if (location.pathname.split('/')[1] === "admin") {
+        admin = true
+    }
+    return admin;
+}
+
+function unwrap_or_else(payload, errMsg) {
+    if (payload.state == "err") {
+        new MsgFactory("err", errMsg);
+        return null;
+    } else {
+        return payload.data;
+    }
+}
+
+
+////////////////////////////////////////////// room-table content objects
+
+class MenuFactory {
+    constructor() {
+        const container = document.getElementById("actions");
+        container.appendChild(this.btnBuilder("Créer", "create", ["btn-small", "border", "side-margin"], "creationModal()"));
+        container.appendChild(this.btnBuilder("Supprimer", "del", ["btn-small", "border", "side-margin"], "delSelRooms()"));
+        container.appendChild(this.btnBuilder("Réinitialiser", "reset", ["btn-small", "border", "side-margin"], "reInitSelRooms()"));
+        container.appendChild(this.btnBuilder("QR-code", "qrcode", ["btn-small", "border", "side-margin"], "GenerateQrCode()"));
+    }
+
+    btnBuilder(text, id, cls, onclick) {
+        let btn = document.createElement("button");
+        btn.setAttribute("id", id);
+        btn.setAttribute("onclick", onclick);
+        btn.classList.add(...cls);
+        btn.innerText = text;
+        return btn;
+    }
+}
+
+class RoomFactory {
+    constructor(payload) {
+        const table = document.getElementById("room-table");
+        if (payload === "placeholder") {
+            table.appendChild(this.placeHolder())
+        } else {
+            let frame = this.buildRoom(payload);
+            console.log(frame);
+            table.appendChild(frame);
+        }
+    }
+
+    buildRoom(payload) {
+        let frame = this.buildFrame(payload);
+
+        frame.appendChild(this.buildCheckBox())
+        frame.appendChild(this.buildSeparator());
+        frame.appendChild(this.buildCell(this.defaultName(payload), ["grid-cell", "padding", "long", "rname"]));
+        frame.appendChild(this.buildSeparator());
+        frame.appendChild(this.buildCell(payload.display_name, ["grid-cell", "padding", "pname"]));
+        frame.appendChild(this.buildSeparator());
+        frame.appendChild(this.buildCell(this.translateState(payload.state), ["grid-cell", "padding", "long", "pstate"]));
+        frame.appendChild(this.buildSeparator());
+        if (payload.state != "done") {
+            frame.appendChild(this.buildCell(payload.creating_date, ["grid-cell", "padding", "long", "pdate"]));
+        } else {
+            frame.appendChild(this.buildCell(payload.closing_date, ["grid-cell", "padding", "long", "pdate"]));
+        }
+        frame.appendChild(this.buildSeparator());
+        frame.appendChild(this.buildPassCell());
+        frame.appendChild(this.buildAccessBtn(payload.origin, payload.token, payload.rid));
+        return frame;
+    }
+
+    buildFrame(payload) {
+        let elm = document.createElement("div");
+        elm.classList.add("purchase", payload.state);
+        elm.setAttribute("state", payload.state);
+        elm.setAttribute("sibling", payload.sibling);
+        elm.setAttribute("otype", payload.type);
+        elm.setAttribute("oid", payload.oid);
+        elm.setAttribute("rid", payload.rid);
+        elm.setAttribute("token", payload.token);
+        return elm;
+    }
+
+    buildCheckBox() {
+        let elm = document.createElement("div");
+        elm.classList.add("grid-cell", "check");
+
+        let inp = document.createElement("input");
+        inp.classList.add("selectBox");
+        inp.setAttribute("type","checkbox");
+
+        elm.appendChild(inp);
+        return elm;
+    }
+
+    buildCell(text, classes) {
+        let elm = document.createElement("div");
+        elm.innerText = text;
+        for (var cls of classes) {
+            elm.classList.add(cls);
+        }
+        return elm;
+    }
+
+    buildPassCell() {
+        let elm = document.createElement("div");
+        elm.classList.add("grid-cell", "rpass");
+
+        let inp = document.createElement("input");
+        inp.setAttribute("type", "password");
+        inp.setAttribute("autocomplete", "off");
+        inp.setAttribute("placeholder", "Mot de passe...");
+
+        elm.appendChild(inp);
+        return elm;
+    }
+
+    buildAccessBtn(origin, token, rid) {
+        let url = origin+"/"+token+"?rid="+rid;
+        let elm = document.createElement("div");
+        elm.classList.add("grid-cell-btn", "raccess");
+
+        let redirector = document.createElement("a");
+        redirector.setAttribute("href", url)
+
+        let btn = document.createElement("button");
+
+        let iframe = document.createElement("i");
+        iframe.classList.add("arrow", "right");
+
+        btn.appendChild(iframe);
+        redirector.appendChild(btn)
+        elm.appendChild(redirector);
+        return elm;
+    }
+
+    buildSeparator() {
+        let elm = document.createElement("div");
+        elm.classList.add("separator");
+        return elm;
+    }
+
+    placeHolder() {
+        let elm = document.createElement("div");
+        elm.classList.add("placeholder");
+
+        let text = document.createElement("p");
+        text.innerText = "Aucun Salon";
+
+        elm.appendChild(text);
+        return elm;
+    }
+
+    translateState(state) {
+        if (state == "open") {
+            return "Ouvert";
+        } else if (state == "close") {
+            return "Fermé";
+        } else if (state == "done") {
+            return "Fini";
+        }
+    }
+
+    defaultName(payload) {
+        if (payload.name != "") {
+            return payload.name;
+        }
+        let rid = payload.rid;
+        return "Salon n° " + rid;
+    }
+}
+
+function rmPlaceholder() {
+    const table = document.getElementById("room-table");
+    let placeholder = table.getElementsByClassName("placeholder");
+    if (placeholder.length > 0) {
+        placeholder[0].remove();
+    }
+}
+
+function addPlaceholder() {
+    const table = document.getElementById("room-table");
+    let purchases = table.getElementsByClassName("purchase");
+    let placeholder = table.getElementsByClassName("placeholder");
+    if (purchases.length === 0 & placeholder.length === 0) {
+        new RoomFactory("placeholder");
+    }
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function getSelectedOptions(type) {
+    const purchase = document.getElementById('purchases');
+    const inventory = document.getElementById('categories');
+    let object_id;
+    let object_name;
+    if (type == 'purchase') {
+        object_id = parseInt(purchase.options[purchase.selectedIndex].value);
+        object_name = purchase.options[purchase.selectedIndex].innerHTML;
+    } else {
+        object_id = parseInt(inventory.options[inventory.selectedIndex].value);
+        object_name = inventory.options[inventory.selectedIndex].innerHTML;
+    }
+    return [object_id, object_name]
+}
+
+function getPType() {
+    let check =  document.getElementById('pType-check').checked;
+    if (check) {
+        var pType = 'inventory';
+    } else {
+        var pType = 'purchase';
+    }
+    return pType
+}
+
+
+function createRoom() {
+    const roomName = document.getElementById('room-name');
+    const roomPassword = document.getElementById('room-password');
+    const infoContainer = document.getElementById("creation-info");
+    let type = getPType();
+    let [ObjectId, _] = getSelectedOptions(type);
+    let name = roomName.value;
+    let password = roomPassword.value;
+    socket.emit("add-rooms", {"type": type, "oid": ObjectId, "name": name, "password": password});
+    infoContainer.innerText = "Création en cours...";
+}
+
+function delSelRooms() {
+    let selected = getSelRids();
+    if (selected.length == 0) {
+        new MsgFactory("err", "<strong>Erreur lors de la suppression</strong> : Aucun salon sélectionné");
+    } else {
+        openCModal(
+            "Suppression ?",
+            "Confirmer la suppression des salons ?",
+            "delRooms()",
+      );
+    }
+}
+
+function delRooms() {
+    let selected = getSelRids();
+    socket.emit("del-rooms", {"rids": selected});
+    CloseCModal();
+}
+
+function reInitSelRooms() {
+    let selected = getSelRids();
+    if (selected.length == 0) {
+        new MsgFactory("err", "<strong>Erreur lors de la réinitialisation</strong> : Aucun salon sélectionné");
+    } else {
+        openCModal(
+            "Réinitialisation ?",
+            "Confirmer la réinitialisation des salons ?",
+            "initRooms()",
+      );
+    }
+}
+
+function initRooms() {
+    let selected = getSelRids();
+    socket.emit("reinit-rooms", {"rids": selected});
+    CloseCModal();
+}
+
+function GenerateQrCode() {
+    let selected = getSelRids();
+    if (selected.length == 0) {
+        new MsgFactory("err", "<strong>Erreur lors de la generation des qrcodes</strong> : Aucun salon sélectionné");
+    } else {
+        let curUrl = window.location.href;
+        let origin = new URL(curUrl).origin;
+        console.log(origin);
+        socket.emit("generate-qrcodes", {"rids": selected, "origin": origin});
+    }
+}
+
+
+
+
+function getSelRids() {
+    let selected = [];
+    const rooms = document.getElementsByClassName("purchase");
+    for (var room of rooms) {
+        let checked = room.getElementsByClassName("selectBox")[0].checked;
+        if (checked) {
+            selected.push(parseInt(room.getAttribute("rid")))
+        }
+    }
+    return selected;
+}
+
+function handle0SelCase() {
+
+}
+
+
+///////// GENERATE OPTIONS CHOICES
+
+function addRooms(rooms, base, objectId) {
+    const table = document.getElementById(objectId);
+    for (var room of rooms) {
+        room.origin = base;
+        new RoomFactory(room);
+    }
+}
+
+function addOptions(inputs, objectId) {
+    const selector = document.getElementById(objectId);
+    selector.innerHTML = "";
+    for (var option of inputs) {
+        let name = option[1].toString();
+        let id = option[0].toString();
+        selector.add(createOption(name, id), null);
+    }
+}
+
+function createOption(text, value) {
+    let option = document.createElement('option');
+    option.value = value;
+    option.text = text;
+    return option;
+}
+
+//////////// SWITCH INV/PUR
+
+function creationModal() {
+    const page = document.getElementById("html");
+    const modal = document.getElementById("creation-modal");
+    const switcher = document.getElementById("pType-check");
+    const purContainer = document.getElementById('purchase-container');
+    const invContainer = document.getElementById('inv-container');
+    const roomName = document.getElementById('room-name');
+    const roomPassword = document.getElementById('room-password');
+    const purchase = document.getElementById('purchases');
+    const inventory = document.getElementById('categories');
+    const infoContainer = document.getElementById("creation-info");
+
+    let display = modal.style.display;
+    if (display != "flex") {
+        modal.style.top = (window.scrollY - 5).toString() + 'px';
+        modal.style.display = "flex";
+        infoContainer.innerText = "";
+        switcher.checked = false;
+        purContainer.style.display = 'block';
+        invContainer.style.display = 'none';
+        page.style.overflowY = 'hidden';
+    } else {
+        modal.style.display = "none";
+        roomName.value = '';
+        roomPassword.value = '';
+        infoContainer.innerText = "";
+        purchase.selectedIndex = 0;
+        inventory.selectedIndex = 0;
+        switcher.checked = false;
+        page.style.overflowY = 'visible';
+    }
+}
+
+function switchContainer() {
+    const switcher = document.getElementById("pType-check");
+    const purContainer = document.getElementById('purchase-container');
+    const invContainer = document.getElementById('inv-container');
+    if (switcher.checked) {
+        purContainer.style.display = 'none';
+        invContainer.style.display = 'block';
+    } else {
+        purContainer.style.display = 'block';
+        invContainer.style.display = 'none';
+    }
+}
+
+
+//////////////////////////////////////////// MSG BOX
+
+
+function closeMsg(elm) {
+    let box = elm.parentElement.parentElement;
+    box.remove();
+}
+
+///////////////////////////////////////// SORTING
+
+function tableSort(elm) {
+    let selected = elm.getElementsByClassName("order")[0];
+    new TableSorter(selected);
+}
+
+
+class TableSorter {
+    constructor(sel) {
+        let symbols = {"neu": "-", "asc": "▼", "des": "▲"};
+        let reversedSymbols = {"-": "neu", "▼": "asc", "▲": "des"};
+        let orders = {"neu": "asc", "asc": "des", "des": "asc"};
+
+
+        let currentSelector = sel.id;
+        let currentSortingState = reversedSymbols[sel.innerText];
+        let nextSortingState = orders[currentSortingState];
+        let nextSymbol = symbols[nextSortingState];
+
+        let [nodesRef, valuesRef] = this.collectNodes(currentSelector);
+        let sorted = this.sort(nextSortingState, valuesRef);
+        this.inject(sorted, nodesRef);
+        this.modifySortingStates(currentSelector, nextSymbol);
+    }
+
+
+    collectNodes(selid) {
+        let stateValues = {"open": 1, "close": 2, "done": 3};
+        const table = document.getElementById("room-table");
+        let nodes = table.getElementsByClassName("purchase");
+
+        let nodesRef = {};
+        let valuesRef = [];
+
+        Array.from(nodes).forEach( function(node) {
+            let rid = node.getAttribute("rid");
+            let refcell = node.getElementsByClassName(selid.split('-')[0])[0];
+            nodesRef[rid] = node;
+            if (selid === "date-order") {
+                let date = new Date(refcell.innerText);
+                valuesRef.push([date, rid]);
+            } else if (selid === "state-order") {
+                let stateVal = stateValues[node.getAttribute("state")];
+                valuesRef.push([stateVal, rid]);
+            } else {
+                let text = refcell.innerText;
+                valuesRef.push([text, rid]);
+            }
+        });
+        return [nodesRef, valuesRef];
+    }
+
+    sort(order, valuesRef) {
+        let sorted;
+        if (order == "asc") {
+            console.log("ascending ordering");
+            sorted = valuesRef.sort(([a,b], [c,d]) => {
+                if (a > c)
+                    return 1;
+                if (a < c)
+                    return -1;
+                return 0;
+            });
+
+        } else if (order == "des") {
+            console.log("descending ordering");
+            sorted = valuesRef.sort(([a,b], [c,d]) => {
+                if (a > c)
+                    return -1;
+                if (a < c)
+                    return 1;
+                return 0;
+            });
+        }
+        return sorted;
+    }
+
+    inject(valuesRef, nodesRef) {
+        const table = document.getElementById("room-table");
+        table.innerHTML = "";
+        for (var [v, rid] of valuesRef) {
+            let node = nodesRef[rid];
+            table.appendChild(node);
+        }
+    }
+
+    modifySortingStates(selid, next) {
+        let selector = document.getElementById(selid);
+        let others = document.getElementsByClassName("order");
+        selector.innerHTML = next;
+        Array.from(others).forEach( function(node) {
+            if (node.id != selid) {
+                node.innerHTML = "-";
+            } 
+        });
+    }
+}
+
+
+////////// SEARCH BAR
+
+function searchRoom(event) {
+    let input = document.getElementById("searchbar").value.toLowerCase();
+    if (input == "") {
+        resetSearch();
+    } else {
+        filterRooms(input);
+    }
+}
+
+function filterRooms(input) {
+    const table = document.getElementById("room-table");
+    let nodes = table.getElementsByClassName("purchase");
+    for (node of nodes) {
+        let rname = node.getElementsByClassName("rname")[0].innerText.toLowerCase();
+        let pname = node.getElementsByClassName("pname")[0].innerText.toLowerCase();
+        if (rname.includes(input) || pname.includes(input)) {
+            console.log(input, pname, rname);
+            node.style.display = "grid";
+        } else {
+            node.style.display = "none";
+        }
+    }  
+}
+
+function resetSearch() {
+    const table = document.getElementById("room-table");
+    document.getElementById("searchbar").value = "";
+    let nodes = table.getElementsByClassName("purchase");
+    for (node of nodes) { node.style.display = "grid" };
+}
+
+
+//////////////////////// MESSAGE GENERATION
+
+class MsgFactory {
+    constructor(mtype, msg) {
+        const container = document.getElementById("msg-box");
+
+        let frame = this.buildFrame(mtype);
+        frame.appendChild(this.buildSymbol(mtype));
+        frame.appendChild(this.buildMsg(msg));
+        frame.appendChild(this.buildExit());
+
+        container.appendChild(frame);
+    }
+
+
+    buildFrame(mtype) {
+        let frame = document.createElement("div");
+        frame.classList.add(mtype, "msg-container");
+        return frame;
+    }
+
+    buildSymbol(mtype) {
+        let elm = document.createElement('img');
+        elm.classList.add("msg-symbol","msg-comp");
+        elm.setAttribute("src","../static/misc/"+mtype+".png");
+        return elm;
+    }
+
+    buildMsg(msg) {
+        let elm = document.createElement("p");
+        elm.classList.add("msg", "msg-comp");
+        elm.innerHTML = msg;
+        return elm;
+    }
+
+    buildExit() {
+        let elm = document.createElement("div");
+        elm.classList.add("quit-container");
+        
+        let btn = document.createElement("button");
+        btn.classList.add("msg-quit", "msg-comp");
+        btn.setAttribute("onclick", "closeMsg(this)");
+        btn.innerText = "x";
+
+        elm.appendChild(btn);
+        return elm;   
+    }
+}
+
+///////////////////////////////// CONFIRMATION MODAL
+
+function openCModal(headerMsg, bodyMsg, closeFunc) {
+    const page = document.getElementById('html');
+    const modal = document.getElementById("confirmation-modal");
+    const header = document.getElementById('heading-message');
+    const message = document.getElementById('content-message');
+    const button = document.getElementById('accept-confirmation');
+
+    window.scrollTo(0, window.scrollY); 
+    modal.style.top = (window.scrollY - 5).toString() + 'px';
+    modal.style.display = 'flex';
+    page.style.overflowY = 'hidden';
+    header.innerHTML = headerMsg;
+    message.innerHTML = bodyMsg;
+    button.setAttribute('onclick', closeFunc);
+}
+
+function CloseCModal() {
+    document.getElementById('confirmation-modal').style.display = 'none';
+    document.getElementById('html').style.overflowY = 'visible';
+    document.getElementById('cancel-confirmation').hidden = false;
+    document.getElementById('accept-confirmation').hidden = false;
+}
 // ALL SOCKET.IO EVENTS RECEIVED FROM FLASK-SOCKET.IO SERVER
 // CONTAINS ALL CLIENT GENERATED EVENTS
 

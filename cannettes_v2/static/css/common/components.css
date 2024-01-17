@@ -1,0 +1,19 @@
+
+
+.border {
+    border-left: solid 1px var(--secondary);
+    border-top: solid 1px var(--secondary);
+    border-right: solid 3px var(--secondary);
+    border-bottom: solid 3px var(--secondary);
+    border-radius: 5px;
+}
+
+
+
+.padded {
+    padding: 10px;
+}
+
+.centered {
+    margin: auto;
+}

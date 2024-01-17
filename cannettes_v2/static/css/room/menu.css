@@ -1,0 +1,104 @@
+
+
+.menu-container {
+    display: grid;
+    grid-template-columns: 80% 20%;
+    background-color: var(--primary-shade);
+    z-index: 1;
+}
+
+.room-info {
+    padding: 0 10px;
+    line-height: 1em;
+    font-size: 1.1em;
+}
+
+.room-menu {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.room-scanners {
+    display: grid;
+    grid-template-rows: repeat(2, auto);
+    margin: 20px 0;
+}
+
+.scanner-btn {
+    height: 70px;
+    width: 70px;
+    margin: 10px 10px;
+    background: none;
+    background-color: var(--items-open);
+}
+
+.scanner-btn img {
+    width: 60px;
+    height: 60px;
+    scale: 1;
+    background-color: var(--items-open);
+}
+
+.scanner-btn:hover, .scanner-btn img:hover {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    background-color: var(--itemshover-open);
+}
+
+
+
+.room-actions {
+    display: grid;
+    grid-template-rows: auto;
+    height: 100%;
+    margin: 10px 10px 5px 10px;
+}
+
+.stack {
+    display: block;
+    margin: 7px 0;
+}
+
+@media only screen and (pointer: fine) and (780px <= width <= 1171px) { 
+    .menu-container {
+        grid-template-columns: 70% 30%;
+    }
+}
+
+@media only screen and (pointer: fine) and (width <= 779px) { 
+    .menu-container {
+        grid-template-columns: 65% 35%;
+    }
+}
+
+
+@media only screen and (hover: none) and (pointer: coarse){ 
+    .menu-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(2, auto);
+    }
+
+    .room-info {
+        margin-bottom: 10px;
+    }
+
+    .room-menu {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(2, auto);
+    }
+
+    .room-scanners {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: 1fr;
+    }
+
+    .scanner-btn {
+        margin: 0 auto;
+    }
+
+    .room-actions {
+        grid-template-columns: auto;
+        margin: 0 20px;
+        gap: 10px;
+    }
+}
