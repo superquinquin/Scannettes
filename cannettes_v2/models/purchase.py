@@ -5,7 +5,7 @@ from copy import deepcopy
 from datetime import datetime
 from collections import defaultdict
 from erppeek import Record, RecordList
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Type
 
 from cannettes_v2.models.product import Product
 from cannettes_v2.models.state_handler import PRODUCT_STATE, State, PROCESS_STATE, PURCHASE_STATE
@@ -74,7 +74,7 @@ class Purchase(object):
     def build_registeries(self) -> None:
         self.uuid_registry: Dict[str, Product] = {}
         self.pid_registry: Dict[str, Product] = {}
-        self.barcode_registry: Dict[int, Product] = {}
+        self.barcode_registry: Dict[str, Product] = {}
         self.products: List[Product] = []
         for ref in self._initial_products:
             product = deepcopy(ref)
@@ -93,16 +93,16 @@ class Purchase(object):
                 self.barcode_registry[brcd] = product
 
     def get_modified_products(self) -> List[Uuid]:
-        return [p.uuid for p in self.uuid_registry.values() if p._modified]
+        return [p for p in self.uuid_registry.values() if p._modified]
 
     def get_new_products(self) -> List[Uuid]:
-        return [p.uuid for p in self.uuid_registry.values() if p._new]
+        return [p for p in self.uuid_registry.values() if p._new]
 
     def get_unknown_products(self) -> List[Uuid]:
-        return [p.uuid for p in self.uuid_registry.values() if p._unknown]
+        return [p for p in self.uuid_registry.values() if p._unknown]
 
     def get_scanned_products(self) -> List[Uuid]:
-        return [p.uuid for p in self.uuid_registry.values() if p._scanned]
+        return [p for p in self.uuid_registry.values() if p._scanned]
 
     def retrieve_initial_product(self, product: Product) -> Product:
         return [p for p in self._initial_products if p.uuid == product.uuid][0]
@@ -118,7 +118,7 @@ class Purchase(object):
 
     def del_product(self, product: Product, with_initial: bool = False) -> None:
         self.uuid_registry.pop(product.uuid, None)
-        [self.barcode_registry.pop(brcd) for brcd in product.barcodes]
+        [self.barcode_registry.pop(brcd, None) for brcd in product.barcodes]
         self.pid_registry.pop(product.pid, None)
         self.products.pop(self.products.index(product))
         if with_initial:
@@ -138,6 +138,11 @@ class Purchase(object):
             [self.barcode_registry.pop(brcd) for brcd in product.barcodes]
             product.update({"barcodes": barcodes})
             self.register_barcodes(product)
+            
+        pid = payload.pop("pid", None)
+        if pid and pid != product.pid:
+            product.update({"pid": pid})
+            self.pid_registry[str(pid)] = product
         product.update(payload)
 
     def build_initial_payload(self) -> Payload:
@@ -146,32 +151,40 @@ class Purchase(object):
         return payload
 
     def rebase_products(
-        self, products: List[RecordList], api: Odoo
+        self, products: List[RecordList], api: Type
     ) -> Payload:
         """Pid are supposed to be unique accross the purchased product list."""
+        
         for pur in products:
-            product = self.pid_registry.get(pur.product_id.id, None)
+            pid = pur.product_id.id
+            barcodes = api.get_barcodes(pur.product_id)
+            
+            product = self.pid_registry.get(pid, None)
+            if product is None:
+                res = list(filter(None,[self.barcode_registry.get(b, None) for b in barcodes]))
+                if res: product = res[0]
+            
             if product and pur.state == "cancel":
-                self.del_product(product, with_initial=True)
+                self.del_product(product, with_initial=True)   
+            
             elif product and pur.state != "cancel":
-                self.update_product(
-                    product,
-                    {
-                        "name": re.sub(
-                            "\[.*?\]",  # noqa: W605
-                            "",
-                            api.get_name_translation(pur.product_id),
-                        ),
-                        "barcode": api.get_barcodes(pur),
-                        "qty": pur.product_qty,
-                        "qty_package": pur.product_qty_package,
-                    },
-                    with_initial=True,
-                )
-
+                name = api.get_name_translation(pur.product_id.product_tmpl_id)
+                payload = {
+                    "pid": int(pid), 
+                    "name": name, 
+                    "barcodes": barcodes, 
+                    "qty": float(pur.product_qty), 
+                    "qty_package": float(pur.product_qty_package),
+                    "_new": False,
+                    "_unknown": False}
+                if product.state.current() in ["initial", "scanned"]:
+                    payload.update({"qty_received": float(pur.product_qty)})
+                self.update_product(product, payload, with_initial=True)
+            
             elif product is None:
-                product = api.product_factory(product)
+                product = api.product_factory(pur)
                 self.add_product(product, with_initial=True)
+
 
     def update_edited_product(self, context: Payload) -> Payload:
         """Handle move and qty modification + move."""
@@ -185,7 +198,6 @@ class Purchase(object):
 
     def search_scanned_in_self(self, context: Payload, **kwargs) -> Payload:
         product = self.barcode_registry.get(context["barcode"], None)
-        print("self ", product)
         if product:
             product.update({"_scanned": True})
             product.state.bump()
@@ -290,19 +302,24 @@ class Inventory(Purchase):
         self.build_registeries()
     
     def assembler(self, other: Inventory) -> None:
-        """Product of both should be deepcopy do that uuid are the same."""
-        for product in other.products:
+        """Product of both should be deepcopy do that uuid are the same."""   
+        verified_others = [p for p in other.products if p.state.current() == "done"]
+        for product in verified_others:
             ref = self.uuid_registry.get(product.uuid, None)
             if ref:
                 ref.qty_received += product.qty_received
+                ref.state.take_max(product.state)
+                ref._modified = any([ref._modified, product._modified])
+                ref._scanned = any([ref._scanned, product._scanned])
             else:
-                self.add_product(product)
+                self.add_product(product, with_initial=True)
+
 
     def nullifier(self) -> None:
-        for product in self.products:
-            if product.state != "done":
-                product.update({"qty_received": 0, "_scanned": True})
-                product.state.bump_to("done")
+        non_verified = [p for p in self.products if p.state.current() != "done"]
+        for product in non_verified:
+            product.update({"qty_received": float(0), "_scanned": True})
+            product.state.bump_to("done")
 
     def display_name(self) -> str:
         if self.name:

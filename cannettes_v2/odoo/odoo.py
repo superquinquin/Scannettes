@@ -120,9 +120,10 @@ class Odoo(object):
             "pid": product.id,
             "name": re.sub("\[.*?\]", "", self.get_name_translation(product)),
             "barcodes": self.get_barcodes(product),
-            "qty": 0,
-            "qty_virtual": 0,
-            "qty_package": 0,
+            "qty": float(0),
+            "qty_virtual": float(0),
+            "qty_package": float(0),
+            "uomid": product.product_tmpl_id.uom_id.id
         }
         payload.update(kwargs)
         return payload

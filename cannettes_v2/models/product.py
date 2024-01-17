@@ -42,10 +42,10 @@ class Product(object):
     uuid: str = field(compare= False)
     name: str = field(compare=True, default="")
     barcodes: List[Union[str, bool]] = field(compare=True)
-    qty: int = field(compare=False, default=0)
-    qty_virtual: int = field(compare=False, default=0)
-    qty_package: int = field(compare=False, default=0)
-    qty_received: int = field(compare=False, default=0)
+    qty: float = field(compare=False, default=float(0))
+    qty_virtual: float = field(compare=False, default=float(0))
+    qty_package: float = field(compare=False, default=float(0))
+    qty_received: float = field(compare=False, default=float(0))
     uomid: int = field(compare=True, default=None)
     state: State = field(compare=False, default=None)
     _modified: bool = field(compare=False, default=False),
@@ -59,9 +59,9 @@ class Product(object):
         pid: Optional[int] = None,
         name: str = "",
         barcodes: List[Union[str, bool]],
-        qty: int = 0,
-        qty_virtual: int = 0,
-        qty_package: int = 0,
+        qty: float = float(0),
+        qty_virtual: float = float(0),
+        qty_package: float = float(0),
         uomid: Optional[int] = None,
         state: Optional[State] = None,
         _modified: bool = False,
@@ -74,9 +74,9 @@ class Product(object):
         self.pid = pid
         self.name = name
         self.barcodes = barcodes
-        self.qty = int(qty)
-        self.qty_virtual = int(qty_virtual)
-        self.qty_package = int(qty_package)
+        self.qty = float(qty)
+        self.qty_virtual = float(qty_virtual)
+        self.qty_package = float(qty_package)
         self.uomid = uomid
         self.state = state or State(PRODUCT_STATE)
         self._modified = _modified
@@ -85,7 +85,7 @@ class Product(object):
         self._unknown = _unknown
         
         self.uuid = generate_uuid()
-        self.qty_received = self.qty
+        self.qty_received = float(0)
         self.__dict__.update(**kwargs)
 
     def __repr__(self) -> str:
@@ -105,6 +105,18 @@ class Product(object):
 
     def update(self, payload: Payload) -> None:
         update_object(self, payload)
+
+    def status_quo(self) -> None:
+        self.qty_received = self.qty
+        
+    def modify(self, wmod: bool=False, modifications: Dict[str, Any]= {}):
+        if self.state.current() != "done":
+            self._scanned = True
+            self.state.bump_to("done")
+        if wmod:
+            self._modified = True
+            self.update(modifications)
+
 
     def to_payload(self, single_brcd: bool = False) -> Payload:
         payload = {

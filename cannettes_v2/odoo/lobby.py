@@ -1,6 +1,6 @@
 from copy import deepcopy
 from collections import ChainMap
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, Tuple, List, Type, Optional
 
 import PIL  # noqa: F401
 from PIL import Image
@@ -60,14 +60,24 @@ class Lobby(object):
             room.data.process_state.rollback_to("started")
         room.data.build_registeries()
 
-    def delete_room(self, rid: str) -> None:
+    def delete_room(self, rid: str, inventories: Optional[Type]=None) -> None:
         room = self.rooms.pop(rid)
         room.data.associated_rid = None
         if room.sibling:
             other_rid = room.sibling
             self.rooms.get(other_rid).sibling = None
+        if room.type == "inventory" and inventories:
+            oid = room.data.oid
+            inventories.inventories.pop(int(oid), None)
+            
+    
+    
+    def can_assemble(self, rid: int, other_rid: int) -> bool:
+        state = self.rooms.get(rid).state.current() == "close"
+        other_state = self.rooms.get(other_rid).state.current() == "close"
+        return all([state, other_state])
 
-    def assembling_rooms(self, rid: int, other_rid: int) -> Room:
+    def assembling_rooms(self, rid: int, other_rid: int) -> Optional[Room]:
         r1 = self.rooms.get(rid)
         r2 = self.rooms.get(other_rid)
         r1.data.assembler(r2.data)

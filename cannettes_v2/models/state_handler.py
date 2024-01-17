@@ -1,9 +1,10 @@
+from __future__ import annotations
 from enum import Enum
 
 ROOM_STATE = Enum("RoomState", ["open", "close", "done"])
 PROCESS_STATE = Enum("ProcessState", ["none", "started", "finished", "done"])
 PURCHASE_STATE = Enum("PurchaseState", ["incoming", "received"])
-PRODUCT_STATE = Enum("ProductState", ["initial", "queue", "done"])
+PRODUCT_STATE = Enum("ProductState", ["initial", "scanned", "done"])
 
 
 class State(object):
@@ -26,7 +27,7 @@ class State(object):
         existing_state = [x.name for x in list(self.states)]
         if (
             next_state not in existing_state
-            or self.states[next_state].value <= self.active  # noqa: W503
+            or self.states[next_state].value < self.active  # noqa: W503
         ):
             raise ValueError(f"You must bump to a further state than {self}")
         self.active = self.states[next_state].value
@@ -40,7 +41,7 @@ class State(object):
         existing_states = [x.name for x in list(self.states)]
         if (
             previous_state not in existing_states
-            or self.states[previous_state].value <= self.active  # noqa: W503
+            or self.states[previous_state].value > self.active  # noqa: W503
         ):
             raise ValueError(
                 f"You must rollback to a previous state than {self} ({existing_states})"
@@ -49,3 +50,7 @@ class State(object):
 
     def is_passed(self, state: str) -> bool:
         return self.states[state].value <= self.active
+    
+    def take_max(self, other: State) -> None:
+        self.active = max(self.active, other.active)
+    

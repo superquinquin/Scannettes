@@ -2,6 +2,7 @@ import base64
 import numpy as np
 from datetime import datetime
 from pyzbar.pyzbar import decode
+from itertools import chain
 from typing import Any, Dict, Literal, Optional, Union
 
 from cannettes_v2.models.purchase import Inventory, Purchase
@@ -81,7 +82,7 @@ class Room(object):
         while context["flag"]:
             handler = next(handlers)
             context = handler(context=context, api=api)
-        if context.pop("external", True):
+        if context.pop("external", False):
             self.data.add_product(context["res"]["product"])
         return context
 
@@ -103,9 +104,9 @@ class Room(object):
 
     def _is_not_scanned_yet(self, context: Payload, **kwargs) -> Payload:
         """payload : {"barcode"(str), "flag"(bool) res(payload)}"""
-        if context["barcode"] in self.data.get_scanned_products():
+        if context["barcode"] in list(chain.from_iterable([p.barcodes for p in self.data.get_scanned_products()])):
             context["flag"] = False
-            context["res"] = {"msg": f"{context['barcode']} is already scanned"}
+            context["res"] = {"scanned": True}
         return context
 
     

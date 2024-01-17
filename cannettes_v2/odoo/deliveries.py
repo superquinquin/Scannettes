@@ -110,9 +110,7 @@ class Deliveries(Odoo):
                         self.purchases.pop(oid)
                         
                 elif _picking_state == "assigned" and self.purchases.get(oid, False): # -- UNTESTED
-                    purchase = self.purchases.get(oid)
-                    products = self.fetch_products(purchase.name)
-                    purchase.rebase_products(products, self)
+                    self.recharge_purchase(oid)
 
                 elif (
                     _picking_state == "assigned"
@@ -126,8 +124,14 @@ class Deliveries(Odoo):
                         _initial_products = self.fetch_products(name)
                     )
 
+    def fetch_purchase_products(self, purchase_name: str, only_assigned:bool=True) -> List[RecordList]:
+        cond = [("origin", "=", purchase_name)]
+        if only_assigned:
+            cond.append(("state", "=", "assigned"))
+        return self.browse("stock.move", cond)
+    
     def fetch_products(self, purchase_name: str) -> List[Product]:
-        moves = self.browse("stock.move", [("origin", "=", purchase_name), ("state", "=", "assigned")])
+        moves = self.fetch_purchase_products(purchase_name)
         return [self.product_factory(product) for product in moves]
 
     def product_factory(self, product: Record, **kwargs):
@@ -138,6 +142,7 @@ class Deliveries(Odoo):
             "barcodes": self.get_barcodes(product.product_id),
             "qty": product.product_qty,
             "qty_package": product.product_qty_package,
+            "uomid": product.product_id.product_tmpl_id.uom_id.id
         })
         prod.update(kwargs)
         return prod
@@ -148,17 +153,18 @@ class Deliveries(Odoo):
         return [pur for pur in self.purchases.values() if _associable(pur)]
     
     def export_to_odoo(self, oid: int, create_missing_product: bool= False, autoval: bool= False) -> payload:
-        payload = {"purchase": self.purchases.get(oid), "valid": True, "flag": True, "add_missing": create_missing_product}
+        payload = {"container":None, "purchase": self.purchases.get(oid), "valid": True, "flag": True, "add_missing": create_missing_product}
         handlers = iter(self.export_pipeline) 
         while payload["flag"]:
             handler = next(handlers)
             payload = handler(payload)
+            print(handler, payload)
             if payload["valid"] is False:
                 return payload
-        self._propagate_validate(payload, autoval)
+        self._propagate_validate(payload["container"], autoval)
         return payload
 
-    
+
     def _check_product_odoo_existence(self, payload: payload) -> payload:
         outsiders = payload["purchase"].get_unknown_products()
         payload.update({"valid": not any(outsiders), "failing": outsiders, "error_name": "odoout"})
@@ -166,19 +172,24 @@ class Deliveries(Odoo):
     
     def _check_product_into_odoo_delivery(self, payload: payload) -> payload:
         odoo_base = self.browse("stock.move", [("origin", "=", payload["purchase"].name)])
-        odoo_pids = [p.product_id.id for p in odoo_base]
-        current_pids = [p.pid for p in payload["purchase"].products]
-        outsiders = [pid for pid in odoo_pids if pid not in current_pids]
-        payload.update({"valid": not any(outsiders), "failing": outsiders, "error_name": "purout"})
+        odoo_pids = set([p.product_id.id for p in odoo_base])
+        current_pids = set([p.pid for p in payload["purchase"].products])
+        outsiders = list(current_pids - odoo_pids)
+        payload.update({"valid": True, "failing": outsiders, "error_name": "purout"})
         return payload
 
     def _add_products_into_odoo_delivery(self, payload: payload) -> payload:
-        if payload["add_missing"] is False:
+        if payload["add_missing"] is False and payload["failing"]:
+            payload.update({"valid": False, "error_name": "purout"})
+            return payload
+        
+        if payload["add_missing"] is False or not payload["failing"]:
             return payload
         
         purchase = payload["purchase"]
-        for pid in payload['outsiders']:
-            self._inject_unknown_products(purchase, purchase.pid_registry(pid))
+        for pid in payload['failing']:
+            product = purchase.pid_registry.get(pid, None)
+            self._inject_unknown_products(purchase, product)
         return payload
     
     def _inject_unknown_products(self, purchase: Purchase,  product: Product) -> payload:
@@ -217,12 +228,15 @@ class Deliveries(Odoo):
             if product and product.state.current() == "done":
                 self.apply_purchase_record_change(mvid, product.qty_received)
         payload["flag"] = False
+        payload["container"] = moves
         return payload   
         
 
 
-    def _recharge_purchase(self):
-        pass
+    def recharge_purchase(self, oid: str) -> None:
+        purchase = self.purchases.get(oid)
+        products = self.fetch_purchase_products(purchase.name, False)
+        purchase.rebase_products(products, self)
 
     def _delete_purchase(self, oid: int) -> None:
         self.purchases.pop(oid)

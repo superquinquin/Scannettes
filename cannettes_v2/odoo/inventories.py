@@ -106,9 +106,10 @@ class Inventories(Odoo):
             pid= product.id,
             name= re.sub("\[.*?\]", "", name).strip(),
             barcodes= self.get_barcodes(product),
-            qty = product.product_tmpl_id.virtual_available,
-            qty_virtual= product.product_tmpl_id.virtual_available,
-            qty_package= 0
+            qty = float(product.product_tmpl_id.virtual_available),
+            qty_virtual= float(product.product_tmpl_id.virtual_available),
+            qty_package= float(0),
+            uomid=product.product_tmpl_id.uom_id.id
         )
         prod.update(kwargs)
         return prod
@@ -129,14 +130,12 @@ class Inventories(Odoo):
                 verify that every product scanned by the app have an Odoo reference.
             :_create_stock_inventory_row:
                 Try to create a stock.inventory reference
-            :_create_stock_inventory_row:
+            :_create_stock_inventory_line_row:
                 Try to populate the created reference with the scanned items
             :_propagate_start:
                 Simulate inventory creation action on Odoo interface
             :_propagate_validate:
                 deactivated by default. Validate automatically the created inventory.
-                
-        
         """
         payload = {"inventory":self.inventories.get(oid),"valid": True, "flag": True}
         handlers = iter(self.export_pipeline)
