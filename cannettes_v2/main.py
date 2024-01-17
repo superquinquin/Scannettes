@@ -99,11 +99,11 @@ class Cannettes(object):
         import cannettes_v2.handlers.routes as routes
         self.app.register_blueprint(routes.cannettes_bp)
 
-        parse_client_config("./cannettes_v2/static/js/config.js", flask, camera, styles)
-        unify("cannettes_v2/static/js/lobby", "js", "unified")
-        unify("cannettes_v2/static/js/login", "js", "unified")
-        unify("cannettes_v2/static/js/room", "js", "unified_purchase")
-        unify("cannettes_v2/static/js/room", "js", "unified_inventory")
+        parse_client_config("./cannettes_v2/static/js/common/config.js", flask, camera, styles)
+        # unify("cannettes_v2/static/js/lobby", "js", "unified")
+        # unify("cannettes_v2/static/js/login", "js", "unified")
+        # unify("cannettes_v2/static/js/room", "js", "unified_purchase")
+        # unify("cannettes_v2/static/js/room", "js", "unified_inventory")
 
         self.app.users = users
         self.app.cache = cache
