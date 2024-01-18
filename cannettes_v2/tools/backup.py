@@ -1,13 +1,16 @@
+from __future__ import annotations
 import time
 import glob
+import logging
 from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
+import json
 from typing import List, Dict, Any, Optional
 
 from cannettes_v2.odoo.deliveries import Deliveries
 from cannettes_v2.odoo.inventories import Inventories
 from cannettes_v2.odoo.lobby import Lobby
-from cannettes_v2.utils import get_delay
+from cannettes_v2.utils import get_delay, get_fix_delay
 
 Payload = Dict[str, Any]
 
@@ -30,29 +33,45 @@ class Cache(object):
         self.inventories = inventories
         self.lobby = lobby
 
-    @classmethod
-    def initialize(cls, backend: Optional[Dict[str, Any]]= None, backup: Optional[str]= None):
-        cache = None
-        if backend is None and backup is None:
-            raise ValueError("you must pack the backend or the backup for initialization")
-        if backend and backup:
-            raise ValueError("you must choose between backend and backup initialization")
-        
-        if backup:
-            if bool(glob.glob(backup)) is False:
-                raise ValueError("your backup file has not been found")
-            if backup.split('.')[-1] != "pickle":
-                raise ValueError("Cache currently only handle pickle files")
-            with open(backup, "rb") as f:
-                cache = load(f)
 
-        elif backend:
+    @classmethod
+    def check_backup_file(cls, fname: str) -> bool:
+        return bool(glob.glob(fname))
+
+    @classmethod
+    def initialize(cls, method: str, backup_fname: Optional[str]=None, backend: Optional[Payload]= None) -> Cache | None:
+        cache = None
+        if backend is None and backup_fname is None:
+            raise ValueError("you must pack the backend or the backup for initialization")
+        if backend and backup_fname:
+            raise ValueError("you must choose between backend and backup initialization")
+        if method == "bare" and backend is None:
+            raise ValueError("You must pass the backend for a Bare initialization")
+        if method == "backup" and backup_fname is None:
+            raise ValueError("You must pass the backup file name for backup initialization")
+        
+        if method == "backup":
+            if backup_fname.split('.')[-1] != "json":
+                raise ValueError("Cache currently only handle json files")
+            try:
+                with open(backup_fname, "rb") as f:
+                    cache = load(f)
+            except Exception as e:
+                print(e)
+                cache =  None
+        if method == "bare":
             cache = cls(**backend)
         return cache
-
+    
+    def set_config(self, configs: Payload) -> None:
+        self.config = configs
+    
     def to_backup(self, fname: str) -> None:
         with open(fname, "wb") as f:
-            dump(self, f, protocol= HIGHEST_PROTOCOL)
+            for i in [self.deliveries, self.inventories, self.lobby]:
+                print(i)
+                json.dump(i, f)
+                # dump(i, f, protocol= HIGHEST_PROTOCOL)
             
     def set_config(self, config: Dict[str, Any]) -> None:
         self.config = config
@@ -61,71 +80,59 @@ class Cache(object):
         return any([attr for attr in self.__dict__ if attr is None])
     
     def update(self, payload: Payload) -> None:
-        for k, v in payload.items():
-            current = getattr(self, k, "udf")
-            if current == "udf":
-                raise KeyError(f"{self} : {k} attribute doesn't exist")
-            if type(current) != type(v) and current is not None:
-                raise TypeError(
-                    f"{self} : field {k} value {v} ({type(v)}) does not match current type : {type(current)}"
-                )
-            setattr(self, k, v)
+        return self.__dict__.update(payload)
 
 class BackUp:
     def __init__(self, filename: str, frequency: List[int]) -> None:
         self.filename = filename
         self.frequency = frequency
     
-    def BACKUP_RUNNER(self, cache: Cache):
+    def BACKUP_RUNNER(self, cache: Cache, logging:logging):
         """backup thread timer runner
         select delay and prepare backup thread to run"""
-        delay = get_delay(delta=self.frequency)
-        print(f"new start in : {delay} seconds")
-        timer = Timer(delay, self.BACKUP, cache)
+        delay = get_delay(self.frequency)
+        logging.info(f"Next Backup save in {delay} secs")
+        
+        timer = Timer(delay, self.BACKUP, [cache, logging])
         timer.start()
 
-    def BACKUP(self, cache: Cache):
+    def BACKUP(self, cache: Cache, logging:logging):
         """BACKUP THREAD"""
+        logging.info(f"Saving Backup into {self.filename}")
         cache.to_backup(self.filename)
-        self.BACKUP_RUNNER(cache)
+        self.BACKUP_RUNNER(cache, logging)
 
 
 class Update:
     def __init__(
         self,
         *,
-        delta_search_purchase: List[int],
         build_update_time: List[int],
-        erp: Dict[str, Any],
         **kwargs
         ) -> None:
-        self.odoo = Deliveries()
-        self.odoo.connect(**erp)
-        self.lobby = Lobby()
-        self.frequency = delta_search_purchase
-        self.delta = build_update_time
+        self.time = build_update_time
 
-    def UPDATE_RUNNER(self, cache: Dict[str, Any]):
-        """THREADING and schedulding update every XXXX hours
-        possibly placed under build"""
-        delay = get_delay(time=self.frequency)  # time
-        print(f"new update in : {delay} seconds")
-        timer = Timer(delay, self.update_build, cache)
+    def UPDATE_RUNNER(self, cache: Dict[str, Any], logging:logging):
+        delay = get_fix_delay(self.time)
+        logging.info(f"Next Deliveries update in {delay} secs")
+        timer = Timer(delay, self.update_build, [cache, logging])
         timer.start()
 
-    def update_build(self, cache: Cache):
-        """try to update purchase list"""
-
+    def update_build(self, cache: Cache, logging:logging):
+        logging.info(f"Starting updating Deliveries data...")
         while True:
             try:
-                deliveries = cache.get("deliveries")
-                lobby = cache.get("lobby")
+                erp = cache.config["odoo"]["erp"]
+                deliveries: Deliveries = cache.deliveries
+                lobby: Lobby = cache.lobby
+                deliveries.connect(**erp)
                 deliveries.fetch_purchases(cache)
                 lobby.remove_outdated_rooms()
-                self.UPDATE_RUNNER(cache)
+                self.UPDATE_RUNNER(cache, logging)
+                break
             except KeyError as e:
                 print("__ BUILD UPDATE KEY ERROR\n", e)
-                self.UPDATE_RUNNER(cache)
+                self.UPDATE_RUNNER(cache, logging)
                 break
             except Exception as e:
                 print("__ BUILD UPDATE EXCEPTION\n", e)

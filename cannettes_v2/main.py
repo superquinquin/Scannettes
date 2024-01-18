@@ -1,6 +1,8 @@
+from __future__ import annotations
 from os import environ
 from typing import Any, Dict, Optional, Union
 
+import logging
 from flask import Flask
 from flask_socketio import SocketIO
 
@@ -12,6 +14,9 @@ from cannettes_v2.parsers import get_config, parse_client_config
 from cannettes_v2.tools.backup import BackUp, Update, Cache
 from cannettes_v2.tools.log import Logger
 from cannettes_v2.utils import unify
+
+Payload = Dict[str,Any]
+
 
 banner = """\
       ___           ___           ___           ___           ___                                       ___           ___
@@ -48,16 +53,17 @@ class Cannettes(object):
         self,
         *,
         env: str,
-        flask: Dict[str, Any],
-        odoo: Dict[str, Any],
-        camera: Dict[str, Any],
-        socketio: Dict[str, Any] = {},
-        backup: Optional[Dict[str, Any]] = None,
-        logger: Optional[Dict[str, Any]] = None,
-        authenticator: Optional[Dict[str, Any]] = None,
-        mailling: Optional[Dict[str, Any]] = None,
-        options: Optional[Dict[str, Any]] = None,
-        styles: Optional[Dict[str, Any]] = None,
+        flask: Payload,
+        odoo: Payload,
+        camera: Payload,
+        socketio: Payload = {},
+        building: Optional[Payload] = None,
+        backup: Optional[Payload] = None,
+        logger: Optional[Payload] = None,
+        authenticator: Optional[Payload] = None,
+        mailling: Optional[Payload] = None,
+        options: Optional[Payload] = None,
+        styles: Optional[Payload] = None,
     ) -> None:
         cache = None
         self.env = env
@@ -69,7 +75,7 @@ class Cannettes(object):
         self.socketio = SocketIO(**socketio)
 
         if logger:
-            self.logger = Logger(**logger)
+            logging = Logger(**logger)
 
         if mailling:
             pass
@@ -79,16 +85,12 @@ class Cannettes(object):
                 raise FileExistsError("You must configure a user path")
             users = Authenticator().load_users(authenticator["users_path"])
 
+        cache = self.build_backend(building, locals(), logging.log)
+        cache.set_config(locals())
+        
         if backup:
-            cache = self.load_cache(backup)
-            self.start_backup_cycle(backup, cache)
-
-        if cache is None or cache.check_integrity() is False:
-            cache = Cache(config=locals(),lobby=Lobby())
-            deliveries = Deliveries.build(cache, odoo)
-            inventories = Inventories.build(**odoo)
-            cache.update({"deliveries": deliveries, "inventories": inventories})
-        Update(**odoo).UPDATE_RUNNER(cache)
+            self.start_backup_cycle(backup, cache, logging.log)
+        Update(**odoo).UPDATE_RUNNER(cache, logging.log)
         
         if not flask.get("static_url"):
             raise KeyError("you must set a static path for Flask")
@@ -109,37 +111,64 @@ class Cannettes(object):
         self.app.cache = cache
         self.socketio.init_app(self.app)
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(self, *args: Any, **kwds: Any) -> None:
         print(banner)
         self.socketio.run(self.app)
         
     @classmethod
-    def create_app(cls):
+    def create_app(cls) -> Cannettes:
         cfg = get_config(
             environ.get("CONFIG_FILEPATH", "./cannettes_configs/cannettes_config.yaml")
         )
         return cls(**cfg)
-    
-    def load_cache(self, backup: Dict[str,Any]) -> Union[None, Cache]:
-        cache = None
-        if not backup.get("filename"):
-            raise KeyError("configure filename")
-        fname = backup.get("filename")
         
-        if backup.get("build_on_backup", False):
-            cache = Cache.initialize(fname)
-        return cache
-    
-    def start_backup_cycle(self, backup: Dict[str, Any], cache: Cache) -> BackUp:
-        if not backup.get("frequency"):
-            raise KeyError("configure backup frequency")
-        freq = backup.get("frequency")
-        fname = backup.get("filename")
+    def start_backup_cycle(self, backup: Payload, cache: Cache, logging: logging) -> BackUp:
+        logging.info("Initializing Backup system...")
+        freq = backup.get("frequency", None)
+        fname = backup.get("filename", None)
+        
+        if fname is None:
+            raise KeyError("Configure a backup file name")
+        if fname.split('.')[-1] != "json":
+            raise ValueError("Only json files are currently handled.")
+        if freq is None:
+            raise KeyError("configure backup frequency [days, hours, mins, secs]")
+        
         bckup = BackUp(fname, freq)
-        bckup.BACKUP_RUNNER(cache)
+        bckup.BACKUP_RUNNER(cache, logging)
         return bckup
         
+    def build_backend(self, building: Optional[Payload], configs: Payload, logger: logging) -> Cache:
+        preference = "bare"
+        if building:
+            preference = building.get("prefered_method", "bare")
+            fname = building.get('filename', None)
+        
+        logging.info(f"prefered method: {preference}... Starting building app backend")
+        if preference not in ["backup", "bare"]:
+            raise ValueError("prefered method must either 'backup' or 'bare'")
+        if preference == "backup" and fname is None:
+            logger.warning("no backup filename provided... Starting bare initialization")
+            preference = "bare"
+        
+        if preference == "backup" and Cache.check_backup_file(fname):
+            logging.info(f"Loading backup...")
+            cache = Cache.initialize(fname)
+            if cache is None:
+                logger.warning("Something went wrong when loading the backup... Switching to bare initialization")
+                preference = "bare"
+        elif preference == "backup" and Cache.check_backup_file(fname) is False:
+            logging.warning("backup file not found... Switching to bare initialization")
+            preference = "bare"
 
-
-
+        if preference == "bare":
+            logging.info("Starting bare initialization...")
+            cache = Cache(config= configs, lobby=Lobby())
+            deliveries = Deliveries.build(cache, configs["odoo"])
+            inventories = Inventories.build(**configs["odoo"])
+            cache.update({"deliveries": deliveries, "inventories": inventories})
+        return cache
+        
+            
+            
 

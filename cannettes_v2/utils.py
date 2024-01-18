@@ -59,54 +59,19 @@ def restrfmtdate(date:Union[None, str]) -> str:
     date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
     return date.strftime("%d/%m/%Y")
 
-
-def get_delay(**kwargs) -> int:
-    """provide delay between 2 timed threads
-    accepted args:
-      delta: list of int: stand for a delay between 2 threads
-      time: list of int: stand for a daily fixed hour
-
-    Raises:
-        KeyError: must define a time or a delta
-
-    Returns:
-        _type_: delay in sec
-    """
+def get_fix_delay(dtime:List[int]) -> float:
+    H,M,S = dtime
     now = datetime.now()
-    delta = kwargs.get("delta", None)
-    time = kwargs.get("time", None)
-
-    if time:
-        # daily
-        h, m, s = time[0], time[1], time[2]
-        launch = now.replace(hour=h, minute=m, second=s, microsecond=0)
-        delay = (launch - now).total_seconds()
-
-        if delay < 0:
-            delayed = 0
-
-            while delay < 0:
-                next_start = now.replace(
-                    hour=h, minute=m, second=s, microsecond=0
-                ) + timedelta(days=delayed)
-                delay = (next_start - now).total_seconds()
-                delayed += 1
-                print(next_start)
-
-            else:
-                delay = (next_start - now).total_seconds()
-
-    elif delta:
-        # based on defined frequence
-        D, H, M, S = delta[0], delta[1], delta[2], delta[3]
-
-        next_start = now + timedelta(days=D, hours=H, minutes=M, seconds=S)
-        delay = (next_start - now).total_seconds()
-
-    else:
-        raise KeyError("You must at least define kwargs time or delta")
-
-    return delay
+    future = now.replace(hour=H, minute=M, second=S)
+    if (future - now).total_seconds() < 0:
+        future = future + timedelta(days=1)
+    return (future - now).total_seconds()
+    
+def get_delay(dtime:List[int]) -> float:
+    D,H,M,S = dtime
+    now = datetime.now()
+    future = now + timedelta(days=D, hours=H, minutes=M, seconds=S)
+    return (future - now).total_seconds()
 
 
 def is_too_old(date: datetime, ceiling: int) -> bool:
