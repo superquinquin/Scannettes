@@ -6,8 +6,8 @@ import PIL  # noqa: F401
 from PIL import Image
 import qrcode
 
-from cannettes_v2.models.room import Room
-from cannettes_v2.utils import is_too_old
+from scannettes.models.room import Room
+from scannettes.utils import is_too_old
 
 Payload = Dict[str, Any]
 

@@ -3,17 +3,17 @@ from typing import Any, Dict, List, Tuple
 from flask import current_app, url_for
 from flask_socketio import emit, join_room
 
-from cannettes_v2 import cannette
-from cannettes_v2.authenticator import Authenticator
-from cannettes_v2.decorators import protected
-from cannettes_v2.odoo.lobby import Lobby
-from cannettes_v2.odoo.odoo import Odoo
-from cannettes_v2.odoo.deliveries import Deliveries
-from cannettes_v2.odoo.inventories import Inventories
-from cannettes_v2.models.purchase import Purchase, Inventory
-from cannettes_v2.tools.pdf import PDF
-from cannettes_v2.tools.backup import Cache
-from cannettes_v2.utils import build_validation_error_payload
+from scannettes import scannettes
+from scannettes.authenticator import Authenticator
+from scannettes.decorators import protected
+from scannettes.odoo.lobby import Lobby
+from scannettes.odoo.odoo import Odoo
+from scannettes.odoo.deliveries import Deliveries
+from scannettes.odoo.inventories import Inventories
+from scannettes.models.purchase import Purchase, Inventory
+from scannettes.tools.pdf import PDF
+from scannettes.tools.backup import Cache
+from scannettes.utils import build_validation_error_payload
 
 
 Cache = Dict[str, Any]
@@ -21,11 +21,11 @@ Payload = Dict[str, Any]
 
 
 
-@cannette.socketio.on("message")
+@scannettes.socketio.on("message")
 def log_message(msg):
     print(str(msg))
     
-@cannette.socketio.on("initialization-call")
+@scannettes.socketio.on("initialization-call")
 def initialize(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -50,7 +50,7 @@ def initialize(context):
     
 
 
-@cannette.socketio.on("admin-initialization-call")
+@scannettes.socketio.on("admin-initialization-call")
 @protected(auth_level="admin")
 def admin_initialize(context):
     cache: Cache = current_app.cache
@@ -77,7 +77,7 @@ def admin_initialize(context):
         emit("room-initialization", context , include_self=True)
     
 
-@cannette.socketio.on("add-rooms")
+@scannettes.socketio.on("add-rooms")
 @protected(auth_level="admin")
 def add_room(context):
     cache: Cache = current_app.cache
@@ -117,7 +117,7 @@ def add_room(context):
     emit("close-creation-modal", include_self=True)
 
 
-@cannette.socketio.on("del-rooms")
+@scannettes.socketio.on("del-rooms")
 @protected(auth_level="admin")
 def del_rooms(context):
     cache: Cache = current_app.cache
@@ -129,7 +129,7 @@ def del_rooms(context):
     emit("del-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True)
     emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True)
     
-@cannette.socketio.on("reinit-room")
+@scannettes.socketio.on("reinit-room")
 @protected(auth_level="admin")
 def reinit_rooms(context):
     cache: Cache = current_app.cache
@@ -139,7 +139,7 @@ def reinit_rooms(context):
     
 
 
-@cannette.socketio.on("generate-qrcodes")
+@scannettes.socketio.on("generate-qrcodes")
 def generate_qrcodes(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -153,7 +153,7 @@ def generate_qrcodes(context):
 
 # -- ROOMS RELATED EVENTS
 
-@cannette.socketio.on("laser-scan")
+@scannettes.socketio.on("laser-scan")
 def laser_scan(context):
     cache: Cache = current_app.cache
     config: Dict[str, Any] = cache.config
@@ -177,7 +177,7 @@ def laser_scan(context):
     
 
 
-@cannette.socketio.on("modify-product")
+@scannettes.socketio.on("modify-product")
 def bump_product(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -198,7 +198,7 @@ def bump_product(context):
     emit("modify-product", context, include_self=True, broadcast=True, to=str(context["rid"]))
     
 
-@cannette.socketio.on("delete-products")
+@scannettes.socketio.on("delete-products")
 @protected(auth_level="admin")
 def delete_products(context):
     cache: Cache = current_app.cache
@@ -211,7 +211,7 @@ def delete_products(context):
     emit("delete-products", context, include_self=True, broadcast=True, to=str(context["rid"]))
 
 
-@cannette.socketio.on("closing")
+@scannettes.socketio.on("closing")
 def closing(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -236,7 +236,7 @@ def closing(context):
     
     
 
-@cannette.socketio.on("validation")
+@scannettes.socketio.on("validation")
 @protected(auth_level="admin")
 def validation(context):
     cache: Cache = current_app.cache
@@ -277,7 +277,7 @@ def validation(context):
     
     
 
-@cannette.socketio.on("nullification")
+@scannettes.socketio.on("nullification")
 @protected(auth_level="admin")
 def nulify_inventory_products(context):
     cache: Cache = current_app.cache
@@ -288,7 +288,7 @@ def nulify_inventory_products(context):
     emit("nullification", {"state": "ok", "data": context}, include_self=True, broadcast=True, to=str(context["rid"]))
 
 
-@cannette.socketio.on("suspend-rooms")
+@scannettes.socketio.on("suspend-rooms")
 @protected(auth_level="admin")
 def suspend_room(context):
     cache: Cache = current_app.cache
@@ -305,7 +305,7 @@ def suspend_room(context):
     emit("suspend-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True, to="lobby")
     
 
-@cannette.socketio.on("rebase")
+@scannettes.socketio.on("rebase")
 @protected(auth_level="admin")
 def rebase(context):
     cache: Cache = current_app.cache

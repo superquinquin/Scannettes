@@ -1,14 +1,10 @@
-
-application/config.py
-application/static/js/config.js
-application/static/js/*/unified*.js
-application/whitelist.txt
+tests/*
 volume/
 dist/
 *.pickle
 *.log
 *.pyc
-cannettes_configs/*.yaml
+scannettes_configs/*.yaml
 .venv
 docker-compose.yml
 test.py

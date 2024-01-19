@@ -5,10 +5,10 @@ from pyzbar.pyzbar import decode
 from itertools import chain
 from typing import Any, Dict, Literal, Optional, Union
 
-from cannettes_v2.models.purchase import Inventory, Purchase
-from cannettes_v2.models.state_handler import RoomState, State
-from cannettes_v2.odoo.odoo import Odoo
-from cannettes_v2.utils import generate_uuid, update_object, restrfmtdate
+from scannettes.models.purchase import Inventory, Purchase
+from scannettes.models.state_handler import RoomState, State
+from scannettes.odoo.odoo import Odoo
+from scannettes.utils import generate_uuid, update_object, restrfmtdate
 
 Payload = Dict[str, Any]
 RoomType = Literal["purchase", "inventory"]

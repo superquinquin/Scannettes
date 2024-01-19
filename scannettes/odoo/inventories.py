@@ -6,9 +6,9 @@ from erppeek import Record
 from datetime import datetime
 from typing import List, Dict, Tuple, Any, Optional
 
-from cannettes_v2.odoo.odoo import Odoo
-from cannettes_v2.models.purchase import Inventory
-from cannettes_v2.models.product import Product
+from scannettes.odoo.odoo import Odoo
+from scannettes.models.purchase import Inventory
+from scannettes.models.product import Product
 
 payload = Dict[str, Any]
 

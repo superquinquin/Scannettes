@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Tuple, Optional
 
 from erppeek import Record, RecordList
 
-from cannettes_v2.models.product import Product
-from cannettes_v2.models.purchase import Purchase, Supplier
+from scannettes.models.product import Product
+from scannettes.models.purchase import Purchase, Supplier
 
-from cannettes_v2.odoo.lobby import Lobby
-from cannettes_v2.odoo.odoo import Odoo
-from cannettes_v2.utils import get_update_time_ceiling
+from scannettes.odoo.lobby import Lobby
+from scannettes.odoo.odoo import Odoo
+from scannettes.utils import get_update_time_ceiling
 
 payload = Dict[str, Any]
 

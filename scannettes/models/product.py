@@ -4,8 +4,8 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
-from cannettes_v2.models.state_handler import State, ProductState
-from cannettes_v2.utils import generate_uuid, update_object
+from scannettes.models.state_handler import State, ProductState
+from scannettes.utils import generate_uuid, update_object
 
 Payload = Dict[str, Any]
 

@@ -3,7 +3,7 @@ from typing import Optional
 
 from flask import current_app, redirect, request
 
-from cannettes_v2.authenticator import Authenticator
+from scannettes.authenticator import Authenticator
 
 
 def protected(auth_level: Optional[str]):

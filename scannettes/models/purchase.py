@@ -7,10 +7,10 @@ from collections import defaultdict
 from erppeek import Record, RecordList
 from typing import Any, Dict, List, Tuple, Optional, Type
 
-from cannettes_v2.models.product import Product
-from cannettes_v2.models.state_handler import ProductState, State, ProcessState, PurchaseState
-from cannettes_v2.odoo.odoo import Odoo
-from cannettes_v2.utils import update_object
+from scannettes.models.product import Product
+from scannettes.models.state_handler import ProductState, State, ProcessState, PurchaseState
+from scannettes.odoo.odoo import Odoo
+from scannettes.utils import update_object
 
 Uuid = str
 Payload = Dict[str, Any]

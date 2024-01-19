@@ -6,10 +6,10 @@ from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
 from typing import List, Dict, Any, Optional
 
-from cannettes_v2.odoo.deliveries import Deliveries
-from cannettes_v2.odoo.inventories import Inventories
-from cannettes_v2.odoo.lobby import Lobby
-from cannettes_v2.utils import get_delay, get_fix_delay
+from scannettes.odoo.deliveries import Deliveries
+from scannettes.odoo.inventories import Inventories
+from scannettes.odoo.lobby import Lobby
+from scannettes.utils import get_delay, get_fix_delay
 
 Payload = Dict[str, Any]
 
@@ -54,7 +54,7 @@ class Cache(object):
 
         if method == "backup":
             if backup_fname.split('.')[-1] != "pickle":
-                raise ValueError("Cache currently only handle pickle files")
+                raise ValueError("Cache currently only handle pickle files")                
             try:
                 with open(backup_fname, "rb") as f:
                     data = load(f)

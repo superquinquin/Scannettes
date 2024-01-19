@@ -6,31 +6,31 @@ import logging
 from flask import Flask
 from flask_socketio import SocketIO
 
-from cannettes_v2.authenticator import Authenticator
-from cannettes_v2.parsers import get_config, parse_client_config
-from cannettes_v2.tools.backup import BackUp, Update, Cache
-from cannettes_v2.tools.log import Logger
-from cannettes_v2.utils import unify
+from scannettes.authenticator import Authenticator
+from scannettes.parsers import get_config, parse_client_config
+from scannettes.tools.backup import BackUp, Update, Cache
+from scannettes.tools.log import Logger
+from scannettes.utils import unify
 
 Payload = Dict[str,Any]
 
 
 banner = """\
-      ___           ___           ___           ___           ___                                       ___           ___
-     /\__\         /\  \         /\  \         /\  \         /\__\                                     /\__\         /\__\ 
-    /:/  /        /::\  \        \:\  \        \:\  \       /:/ _/_         ___           ___         /:/ _/_       /:/ _/_
-   /:/  /        /:/\:\  \        \:\  \        \:\  \     /:/ /\__\       /\__\         /\__\       /:/ /\__\     /:/ /\  \ 
-  /:/  /  ___   /:/ /::\  \   _____\:\  \   _____\:\  \   /:/ /:/ _/_     /:/  /        /:/  /      /:/ /:/ _/_   /:/ /::\  \ 
- /:/__/  /\__\ /:/_/:/\:\__\ /::::::::\__\ /::::::::\__\ /:/_/:/ /\__\   /:/__/        /:/__/      /:/_/:/ /\__\ /:/_/:/\:\__\ 
- \:\  \ /:/  / \:\/:/  \/__/ \:\~~\~~\/__/ \:\~~\~~\/__/ \:\/:/ /:/  /  /::\  \       /::\  \      \:\/:/ /:/  / \:\/:/ /:/  /
-  \:\  /:/  /   \::/__/       \:\  \        \:\  \        \::/_/:/  /  /:/\:\  \     /:/\:\  \      \::/_/:/  /   \::/ /:/  /
-   \:\/:/  /     \:\  \        \:\  \        \:\  \        \:\/:/  /   \/__\:\  \    \/__\:\  \      \:\/:/  /     \/_/:/  /
-    \::/  /       \:\__\        \:\__\        \:\__\        \::/  /         \:\__\        \:\__\      \::/  /        /:/  /
-     \/__/         \/__/         \/__/         \/__/         \/__/           \/__/         \/__/       \/__/         \/__/
+      ___           ___           ___           ___           ___           ___                                       ___           ___     
+     /\__\         /\__\         /\  \         /\  \         /\  \         /\__\                                     /\__\         /\__\    
+    /:/ _/_       /:/  /        /::\  \        \:\  \        \:\  \       /:/ _/_         ___           ___         /:/ _/_       /:/ _/_   
+   /:/ /\  \     /:/  /        /:/\:\  \        \:\  \        \:\  \     /:/ /\__\       /\__\         /\__\       /:/ /\__\     /:/ /\  \  
+  /:/ /::\  \   /:/  /  ___   /:/ /::\  \   _____\:\  \   _____\:\  \   /:/ /:/ _/_     /:/  /        /:/  /      /:/ /:/ _/_   /:/ /::\  \ 
+ /:/_/:/\:\__\ /:/__/  /\__\ /:/_/:/\:\__\ /::::::::\__\ /::::::::\__\ /:/_/:/ /\__\   /:/__/        /:/__/      /:/_/:/ /\__\ /:/_/:/\:\__\ 
+ \:\/:/ /:/  / \:\  \ /:/  / \:\/:/  \/__/ \:\~~\~~\/__/ \:\~~\~~\/__/ \:\/:/ /:/  /  /::\  \       /::\  \      \:\/:/ /:/  / \:\/:/ /:/  /
+  \::/ /:/  /   \:\  /:/  /   \::/__/       \:\  \        \:\  \        \::/_/:/  /  /:/\:\  \     /:/\:\  \      \::/_/:/  /   \::/ /:/  / 
+   \/_/:/  /     \:\/:/  /     \:\  \        \:\  \        \:\  \        \:\/:/  /   \/__\:\  \    \/__\:\  \      \:\/:/  /     \/_/:/  /  
+     /:/  /       \::/  /       \:\__\        \:\__\        \:\__\        \::/  /         \:\__\        \:\__\      \::/  /        /:/  /   
+     \/__/         \/__/         \/__/         \/__/         \/__/         \/__/           \/__/         \/__/       \/__/         \/__/     
 """
 
 
-class Cannettes(object):
+class Scannettes(object):
     """
     cannettes wrapper for flask and flask-socketio
     :flask: configurations for flask
@@ -95,10 +95,10 @@ class Cannettes(object):
         self.app.config.update({k.upper(): v for k, v in flask.items()})
 
 
-        import cannettes_v2.handlers.routes as routes
-        self.app.register_blueprint(routes.cannettes_bp)
+        import scannettes.handlers.routes as routes
+        self.app.register_blueprint(routes.scannettes_bp)
 
-        parse_client_config("./cannettes_v2/static/js/common/config.js", flask, camera, styles)
+        parse_client_config("./scannettes/static/js/common/config.js", flask, camera, styles)
         # unify("cannettes_v2/static/js/lobby", "js", "unified")
         # unify("cannettes_v2/static/js/login", "js", "unified")
         # unify("cannettes_v2/static/js/room", "js", "unified_purchase")
@@ -113,9 +113,9 @@ class Cannettes(object):
         self.socketio.run(self.app)
         
     @classmethod
-    def create_app(cls) -> Cannettes:
+    def create_app(cls) -> Scannettes:
         cfg = get_config(
-            environ.get("CONFIG_FILEPATH", "./cannettes_configs/cannettes_config.yaml")
+            environ.get("CONFIG_FILEPATH", "./scannettes_configs/scannettes_config.yaml")
         )
         return cls(**cfg)
         

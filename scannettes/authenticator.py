@@ -71,7 +71,7 @@ class Authenticator(object):
             **users
         ).authenticate(**context)
         
-        response = make_response(redirect(url_for("cannettes_bp.admin_lobby")))
+        response = make_response(redirect(url_for("scannettes_bp.admin_lobby")))
         if auth.get("status") == "success":
             response.set_cookie('session', auth["token"])
         return response

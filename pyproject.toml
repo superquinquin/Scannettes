@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cannettes_v2"
+name = "scannettes"
 version = "1.0.0"
 description = "Flask app handling inventories and deliveries for Odoo based FoodCoop"
 license = "GPL-3.0-only"
@@ -48,7 +48,7 @@ name = "cz_conventional_commits"
 version = "0.1.0"
 tag_format = "$version"
 version_files = [
-    "cannettes_v2/__init__.py:__version__", 
+    "scannettes/__init__.py:__version__", 
     "pyproject.toml:^version"
 ]
 major_version_zero = true
@@ -56,7 +56,7 @@ update_changelog_on_bump = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -v --flakes --cov cannettes_v2"
+addopts = "-ra -v --flakes --cov scannettes"
 testpaths = [
    "tests"
 ]
