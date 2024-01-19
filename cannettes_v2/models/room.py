@@ -6,7 +6,7 @@ from itertools import chain
 from typing import Any, Dict, Literal, Optional, Union
 
 from cannettes_v2.models.purchase import Inventory, Purchase
-from cannettes_v2.models.state_handler import ROOM_STATE, State
+from cannettes_v2.models.state_handler import RoomState, State
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.utils import generate_uuid, update_object, restrfmtdate
 
@@ -34,7 +34,7 @@ class Room(object):
         self.type = type
         self.sibling = sibling
         self.data = data
-        self.state = state or State(ROOM_STATE)
+        self.state = state or State(RoomState)
         self.closing_date = None
         self.creating_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.token = generate_uuid()

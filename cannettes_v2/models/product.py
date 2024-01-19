@@ -4,7 +4,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
-from cannettes_v2.models.state_handler import State, PRODUCT_STATE
+from cannettes_v2.models.state_handler import State, ProductState
 from cannettes_v2.utils import generate_uuid, update_object
 
 Payload = Dict[str, Any]
@@ -78,7 +78,7 @@ class Product(object):
         self.qty_virtual = float(qty_virtual)
         self.qty_package = float(qty_package)
         self.uomid = uomid
-        self.state = state or State(PRODUCT_STATE)
+        self.state = state or State(ProductState)
         self._modified = _modified
         self._scanned = _scanned
         self._new = _new

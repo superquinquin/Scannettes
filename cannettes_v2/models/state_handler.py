@@ -1,10 +1,31 @@
 from __future__ import annotations
-from enum import Enum
+from enum import Enum, auto
+from typing import Dict, Any
+from importlib import import_module
 
-ROOM_STATE = Enum("RoomState", ["open", "close", "done"])
-PROCESS_STATE = Enum("ProcessState", ["none", "started", "finished", "done"])
-PURCHASE_STATE = Enum("PurchaseState", ["incoming", "received"])
-PRODUCT_STATE = Enum("ProductState", ["initial", "scanned", "done"])
+Payload = Dict[str, Any]
+
+
+class RoomState(Enum):
+    open = auto()
+    close = auto()
+    done = auto()
+    
+class ProcessState(Enum):
+    none = auto()
+    started = auto()
+    finished = auto()
+    done = auto()
+    
+class PurchaseState(Enum):
+    incoming = auto()
+    received = auto()
+
+class ProductState(Enum):
+    initial = auto()
+    scanned = auto()
+    done = auto()
+
 
 
 class State(object):

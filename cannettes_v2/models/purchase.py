@@ -8,7 +8,7 @@ from erppeek import Record, RecordList
 from typing import Any, Dict, List, Tuple, Optional, Type
 
 from cannettes_v2.models.product import Product
-from cannettes_v2.models.state_handler import PRODUCT_STATE, State, PROCESS_STATE, PURCHASE_STATE
+from cannettes_v2.models.state_handler import ProductState, State, ProcessState, PurchaseState
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.utils import update_object
 
@@ -63,8 +63,8 @@ class Purchase(object):
         self.create_date = create_date
         self.associated_rid = None
         self._initial_products = _initial_products
-        self.state = state or State(PURCHASE_STATE)
-        self.process_state = process_state or State(PROCESS_STATE)
+        self.state = state or State(PurchaseState)
+        self.process_state = process_state or State(ProcessState)
         self.added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.build_registeries()
 
@@ -216,7 +216,7 @@ class Purchase(object):
                 product, 
                 _new=True, 
                 _scanned=True,
-                state = State(PRODUCT_STATE, 2)
+                state = State(ProductState, 2)
             )
             context.update({
                 "flag": False,
@@ -228,7 +228,7 @@ class Purchase(object):
     def build_external_product(self, context: Payload, **kwargs) -> Payload:
         product = Product(
             barcodes=[context["barcode"]],
-            state=State(PRODUCT_STATE, 2),
+            state=State(ProductState, 2),
             _new=True,
             _scanned=True,
             _unknown=True,
@@ -290,8 +290,8 @@ class Inventory(Purchase):
         self.sibling = sibling
         self.create_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self._initial_products = _initial_products
-        self.state = state or State(PURCHASE_STATE)
-        self.process_state = process_state or State(PROCESS_STATE)
+        self.state = state or State(PurchaseState)
+        self.process_state = process_state or State(ProcessState)
         self.added_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.build_registeries()
 
