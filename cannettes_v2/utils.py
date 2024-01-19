@@ -1,20 +1,17 @@
 import os
-import json
 import binascii
 from glob import glob
-from typing import Dict, Union, Tuple, List, Any
-from dateutil.relativedelta import *
+from random import choices
 from datetime import datetime, timedelta
 from string import ascii_lowercase, ascii_uppercase, digits
-from random import choices
 
-error_messages = {
+from typing import Dict, Union, List, Any
+
+ERROR_MESSAGES = {
     "odoout": "Les produits suivant ne sont pas référencés dans Odoo. Veuillez les ajouter ou les supprimer de l'application.",
     "purout": "Les produits suivant n'ont pas été commandés. Veuillez les ajouter dans le bon de commande Odoo ou activer l'option pour que l'application rajoute automatiquement les produits.",
     "odostockinvfail": "Les produits suivant ne peuvent être ajouté à l'inventaire. Vérifiez sur Odoo qu'ils ne sont pas déjà dans un autre inventaire."
 }
-
-
 
 CHARS = ascii_lowercase + ascii_uppercase + digits
 
@@ -86,64 +83,7 @@ def build_validation_error_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
         if p.pid:
             name += f"{p.pid} - {p.name} ({p.barcodes[0]})"
         names.append(name)
-    return {"faulty_products": names, "error_message": error_messages[payload["error_name"]]}
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return {"faulty_products": names, "error_message": ERROR_MESSAGES[payload["error_name"]]}
 
 
 def order_files(files: List[str]) -> List[str]:
@@ -180,74 +120,3 @@ def unify(folder: str, types: str, outfile: str) -> None:
                 with open(file, "r") as f:
                     content = f.read()
                     unify.write(f"{content}\n")
-
-
-
-
-def format_error_cases(channel: str, context: dict):
-    # channel [item_validity, unmatch]
-
-    if channel == "unmatch":
-        if context["barcode"] == False:
-            ## no barcode
-            hint = "Aucun code-barres associés à ce produit dans Odoo"
-            err = "NoBarcode"
-        else:
-            ## ID AND BARCODE DO NOT MATCH IN CHECK PROCESS
-            hint = "Le code-barres ne correspond pas au bon produit Odoo"
-            err = "NoMatchs"
-
-    elif channel == "item_validity":
-        if context["alt"] == None and context["has_main"] == False:
-            hint = "Le produit n'est pas référencé dans Odoo"
-            err = "NoExist"
-        elif context["alt"] != None and context["has_main"] == True:
-            hint = "Le code-barres est à la fois un code-barre principale et multiple"
-            err = "MultiOccur"
-        elif context["alt"] != None and context["has_main"] == False:
-            hint = "Le code-barre n'a pas de produits principaux"
-            err = "OnlyALt"
-
-    elif channel == "creation_no_exist":
-        hint = "Le produit n'est pas référencé dans Odoo"
-        err = "CreationNoExist"
-
-    elif channel == "creation_inactivated":
-        hint = "La création automatique de produit est désactivée"
-        err = "CreationInactivated"
-
-    elif channel == "inv_block":
-        hint = "Déjà dans un inventaire en cours"
-        err = "multiInvOpen"
-
-    return {
-        "barcode": context["barcode"],
-        "product": context["product"],
-        "hint": hint,
-        "err": err,
-    }
-
-
-def format_error_client_message(errors: List[dict]) -> str:
-    """takes context from failed process like odoo post process
-    format the errors component into string to be displayed into the client
-
-      Args:
-          errors (List): list of object err with keys: barcode, product, hint
-
-      Returns:
-          str: formated string
-    """
-
-    s = ""
-    for err in errors:
-        if err["barcode"] != False and err["product"] != None:
-            s += f"&#8226; {err['barcode']}, {err['product'].name} ({err['hint']}),<br>"
-        elif err["barcode"] == False and err["product"] != None:
-            s += f"&#8226; {err['product'].name} ({err['hint']}),<br>"
-        elif err["barcode"] == False and err["product"] == None:
-            s += f"&#8226; produit inconnu ({err['hint']}),<br>"
-        elif err["barcode"] != False and err["product"] == None:
-            s += f"&#8226; {err['barcode']} ({err['hint']}),<br>"
-
-    return s.rstrip(",<br>")

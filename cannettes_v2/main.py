@@ -1,15 +1,12 @@
 from __future__ import annotations
 from os import environ
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import logging
 from flask import Flask
 from flask_socketio import SocketIO
 
 from cannettes_v2.authenticator import Authenticator
-from cannettes_v2.odoo.deliveries import Deliveries
-from cannettes_v2.odoo.inventories import Inventories
-from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.parsers import get_config, parse_client_config
 from cannettes_v2.tools.backup import BackUp, Update, Cache
 from cannettes_v2.tools.log import Logger
@@ -129,8 +126,8 @@ class Cannettes(object):
         
         if fname is None:
             raise KeyError("Configure a backup file name")
-        if fname.split('.')[-1] != "json":
-            raise ValueError("Only json files are currently handled.")
+        if fname.split('.')[-1] != "pickle":
+            raise ValueError("Only pickle files are currently handled.")
         if freq is None:
             raise KeyError("configure backup frequency [days, hours, mins, secs]")
         
@@ -139,7 +136,7 @@ class Cannettes(object):
         return bckup
         
     def build_backend(self, building: Optional[Payload], configs: Payload, logger: logging) -> Cache:
-        preference = "bare"
+        preference, fname = "bare", None
         if building:
             preference = building.get("prefered_method", "bare")
             fname = building.get('filename', None)
@@ -150,24 +147,15 @@ class Cannettes(object):
         if preference == "backup" and fname is None:
             logger.warning("no backup filename provided... Starting bare initialization")
             preference = "bare"
-        
-        if preference == "backup" and Cache.check_backup_file(fname):
-            logging.info(f"Loading backup...")
-            cache = Cache.initialize(fname)
-            if cache is None:
-                logger.warning("Something went wrong when loading the backup... Switching to bare initialization")
-                preference = "bare"
-        elif preference == "backup" and Cache.check_backup_file(fname) is False:
+        if preference == "backup" and Cache.check_backup_file(fname) is False:
             logging.warning("backup file not found... Switching to bare initialization")
             preference = "bare"
-
-        if preference == "bare":
+        elif preference == "backup" and Cache.check_backup_file(fname):
+            logging.info(f"Loading backup...")        
+        elif preference == "bare":
             logging.info("Starting bare initialization...")
-            cache = Cache(config= configs, lobby=Lobby())
-            deliveries = Deliveries.build(cache, configs["odoo"])
-            inventories = Inventories.build(**configs["odoo"])
-            cache.update({"deliveries": deliveries, "inventories": inventories})
-        return cache
+        return Cache.initialize(method=preference, configs=configs, backup_fname=fname, logging=logging)
+
         
             
             

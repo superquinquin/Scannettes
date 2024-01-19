@@ -12,7 +12,6 @@ from cannettes_v2.models.purchase import Purchase, Supplier
 from cannettes_v2.odoo.lobby import Lobby
 from cannettes_v2.odoo.odoo import Odoo
 from cannettes_v2.utils import get_update_time_ceiling
-from cannettes_v2.models.state_handler import State, PROCESS_STATE, PURCHASE_STATE
 
 payload = Dict[str, Any]
 
@@ -35,17 +34,24 @@ class Deliveries(Odoo):
             self._export_products
         ]
 
+
     @classmethod
-    def build(cls, cache: type,  odoo: Dict[str, Any], **kwargs) -> Deliveries:
-        if odoo.get("delta_search_purchase", False) is False:
-            raise ValueError("please configure odoo.delta_search_purchase")
-        delta = odoo.get("delta_search_purchase")
-        deliveries = cls()
-        deliveries.connect(**odoo["erp"])
-        deliveries.fetch_purchases(cache)
+    def initialize(cls, odoo_configs: payload, lobby:Lobby, init: payload= {}, **kwargs) -> Deliveries:
+        delta = odoo_configs.get("delta_search_purchase", False)
+        erp = odoo_configs.get("erp", False)
+        if delta is False:
+            raise KeyError("please configure odoo.delta_search_purchase")
+        if erp is False:
+            raise KeyError("You must configure odoo.erp payload")
+        deliveries = cls(**init)
+        deliveries.connect(**erp)
+        deliveries.fetch_purchases(delta, lobby)
         return deliveries
-    
-    def fetch_purchases(self, cache: type) -> None:
+
+    def as_backup(self) -> payload:
+        return {"purchases": self.purchases, "last_update": self.last_update}
+
+    def fetch_purchases(self, delta: List[int], lobby: Lobby) -> None:
         """
         collect purchases from "purchase.order"
         :states:
@@ -68,9 +74,6 @@ class Deliveries(Odoo):
         keep track of purchased in "draft" state by referencing them as self.purchases keys ( value set to None )
         """        
         
-        delta = cache.config["odoo"]["delta_search_purchase"]
-        lobby = cache.lobby
-
         date_ceiling = get_update_time_ceiling(self.last_update, delta)
         cached_drafts = self.browse("purchase.order", [("id", "in", list(self.purchases.keys()))])
         new_purchases = self.browse("purchase.order", [("create_date", ">", date_ceiling)])

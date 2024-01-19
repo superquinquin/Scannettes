@@ -20,11 +20,16 @@ class Inventories(Odoo):
     !! any of its product ouside of the inventory scope                    !!
     """
     
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        categories: List[Tuple[str, int]]= [],
+        inventories: Dict[int, Optional[Inventory]]= {},
+        last_update: Optional[datetime]= None
+        ) -> None:
         super().__init__()
-        self.categories: List[Tuple[str, int]]
-        self.inventories: Dict[int, Optional[Inventory]] = {}
-        self.last_update: datetime = None
+        self.categories: List[Tuple[str, int]] = categories
+        self.inventories: Dict[int, Optional[Inventory]] = inventories
+        self.last_update: datetime = last_update
         
         self.export_pipeline = [
             self._check_product_odoo_existence,
@@ -33,13 +38,18 @@ class Inventories(Odoo):
             self._propagate_start
         ]
 
-
     @classmethod
-    def build(cls, erp: Dict[str, Any], **kwargs) -> Inventories:
-        inventories = cls()
+    def initialize(cls, odoo_configs: payload, init: payload= {}, **kwargs) -> Inventories:
+        erp = odoo_configs.get("erp", False)
+        if erp is False:
+            raise KeyError("You must configure odoo.erp payload")
+        inventories = cls(**init)
         inventories.connect(**erp)
         inventories.import_categories()
-        return inventories
+        return inventories        
+
+    def as_backup(self) -> payload:
+        return {"categories": self.categories, "inventories": self.inventories, "last_update": self.last_update}
 
     def import_categories(self) -> None:
         cats = self.browse("product.category", [("create_date", ">", "1900-01-01 01:01:01")])

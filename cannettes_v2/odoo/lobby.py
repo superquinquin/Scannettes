@@ -19,6 +19,10 @@ class Lobby(object):
         rooms: Dict[str, Room] = {},
     ) -> None:
         self.rooms = rooms
+        
+
+    def as_backup(self) -> Payload:
+        return {"rooms": self.rooms}
 
     def get_open_rooms(self) -> List[Room]:
         return [room for room in self.rooms.values() if room.state.current() == "open"]

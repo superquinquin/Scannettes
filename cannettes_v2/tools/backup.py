@@ -4,7 +4,6 @@ import glob
 import logging
 from threading import Timer
 from pickle import dump, load, HIGHEST_PROTOCOL
-import json
 from typing import List, Dict, Any, Optional
 
 from cannettes_v2.odoo.deliveries import Deliveries
@@ -39,39 +38,51 @@ class Cache(object):
         return bool(glob.glob(fname))
 
     @classmethod
-    def initialize(cls, method: str, backup_fname: Optional[str]=None, backend: Optional[Payload]= None) -> Cache | None:
-        cache = None
-        if backend is None and backup_fname is None:
-            raise ValueError("you must pack the backend or the backup for initialization")
-        if backend and backup_fname:
-            raise ValueError("you must choose between backend and backup initialization")
-        if method == "bare" and backend is None:
-            raise ValueError("You must pass the backend for a Bare initialization")
+    def initialize(
+        cls, 
+        method: str,
+        configs: Payload,
+        logging: logging,
+        backup_fname: Optional[str]= None, 
+        ) -> Cache:
+        
+        odoo_cfg = configs.get("odoo", False)
         if method == "backup" and backup_fname is None:
             raise ValueError("You must pass the backup file name for backup initialization")
-        
+        if odoo_cfg is False:
+            raise KeyError("You must set the Odoo configs")
+
         if method == "backup":
-            if backup_fname.split('.')[-1] != "json":
-                raise ValueError("Cache currently only handle json files")
+            if backup_fname.split('.')[-1] != "pickle":
+                raise ValueError("Cache currently only handle pickle files")
             try:
                 with open(backup_fname, "rb") as f:
-                    cache = load(f)
+                    data = load(f)
             except Exception as e:
-                print(e)
-                cache =  None
+                logging.error(e)
+                logging.warning("Something went wrong when loading the backup... Switching to bare initialization")
+                method = "bare"
+                
         if method == "bare":
-            cache = cls(**backend)
-        return cache
+            data = {"deliveries": {}, "inventories": {}, "lobby": {}}
+            
+        lobby = Lobby(**data["lobby"])
+        deliveries = Deliveries.initialize(odoo_cfg, lobby, data["deliveries"])
+        inventories = Inventories.initialize(odoo_cfg, data["inventories"])
+        return cls(config=configs, deliveries=deliveries, inventories=inventories, lobby=lobby)
+    
+    
     
     def set_config(self, configs: Payload) -> None:
         self.config = configs
     
     def to_backup(self, fname: str) -> None:
         with open(fname, "wb") as f:
-            for i in [self.deliveries, self.inventories, self.lobby]:
-                print(i)
-                json.dump(i, f)
-                # dump(i, f, protocol= HIGHEST_PROTOCOL)
+            dump({
+                "deliveries": self.deliveries.as_backup(),
+                "inventories": self.inventories.as_backup(),
+                "lobby": self.lobby.as_backup()
+            }, f, protocol= HIGHEST_PROTOCOL)
             
     def set_config(self, config: Dict[str, Any]) -> None:
         self.config = config
@@ -123,10 +134,11 @@ class Update:
         while True:
             try:
                 erp = cache.config["odoo"]["erp"]
+                delta = cache.config["odoo"]["delta_search_purchase"]
                 deliveries: Deliveries = cache.deliveries
                 lobby: Lobby = cache.lobby
                 deliveries.connect(**erp)
-                deliveries.fetch_purchases(cache)
+                deliveries.fetch_purchases(delta, lobby)
                 lobby.remove_outdated_rooms()
                 self.UPDATE_RUNNER(cache, logging)
                 break
