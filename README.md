@@ -38,33 +38,21 @@ For launching the application `python wsgi_v2.py`.
 Maybe those points will pop as Github issues if I have the time.
 
 **Backend**
-* [x] move from PipEnv to Poetry.
-* [x] Rebuild dockerfile for poetry build. 
-* [x] Better config system and config injection.
 * [ ] Config validation ( probably in CUE lang )
-* [x] Env variable parser for injecting those into the config yaml at run time.
-* [x] Authentication System based On JWT. Controle admin endpoint access.
-* [ ] More consistent variable naming accross Backend & Frontend.
 * [ ] Tracking system for logging catched errors.
 * [ ] in extension to previous bullet, build up exceptions
-* [x] Refactor Logging system
-* [x] Refactor Caching, Backup and Update system
+* [ ] data validation during events
 * [ ] Continue Mailing system ( mainly for allerting bugs, very low priority )
-* [ ] Continue Refactoring models, odoo connector and event handling.
-...
 
 **Frontend**
-* [ ] Make lobby responsive
-* [ ] Retemplate Room elements (lobby) to make few useful data as attribute rather than hidden html elements...
-* [ ] Retemplate Room product container to few useful data as attribute rather than hidden html elements... as well as better and more consistent container design.
 * [ ] Solve Camera environment camera bug ( camera doesn't switch to environment )
-* [ ] revisit Camera barcode scanner to maybe process the barcode on client side.
-* [ ] Reformat JS code base
-* [ ] Restructure JS code base, maybe using Lit or other very small JS framework ( preferable to be loadable via CDN ).
+
+
+**Testing**
+* Continue testing if app works properly. Soon deployment.
 
 **Bug**
 * [ ] Bug Uwsgi not ( not finding callback, or bad port mapping .. )
-* [ ] client get porduct data when no barcode ( fixed in main )
 
 ## Installation
 ### Setup
