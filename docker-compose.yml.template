@@ -1,16 +1,10 @@
-version: "3"
+version: "3.4.2"
 
 services:
   inventaire:
     build: .
     container_name: inventaire
-    environment:
-      ERPPEEK_ADDRESS: '??'
-      ERPPEEK_API_URL: '??'
-      ERPPEEK_API_DB: '??'
-      ERPPEEK_SERVICE_ACCOUNT_LOGGIN: '??'
-      ERPPEEK_SERVICE_ACCOUNT_PASSWORD: '??'
-      APP_CONFIG: 'staging'
+    env_file: .env
     ports:
       - "8000:8000"
     networks:

@@ -5,7 +5,7 @@ cannettes:
     application_root: "/"
 
   socketio:
-    async_mode: "gevent"
+    async_mode: "gevent_uwsgi"
     cors_allowed_origins: "*"
 
   odoo:
