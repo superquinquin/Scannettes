@@ -6,5 +6,9 @@ dist/
 *.pyc
 scannettes_configs/*.yaml
 .venv
+*.env
+scannettes/static/js/common/config.js
+scannettes/static/js/pack
+scannettes/static/css/pack
 docker-compose.yml
 test.py
