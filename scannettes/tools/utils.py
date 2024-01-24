@@ -2,10 +2,11 @@ import os
 import binascii
 from glob import glob
 from random import choices
+from itertools import chain
 from datetime import datetime, timedelta
 from string import ascii_lowercase, ascii_uppercase, digits
 
-from typing import Dict, Union, List, Any
+from typing import Dict, Union, List, Any, Optional
 
 ERROR_MESSAGES = {
     "odoout": "Les produits suivant ne sont pas référencés dans Odoo. Veuillez les ajouter ou les supprimer de l'application.",
@@ -86,37 +87,24 @@ def build_validation_error_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     return {"faulty_products": names, "error_message": ERROR_MESSAGES[payload["error_name"]]}
 
 
-def order_files(files: List[str]) -> List[str]:
-    """give order for unifying process"""
-    ordered, schema = [], ["config", "init", "functions", "product", "camera", "others"]
-    for t in schema:
-        for file in files:
-            if t in file:
-                ordered.append(file)
-            if t == "others" and file not in ordered:
-                ordered.append(file)
-
-    return ordered
-
-
-def unify(folder: str, types: str, outfile: str) -> None:
-    """unify folder files into an unified file
-    this aim to limit client request as page open"""
-    glob_files = glob(f'{"/".join(folder.split("/")[:-1])}/*.{types}')
-    files = glob(f"{folder}/*.{types}")
-    ordered = order_files(glob_files + files)
-    with open(f"{folder}/{outfile}.{types}", "w") as unify:
-        for file in ordered:
-            if "inventory" in outfile and "purchase" in file:
-                continue
-
-            elif "purchase" in outfile and "inventory" in file:
-                continue
-
-            elif "unified" in file:
-                continue
-
-            else:
+def pack(*folders, outfile: str, priority: Optional[List[str]]=None) -> None:
+    files = list(chain.from_iterable([glob(f"{folder}/*") for folder in folders]))
+    if os.path.exists("./scannettes/static/js/pack") is False:
+        os.mkdir("./scannettes/static/js/pack")
+    if os.path.exists("./scannettes/static/css/pack") is False:
+        os.mkdir("./scannettes/static/css/pack")
+        
+    if priority:
+        fmap = {priority[n]:n for n in range(len(priority))}
+        [
+            files.insert(fmap.get(f.split('/')[-1]), files.pop(n)) 
+            for n,f in enumerate(files) 
+            if fmap.get(f.split('/')[-1], None) is not None
+        ]
+        
+    for file in files:
+        with open(outfile, "w") as out:
+            for file in files:
                 with open(file, "r") as f:
                     content = f.read()
-                    unify.write(f"{content}\n")
+                    out.write(content)
