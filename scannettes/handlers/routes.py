@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request
 
-from scannettes.authenticator import Authenticator
-from scannettes.decorators import protected
+from scannettes.tools.authenticator import Authenticator
+from scannettes.tools.decorators import protected
 
 scannettes_bp = Blueprint("scannettes_bp", __name__)
 

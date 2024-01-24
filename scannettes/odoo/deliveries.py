@@ -11,7 +11,7 @@ from scannettes.models.purchase import Purchase, Supplier
 
 from scannettes.odoo.lobby import Lobby
 from scannettes.odoo.odoo import Odoo
-from scannettes.utils import get_update_time_ceiling
+from scannettes.tools.utils import get_update_time_ceiling
 
 payload = Dict[str, Any]
 
@@ -164,7 +164,7 @@ class Deliveries(Odoo):
             print(handler, payload)
             if payload["valid"] is False:
                 return payload
-        self._propagate_validate(payload["container"], autoval)
+        self._propagate_validate(oid, autoval)
         return payload
 
 
@@ -234,8 +234,6 @@ class Deliveries(Odoo):
         payload["container"] = moves
         return payload   
         
-
-
     def recharge_purchase(self, oid: str) -> None:
         purchase = self.purchases.get(oid)
         products = self.fetch_purchase_products(purchase.name, False)
@@ -244,11 +242,21 @@ class Deliveries(Odoo):
     def _delete_purchase(self, oid: int) -> None:
         self.purchases.pop(oid)
 
-    def _propagate_validate(self, container: Record, autoval: bool) -> None:
+    def _propagate_validate(self, oid: str, autoval: bool) -> None:
         """use odoo action_validate methdod to automaticaly validate an inventory"""
         if autoval:
             try:
-                container.action_validate()
-            except Exception:
+                name = self.purchases.get(oid).name
+                container = self.get("stock.picking", [("origin", "=", name)])
+                container.action_confirm()
+                container.button_validate()
+                # .process().action_confirm()
+            except Exception as e:
                 # catch marshall error & pass it
-                pass
+                print(e)
+            # try:
+            #     print(container)
+            #     container.process()
+            # except Exception as e:
+            #     print(e)
+                

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Tuple, Optional, Type
 from scannettes.models.product import Product
 from scannettes.models.state_handler import ProductState, State, ProcessState, PurchaseState
 from scannettes.odoo.odoo import Odoo
-from scannettes.utils import update_object
+from scannettes.tools.utils import update_object
 
 Uuid = str
 Payload = Dict[str, Any]

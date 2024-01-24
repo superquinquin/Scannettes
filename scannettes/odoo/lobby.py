@@ -7,7 +7,7 @@ from PIL import Image
 import qrcode
 
 from scannettes.models.room import Room
-from scannettes.utils import is_too_old
+from scannettes.tools.utils import is_too_old
 
 Payload = Dict[str, Any]
 

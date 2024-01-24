@@ -3,7 +3,7 @@ import time
 from erppeek import Client, Record
 from typing import Dict, List, Tuple, Union, Any
 
-from scannettes.utils import get_best_state
+from scannettes.tools.utils import get_best_state
 
 class Odoo(object):
     connected: bool = False

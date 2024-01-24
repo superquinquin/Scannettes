@@ -1,11 +1,10 @@
 from typing import Any, Dict, List, Tuple
 
-from flask import current_app, url_for
+from flask import current_app
 from flask_socketio import emit, join_room
 
 from scannettes import scannettes
-from scannettes.authenticator import Authenticator
-from scannettes.decorators import protected
+from scannettes.tools.decorators import protected, logging_hook
 from scannettes.odoo.lobby import Lobby
 from scannettes.odoo.odoo import Odoo
 from scannettes.odoo.deliveries import Deliveries
@@ -13,7 +12,7 @@ from scannettes.odoo.inventories import Inventories
 from scannettes.models.purchase import Purchase, Inventory
 from scannettes.tools.pdf import PDF
 from scannettes.tools.backup import Cache
-from scannettes.utils import build_validation_error_payload
+from scannettes.tools.utils import build_validation_error_payload
 
 
 Cache = Dict[str, Any]
@@ -22,14 +21,15 @@ Payload = Dict[str, Any]
 
 
 @scannettes.socketio.on("message")
+@logging_hook
 def log_message(msg):
     print(str(msg))
     
 @scannettes.socketio.on("initialization-call")
+@logging_hook
 def initialize(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
-    
     if context["instance"] == "lobby":
         context = {
             "origin": cache.config["flask"]["address"],
@@ -52,6 +52,7 @@ def initialize(context):
 
 @scannettes.socketio.on("admin-initialization-call")
 @protected(auth_level="admin")
+@logging_hook
 def admin_initialize(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -79,6 +80,7 @@ def admin_initialize(context):
 
 @scannettes.socketio.on("add-rooms")
 @protected(auth_level="admin")
+@logging_hook
 def add_room(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -99,8 +101,8 @@ def add_room(context):
         rooms = [room.to_payload()]
         payload["data"]["rooms"] = rooms
         sel_payload["data"]["purchases"] = [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]
-        emit("add-rooms", payload ,include_self=True, broadcast=True)
-        emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True)
+        emit("add-rooms", payload ,include_self=True, broadcast=True, to="lobby")
+        emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True, to="lobby")
         
     elif adding_type == "inventory":
         context.update({"catid": context.get("oid")})
@@ -109,7 +111,7 @@ def add_room(context):
         (shelf, stock) = lobby.room_sibling_factory(context, *invs)
         rooms = [shelf.to_payload(), stock.to_payload()] 
         payload["data"]["rooms"] = rooms
-        emit("add-rooms", payload ,include_self=True, broadcast=True)
+        emit("add-rooms", payload ,include_self=True, broadcast=True, to="lobby")
                 
     else:
         payload = {"state": "err", "data": {"message": "Création de salon: quelque chose n'a pas marché."}}
@@ -119,6 +121,7 @@ def add_room(context):
 
 @scannettes.socketio.on("del-rooms")
 @protected(auth_level="admin")
+@logging_hook
 def del_rooms(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -126,20 +129,24 @@ def del_rooms(context):
     for rid in context["rids"]:
         lobby.delete_room(rid)
     sel_payload = {"state": "ok", "data": {"purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]}}
-    emit("del-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True)
-    emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True)
+    emit("del-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True, to="lobby")
+    emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True, to="lobby")
+    emit("close-modal", {}, include_self=True)
     
 @scannettes.socketio.on("reinit-room")
 @protected(auth_level="admin")
+@logging_hook
 def reinit_rooms(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
     lobby.reset_room(int(context["rid"]))
     emit("reinit-room", {"state": "ok", "data": context})
+    emit("close-modal", {}, include_self=True)
     
 
 
 @scannettes.socketio.on("generate-qrcodes")
+@logging_hook
 def generate_qrcodes(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -154,6 +161,7 @@ def generate_qrcodes(context):
 # -- ROOMS RELATED EVENTS
 
 @scannettes.socketio.on("laser-scan")
+@logging_hook
 def laser_scan(context):
     cache: Cache = current_app.cache
     config: Dict[str, Any] = cache.config
@@ -178,6 +186,7 @@ def laser_scan(context):
 
 
 @scannettes.socketio.on("modify-product")
+@logging_hook
 def bump_product(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -200,6 +209,7 @@ def bump_product(context):
 
 @scannettes.socketio.on("delete-products")
 @protected(auth_level="admin")
+@logging_hook
 def delete_products(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -209,9 +219,11 @@ def delete_products(context):
         product = data.uuid_registry.get(uuid)
         data.del_product(product)
     emit("delete-products", context, include_self=True, broadcast=True, to=str(context["rid"]))
+    emit("close-modal", {}, include_self=True)
 
 
 @scannettes.socketio.on("closing")
+@logging_hook
 def closing(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -238,6 +250,7 @@ def closing(context):
 
 @scannettes.socketio.on("validation")
 @protected(auth_level="admin")
+@logging_hook
 def validation(context):
     cache: Cache = current_app.cache
     config: Dict[str, Any] = cache.config
@@ -245,8 +258,9 @@ def validation(context):
     room = lobby.rooms.get(int(context["rid"]))
     
     accept_new_lines = config["odoo"].get("odoo_create_new_purchase_line", True)
-    auto_val = config["odoo"].get("odoo_auto_purchase_validation", False)
-    
+    # auto_val = config["odoo"].get("odoo_auto_purchase_validation", False)
+    auto_val = context["autoval"]
+    print(auto_val)
     oid = room.data.oid
 
     if room.type == "purchase":
@@ -279,6 +293,7 @@ def validation(context):
 
 @scannettes.socketio.on("nullification")
 @protected(auth_level="admin")
+@logging_hook
 def nulify_inventory_products(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -286,10 +301,12 @@ def nulify_inventory_products(context):
     inventory: Inventory = room.data
     inventory.nullifier()
     emit("nullification", {"state": "ok", "data": context}, include_self=True, broadcast=True, to=str(context["rid"]))
+    emit("close-modal", {}, include_self=True)
 
 
 @scannettes.socketio.on("suspend-rooms")
 @protected(auth_level="admin")
+@logging_hook
 def suspend_room(context):
     cache: Cache = current_app.cache
     config: Dict[str, Any] = cache.config
@@ -303,10 +320,12 @@ def suspend_room(context):
         
     context["purchases"] = [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]
     emit("suspend-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True, to="lobby")
+    emit("close-modal", {}, include_self=True)
     
 
 @scannettes.socketio.on("rebase")
 @protected(auth_level="admin")
+@logging_hook
 def rebase(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
@@ -316,3 +335,4 @@ def rebase(context):
     oid = room.data.oid
     deliveries.recharge_purchase(oid)
     emit("rebase", {"state": "ok", "data": context}, include_self=True, broadcast=True, to=str(context["rid"]))
+    emit("close-modal", {}, include_self=True)
