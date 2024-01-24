@@ -39,24 +39,23 @@ class Authenticator(object):
             "authorizations": self.users[username]["authorizations"]
         }
         token = jwt.encode(payload, self.secret_key, algorithm="HS256")
-        return {"status": "success", "token": token, "cookie": self.write_cookie(token)}
-        
-        
+        return {"status": "success", "token": token}
         
     def load_users(self, users_path: str) -> Dict[str, Any]:
         with open(users_path, 'r') as f:
             users = load(f, SafeLoader)
         return users
-    
-    def write_cookie(self, token: str) -> str:
-        max_age = f" Max-Age={self.max_age}" if self.max_age else ""
-        return f"session={token};{max_age}"
         
-        
-    def verify_access(self, token: str):
+    def verify_access(self, cookie: str):
+        token = cookie.split(" ")[1]
         payload = jwt.decode(token, self.secret_key, algorithms="HS256")
         return payload
     
+    def get_auth_options(self) -> Dict[str, Any]:
+        options = {}
+        if self.max_age:
+            options.update({"max_age": self.max_age})
+        return options
 
     @classmethod
     def login(cls, request: Request) -> Response:
@@ -66,12 +65,11 @@ class Authenticator(object):
         }
         authenticator = current_app.cache.config["authenticator"]
         users = current_app.users
-        auth = cls(
-            **authenticator,
-            **users
-        ).authenticate(**context)
-        
-        response = make_response(redirect(url_for("scannettes_bp.admin_lobby")))
-        if auth.get("status") == "success":
-            response.set_cookie('session', auth["token"])
+        auth = cls(**authenticator,**users)
+        auth_request = auth.authenticate(**context)
+        response = make_response(redirect(url_for("scannettes_bp.login")))
+        if auth_request.get("status") == "success":
+            options = auth.get_auth_options()
+            response = make_response(redirect(url_for("scannettes_bp.admin_lobby")))
+            response.set_cookie('Authorization', f"Bearer {auth_request['token']}",**options)
         return response

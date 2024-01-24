@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 from scannettes.odoo.deliveries import Deliveries
 from scannettes.odoo.inventories import Inventories
 from scannettes.odoo.lobby import Lobby
-from scannettes.utils import get_delay, get_fix_delay
+from scannettes.tools.utils import get_delay, get_fix_delay
 
 Payload = Dict[str, Any]
 
