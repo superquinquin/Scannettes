@@ -83,7 +83,7 @@
 
 .placeholder {
     min-height: 50px;
-    background-color: var(--items-done);
+    background-color: var(--product-normal);
     margin: 10px;
 }
 
@@ -96,7 +96,7 @@
 }
 
 .placeholder:hover {
-    background-color: var(--itemshover-done);
+    background-color: var(--producthover-normal);
     transition: background-color 0.2s ease;
 }
 

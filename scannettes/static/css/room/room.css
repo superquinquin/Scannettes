@@ -13,32 +13,29 @@
     --items-done: #1AC7C4;  
     --itemshover-done: #107E7D;
 
-    --product-normal: #F9DBBD;
-    --producthover-normal: #F3B87C;
+    --product-normal: #C1ECDF;
+    --producthover-normal: #82D9BF;
 
+    --product-modified: #F8D6B4;
+    --producthover-modified: #F1AD6A;
 
+    --product-new: #FEF19A;
+    --producthover-new: #FDE549;
 
-    --product-modified: #F55D3E;
-    --producthover-modified: #D52D0B;
+    --product-unknown: #F9B5AC;
+    --producthover-unknown: #F47766;
 
-    --product-new: #8E5572;
-    --producthover-new: #663D52;
+    --product-sdiff: #FEF19A;
+    --producthover-sdiff: #FDE549;
 
-    --product-unknown: #596157;
-    --producthover-unknown: #313630;
+    --product-mdiff: #F8D6B4;
+    --producthover-mdiff: #F1AD6A;
 
+    --product-ldiff: #F9B5AC;
+    --producthover-ldiff: #F47766;
 
-    --product-sdiff: #FFA5AB;
-    --producthover-sdiff: #FF5C67;
-
-    --product-mdiff: #da627d;
-    --producthover-mdiff: #C62F4F;
-
-    --product-ldiff: #A53860;
-    --producthover-ldiff: #6A243E;
-
-    --product-xldiff: #5C0A28;
-    --producthover-xldiff: #120208;
+    --product-xldiff: #D1C5E7;
+    --producthover-xldiff: #A38CCF;
 
     --head-w: 90%;
     --main-w: 90%

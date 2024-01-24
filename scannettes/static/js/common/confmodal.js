@@ -24,8 +24,8 @@ function CloseCModal() {
     lockwindow();
     document.getElementById('open-content').innerHTML = "";
     document.getElementById('confirmation-modal').style.display = 'none';
-    document.getElementById('cancel-confirmation').hidden = false;
-    document.getElementById('accept-confirmation').hidden = false;
+    waitingConf("close");
+    showAutoval("close");
 }
 
 
@@ -63,4 +63,32 @@ function formatListing(strings) {
         ul.appendChild(li);
     }
     return ul;
+}
+
+function waitingConf(action) {
+    const loader = document.getElementById("conf-loader");
+    const btns = document.getElementById("conf-btns");
+    if (action === "open") {
+        loader.style.display = "block";
+        btns.style.display = "none";
+    } else {
+        loader.style.display = "none";
+        btns.style.display = "block";
+    }
+}
+
+function showAutoval(action) {
+    const container = document.getElementById("autoval-container");
+    const autoval = document.getElementById("autoval");
+    if (action === "open") {
+        container.style.display = "block";
+    } else {
+        container.style.display = "none";
+        autoval.checked = false
+    }
+}
+
+function getAutoValValue() {
+    const autoval = document.getElementById("autoval");
+    return autoval.checked;
 }

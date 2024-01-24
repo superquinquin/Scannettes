@@ -238,7 +238,7 @@ function round(val) {
 
 
 function dstate(payload) {
-    let cls = {0: "normal", 1: "new", 2: "modified", 3: "unknown"};
+    let cls = {0: "normal", 1: "modified", 2:  "new", 3: "unknown"};
     let purValues = {"_modified": 1, "_new": 2, "_unknown": 3}
     let invValues = {"sdiff": 10, "mdiff": 20, "ldiff": 30, "xldiff": 40} 
     if (type === "purchase") {

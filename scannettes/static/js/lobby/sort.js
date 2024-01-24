@@ -18,6 +18,9 @@ class TableSorter {
         let nextSymbol = symbols[nextSortingState];
 
         let [nodesRef, valuesRef] = this.collectNodes(currentSelector);
+        if (valuesRef.length == 0) {
+            return;
+        }
         let sorted = this.sort(nextSortingState, valuesRef);
         this.inject(sorted, nodesRef);
         this.modifySortingStates(currentSelector, nextSymbol);

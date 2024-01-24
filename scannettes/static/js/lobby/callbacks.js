@@ -39,6 +39,8 @@ socket.on("lobby-initialization", function(context) {
     }
 });
 
+
+
 socket.on("update-purchase-selector", function(context) {
     let data = unwrap_or_else(context, "erreur 0");
     if (data === null) {
@@ -51,6 +53,11 @@ socket.on("update-purchase-selector", function(context) {
 
 
 
+/// CLOSE MODAL
+socket.on("close-modal", function(context) {
+    CloseCModal();
+    waitingConf("close");
+})
 
 
 socket.on("closing", function(context) {
@@ -81,13 +88,12 @@ socket.on("validation", function(context) {
 function createRoom() {
     const roomName = document.getElementById('room-name');
     const roomPassword = document.getElementById('room-password');
-    const infoContainer = document.getElementById("creation-info");
     let type = getPType();
     let [ObjectId, _] = getSelectedOptions(type);
     let name = roomName.value;
     let password = roomPassword.value;
     socket.emit("add-rooms", {"type": type, "oid": ObjectId, "name": name, "password": password});
-    infoContainer.innerText = "Création en cours...";
+    WaitingCreation("open");
 }
 
 
@@ -116,7 +122,7 @@ socket.on("close-creation-modal", function() {
 function delSelRooms() {
     let selected = getSelRids();
     if (selected.length == 0) {
-        new MsgFactory("msg-box", "err", "<strong>Erreur lors de la suppression</strong> : Aucun salon sélectionné");
+        new MsgFactory("msg-box", "err", "<strong>Erreur lors de la suppression</strong> : Aucun salon sélectionné", true, 3000, 1000);
     } else {
         openCModal(
             "Suppression ?",
@@ -128,8 +134,8 @@ function delSelRooms() {
 
 function delRooms() {
     let selected = getSelRids();
+    waitingConf("open");
     socket.emit("del-rooms", {"rids": selected});
-    CloseCModal();
 }
 
 
@@ -166,8 +172,8 @@ function confSuspension() {
 
 function suspendRooms() {
     let selected = getSelRids();
+    waitingConf("open");
     socket.emit("suspend-rooms", {"rids": selected});
-    CloseCModal();
 }
 
 socket.on("suspend-rooms", function(context) {

@@ -140,7 +140,6 @@
 .normal:hover {
     transition: background-color 0.2s ease;
     background-color: var(--producthover-normal);
-    color: var(--secondary);
 }
 
 
@@ -180,7 +179,6 @@
 
 .sdiff {
     background-color: var(--product-sdiff);
-    color: var(--secondary);
 }
 
 
@@ -191,7 +189,6 @@
 
 .mdiff {
     background-color: var(--product-mdiff);
-    color: var(--secondary);
 }
 
 
@@ -202,7 +199,6 @@
 
 .ldiff {
     background-color: var(--product-ldiff);
-    color: var(--primary-shade);
 }
 
 
@@ -213,7 +209,6 @@
 
 .xldiff {
     background-color: var(--product-xldiff);
-    color: var(--primary-shade);
 }
 
 

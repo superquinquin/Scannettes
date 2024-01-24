@@ -9,22 +9,21 @@ function creationModal() {
     const roomPassword = document.getElementById('room-password');
     const purchase = document.getElementById('purchases');
     const inventory = document.getElementById('categories');
-    const infoContainer = document.getElementById("creation-info");
-
+    
     let display = modal.style.display;
-    if (display != "flex") {
+    if (display != "block") {
         modal.style.top = (window.scrollY - 5).toString() + 'px';
-        modal.style.display = "flex";
-        infoContainer.innerText = "";
+        modal.style.display = "block";
+        WaitingCreation("close");
         switcher.checked = false;
         purContainer.style.display = 'block';
         invContainer.style.display = 'none';
         page.style.overflowY = 'hidden';
     } else {
         modal.style.display = "none";
+        WaitingCreation("close");
         roomName.value = '';
         roomPassword.value = '';
-        infoContainer.innerText = "";
         purchase.selectedIndex = 0;
         inventory.selectedIndex = 0;
         switcher.checked = false;
@@ -82,4 +81,16 @@ function getSelRids() {
         }
     }
     return selected;
+}
+
+function WaitingCreation(action) {
+    const loader = document.getElementById("loading-creation");
+    const btns = document.getElementById("creation-btn");
+    if (action === "open") {
+        loader.style.display = "block";
+        btns.style.display = "none";
+    } else {
+        btns.style.display = "block";
+        loader.style.display = "none";
+    }
 }

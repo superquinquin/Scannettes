@@ -41,6 +41,7 @@ function RYaRdyYet(e) {
         let noscan = NoscannedProductyet();
         if (okL && okChars && okscan && noscan) {
             laser.value = "";
+            waitingLaser("open");
             socket.emit("laser-scan", {"barcode": barcode, "rid": rid});
         } else if (!noscan) {
             laser.value = "";
@@ -122,13 +123,13 @@ function getScannedBarcodes() {
     return scannedBarcodes;
 }
 
-
-socket.on("laser-scan", function(context) {
-    console.log(context);
-    rmPlaceholder("lmmodal");
-    new ProductFactory(context.product, false);
-});
-
-socket.on("laser-scan-scanned", function(context) {
-    new MsgFactory("msg-box", "err", "<strong>Produit déjà scanné</strong>", true, 2000, 1000);
-});
+function waitingLaser(action) {
+    const loader = document.getElementById("laser-loader");
+    if (action === "open") {
+        rmPlaceholder("lmmodal");
+        loader.style.display = "block";
+    } else {
+        addPlaceholder("lmmodal");
+        loader.style.display = "none";
+    }
+}

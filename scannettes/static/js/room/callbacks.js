@@ -79,6 +79,14 @@ function scrolltop() {
 
 
 
+/// CLOSE MODAL
+socket.on("close-modal", function(context) {
+    CloseCModal();
+    waitingConf("close");
+})
+
+
+
 ////// Reinit
 
 function confReInit() {
@@ -90,8 +98,8 @@ function confReInit() {
 }
 
 function reInitialize() {
+    waitingConf("open");
     socket.emit("reinit-room", {"rid": rid});
-    CloseCModal();
 }
 
 socket.on("reinit-room", function(context) {
@@ -116,8 +124,8 @@ function confRebase() {
 }
 
 function rebase() {
+    waitingConf("open");
     socket.emit("rebase", {"rid": rid});
-    lockConfModal();
 }
 
 socket.on("rebase", function(context) {
@@ -141,8 +149,8 @@ function confNullify() {
 }
 
 function nullify() {
+    waitingConf("open");
     socket.emit("nullification", {"rid": rid});
-    CloseCModal();
 }
 
 socket.on("nullification", function(context) {
@@ -177,8 +185,8 @@ function delProducts(containerId) {
     const container = document.getElementById(containerId);
     let nodes = container.getElementsByClassName("product");
     let uuids = getSelectedNodesUUID(nodes);
+    waitingConf("open");
     socket.emit("delete-products", {"from": containerId, "rid": rid, "uuids": uuids});
-    CloseCModal();
 }
 
 socket.on("delete-products", function(context) {
@@ -244,15 +252,18 @@ function confValidate() {
         "Confirmer la validation du salon ?",
         "validateRoom()",
   );
+  showAutoval("open");
 }
 
 function closeRoom() {
+    waitingConf("open");
     socket.emit("closing", {"rid": rid});
-    CloseCModal();
 }
 
 function validateRoom() {
-    socket.emit("validation", {"rid": rid});
+    waitingConf("open");
+    let autoval = getAutoValValue();
+    socket.emit("validation", {"rid": rid, "autoval": autoval});
 }
 
 socket.on("closing", function(context) {
@@ -265,6 +276,7 @@ socket.on("closing", function(context) {
 
 socket.on("validation-error", function(context) {
     new MsgFactory("msg-box","err", "<strong>Erreur lors du processus de validation...</strong>", true, 5000, 1000);
+    waitingConf("close");
     openCModal(
         "Erreur...",
         context.error_message,
@@ -369,4 +381,17 @@ socket.on("modify-product", function(context) {
         span.innerText = context.modifications.qty_received;
         new MsgFactory("msg-box", "ok", "<strong>Produit Modifié: </strong>"+context.product.name, true, 3000, 1000);
     }
+});
+
+
+
+socket.on("laser-scan", function(context) {
+    console.log(context);
+    new ProductFactory(context.product, false);
+    waitingLaser("close");
+});
+
+socket.on("laser-scan-scanned", function(context) {
+    waitingLaser("close")
+    new MsgFactory("msg-box", "err", "<strong>Produit déjà scanné</strong>", true, 2000, 1000);
 });

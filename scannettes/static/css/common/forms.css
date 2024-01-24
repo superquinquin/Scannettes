@@ -38,7 +38,7 @@
 
 .field-text-inp:focus, .sfield-text-inp:focus {
     transition: background-color 0.2s ease;
-    background-color: var(--primary-shade);
+    background-color: var(--primary);
 }
 
 
