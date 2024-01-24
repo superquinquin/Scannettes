@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html id="html" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scannettes | room</title>
+    <link rel="stylesheet" media="all" href="/static/css/pack/room.css">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="head-container">
+            <img class="head-elm" src="{{url_for('static', filename='misc/superquinquin_logo2.png')}}">
+            <h1 id="title" class="head-elm">Scannettes</h1>
+        </div>
+    </div>
+    <div id="msg-box" class="fx"></div>
+    <main>
+        <section id="menu" class="menu-container border">
+            <div id="info" class="room-info"></div>
+            <div class="room-menu">
+                <div class="room-scanners">
+                    <button id="camera" class="scanner-btn border camera"><img src="/static/misc/camera.png"></button>
+                    <button id="laser" class="scanner-btn border laser" onclick="LMModal()"><img src="/static/misc/laser.png"></button>
+                </div>
+                <div id="actions" class="room-actions"></div>
+            </div>
+        </section>
+
+        <section id="initial" class="section-container">
+            <button class="collaps-block" onclick="openCollapser(this)">Produits Initiaux</button>
+            <div class="container border">
+                <div class="inner-wrapper">
+                    <div class="admin-container">
+                        <div class="search">
+                            <input id="searchbar" class="searchbar border" type="text" placeholder="Rechercher un produit / code-barres..." onkeyup="searchProduct(this, 'initial')">
+                            <button id="reset-searchbar" class="reset-searchbar border" onclick="resetSearch('initial')">&#10006</button>
+                        </div>
+                        <div class="wrapper">
+                            <div class="management">
+                                <button class="del btn-small border" onclick="delConf('initial')">Supprimer</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="placeholder-container"></div>
+                    <div id="initial-products" class="products-container"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="done" class="section-container">
+            <button class="collaps-block" onclick="openCollapser(this)">Produits vérifiés</button>
+            <div class="container border">
+                <div class="inner-wrapper">
+                    <div class="admin-container">
+                        <div class="search">
+                            <input id="searchbar" class="searchbar border" type="text" placeholder="Rechercher un produit / code-barres..." onkeyup="searchRoom(this, 'done')">
+                            <button id="reset-searchbar" class="reset-searchbar border" onclick="resetSearch('done')">&#10006</button>
+                        </div>
+                        <div class="wrapper">
+                            <div class="management">
+                                <button class="del btn-small border" onclick="delConf('done')">Supprimer</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="placeholder-container"></div>
+                    <div id="done-products" class="products-container"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+    <div id="lmmodal" class="modal-blur" style="display: none;">
+        <div class="laser-modal border">
+            <div class="modal-header">
+                <p>Scanner Laser</p>
+                <button class="modal-close" onclick="LMModal()">&#10006</button>
+            </div>
+            <div class="modal-padding">
+                <div class="laser-container">
+                    <input type="text" readonly="readonly" id="laser-output" onkeypress="RYaRdyYet(event)" onkeydown="getLaserOutput(event)">
+                    <div class="container border" style="display: flex;">
+                        <div class="inner-wrapper">
+                            <div class="placeholder-container"></div>
+                            <div id="laser-loader"><div class="lds-ring"><div></div><div></div><div></div><div></div></div></div>
+                            <div id="scanned-products" class="scanned-products-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmation-modal" class="modal-blur">
+        <div id="confirmation-container" class="confirmation-modal border">
+            <div class="modal-section"><div class="modal-header"><p id="heading-message"></p></div></div>
+            <div class="modal-section modal-content">
+                <p id="content-message"></p>
+                <div id="open-content" calss="open-content"></div>
+            </div>
+            <div id="autoval-container" class="modal-section autoval">
+                <div class="auto-switch">
+                    <p>Validation automatique de Odoo: </p>
+                    <label class="switch">
+                        <input id="autoval" class="autoswitch" type="checkbox">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="conf-loader" class="modal-section">
+                <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div id="conf-btns" class="modal-section">
+                <div class="centered-btn">
+                    <button id="cancel-confirmation" class="btn-large border margin" onclick="CloseCModal()">Annuler</button>   
+                    <button id="accept-confirmation" class="btn-large border margin">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toTop" class="totop-container " style="display: none;">
+        <button class="totop-btn" onclick="scrolltop()">&#8248</button>
+    </div> 
+    <script type="text/javascript" src="/static/js/pack/room.js"></script>
+</body>
+</html>

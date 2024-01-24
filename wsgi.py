@@ -1,12 +1,10 @@
 from gevent import monkey
-
 monkey.patch_all()
 
-from cannettes import create_app, socketio
-from cannettes.config import parser
+import scannettes.handlers.events  # noqa: F401
+from scannettes import scannettes
 
-app = create_app(parser().config)
-
+app = scannettes.app
 if __name__ == "__main__":
-    socketio.run(app)
-    # http://localhost:5000/lobby
+    scannettes()
+# http://localhost:5000/lobby

@@ -1,0 +1,136 @@
+
+/* FORM FIELD COMPONENTS */
+
+.field {
+    display: block;
+    width: 100%;
+    margin: 30px 20px;
+}
+
+.fblock {
+    display: block;
+}
+
+.field-label {
+    margin-left: 30px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.field-text-inp {
+    width: 90%;
+    height: 50px;
+    padding-left: 20px;
+    font-size: 18px;
+    font-weight: 500;
+    outline: none;
+}
+
+.sfield-text-inp {
+    width: 90%;
+    height: 30px;
+    padding-left: 10px;
+    font-size: 1em;
+    font-weight: 500;
+    outline: none;
+}
+
+.field-text-inp:focus, .sfield-text-inp:focus {
+    transition: background-color 0.2s ease;
+    background-color: var(--primary);
+}
+
+
+.field-sel-inp {
+    width: 95%;
+    height: 55px;
+    padding-left: 20px;
+    font-size: 18px;
+    font-weight: 500;
+    background-color: white;
+}
+
+.imargin {
+    margin-top: 15px;
+}
+
+/* BTN */
+
+
+.btn-small {
+    min-width: 100px;
+    height: 35px;
+
+    background-color: var(--items-open);
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.btn-large {
+    min-width: 200px;
+    height: 50px;
+
+    background-color: var(--items-open);
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.btn-small:hover, .btn-large:hover {
+    cursor: pointer;
+    background-color: var(--itemshover-open);
+    transition: background-color 0.2s ease-in-out;
+}
+
+.margin {
+    margin: 5px;
+}
+
+.side-margin {
+    margin: 0 5px;
+}
+
+
+/* search bar */
+
+.searchbar {
+    width: 80%;
+    height: 30px;
+    padding-left: 10px;
+    background-color: var(--primary-shade);
+    color: var(--secondary);
+    outline: none;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.reset-searchbar {
+    width: 35px;
+    height: 38px;
+    margin-left: -10px;
+    background-color: var(--secondary);
+    color:var(--primary) ;
+    font-size: 1.2em;
+    padding-bottom: 4px;
+}
+
+.reset-searchbar:hover {
+    cursor: pointer;
+    background-color: var(--itemshover-close);
+    border-top: solid 1px var(--itemshover-close);
+    border-right: solid 3px var(--itemshover-close);
+    border-bottom: solid 3px var(--itemshover-close);
+    border-left: solid 1px var(--itemshover-close);
+    color: var(--secondary);
+}
+
+@media only screen and (hover: none) and (pointer: coarse){ 
+    .searchbar {
+        width: 75%;
+    }
+
+    .btn-large {
+        min-width: 130px;
+        height: 40px;
+    }
+}
