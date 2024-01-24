@@ -4,13 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scannettes | Lobby</title>
-    <link rel="stylesheet" media="all" href="/static/css/lobby/lobby.css">
-    <link rel="stylesheet" media="all" href="/static/css/common/header.css">
-    <link rel="stylesheet" media="all" href="/static/css/lobby/table.css">
-    <link rel="stylesheet" media="all" href="/static/css/common/notifications.css">
-    <link rel="stylesheet" media="all" href="/static/css/common/components.css">
-    <link rel="stylesheet" media="all" href="/static/css/common/modals.css">
-    <link rel="stylesheet" media="all" href="/static/css/common/forms.css">
+    <link rel="stylesheet" media="all" href="/static/css/pack/lobby.css">
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
 </head>
 
@@ -61,7 +55,7 @@
     </main>
 
     <div id="creation-modal" class="modal-blur">
-        <div id="back-container" class="creation-modal border">
+        <div id="creation-back-container" class="creation-modal border">
             <div class="centered padded">
                 <div class="modal-section">
                     <div class="switch-button">
@@ -93,9 +87,13 @@
                         <label class="field-label" for="room-password">Définir un mot de passe (facultatif) :</label>
                         <input id="room-password" class="field-text-inp border imargin" type="password" autocomplete="off" value="" placeholder="Mot de passe...">
                     </div>
-                    <p id="creation-info"></p>
+                    <div id="loading-creation" class="loading-section">
+                        <div class="centered-margin">
+                            <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-section">
+                <div id="creation-btn" class="modal-section">
                     <div class="centered-btn">
                         <button id="CancelRoom" class="btn-large border margin" onclick="creationModal()">Annuler</button>   
                         <button id="createRoom" class="btn-large border margin" onclick="createRoom()">Confirmer</button>
@@ -112,7 +110,11 @@
                 <p id="content-message"></p>
                 <div id="open-content" class="open-content"></div>
             </div>
-            <div class="modal-section">
+            <div id="autoval-container"><div id="autoval"></div></div>
+            <div id="conf-loader" class="modal-section">
+                <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+            </div>
+            <div id="conf-btns" class="modal-section">
                 <div class="centered-btn">
                     <button id="cancel-confirmation" class="btn-large border margin" onclick="CloseCModal()">Annuler</button>   
                     <button id="accept-confirmation" class="btn-large border margin">Confirmer</button>
@@ -120,16 +122,6 @@
             </div>
         </div>
     </div>
-
-    <script type="text/javascript" src="/static/js/common/config.js"></script>
-    <script type="text/javascript" src="/static/js/common/utils.js"></script>
-    <script type="text/javascript" src="/static/js/common/notifications.js"></script>
-    <script type="text/javascript" src="/static/js/common/confmodal.js"></script>
-    <script type="text/javascript" src="/static/js/lobby/table.js"></script>
-    <script type="text/javascript" src="/static/js/lobby/sort.js"></script>
-    <script type="text/javascript" src="/static/js/lobby/searchbar.js"></script>
-    <script type="text/javascript" src="/static/js/lobby/creationmodal.js"></script>
-    <script type="text/javascript" src="/static/js/lobby/utils.js"></script>
-    <script type="text/javascript" src="/static/js/lobby/callbacks.js"></script>
+    <script type="text/javascript" src="/static/js/pack/lobby.js"></script>
 </body>
 </html>

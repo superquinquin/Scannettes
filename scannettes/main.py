@@ -1,16 +1,16 @@
 from __future__ import annotations
 from os import environ
 from typing import Any, Dict, Optional
-
 import logging
 from flask import Flask
 from flask_socketio import SocketIO
 
-from scannettes.authenticator import Authenticator
-from scannettes.parsers import get_config, parse_client_config
+from scannettes.tools.authenticator import Authenticator
+from scannettes.tools.parsers import get_config, parse_client_config
 from scannettes.tools.backup import BackUp, Update, Cache
 from scannettes.tools.log import Logger
-from scannettes.utils import unify
+from scannettes.tools.utils import pack
+
 
 Payload = Dict[str,Any]
 
@@ -27,7 +27,13 @@ banner = """\
    \/_/:/  /     \:\/:/  /     \:\  \        \:\  \        \:\  \        \:\/:/  /   \/__\:\  \    \/__\:\  \      \:\/:/  /     \/_/:/  /  
      /:/  /       \::/  /       \:\__\        \:\__\        \:\__\        \::/  /         \:\__\        \:\__\      \::/  /        /:/  /   
      \/__/         \/__/         \/__/         \/__/         \/__/         \/__/           \/__/         \/__/       \/__/         \/__/     
+
+                                            Flask v2.2.3    Flask-SocketIO v5.3.2   
+                                uwsgi v2.0.22   gevent-websocket v0.10.1    gevent v23.9.1
+                                                    ERPpeek v1.7.1
 """
+
+
 
 
 class Scannettes(object):
@@ -62,6 +68,8 @@ class Scannettes(object):
         options: Optional[Payload] = None,
         styles: Optional[Payload] = None,
     ) -> None:
+        self.print_banner(locals())
+        
         cache = None
         self.env = env
 
@@ -99,25 +107,25 @@ class Scannettes(object):
         self.app.register_blueprint(routes.scannettes_bp)
 
         parse_client_config("./scannettes/static/js/common/config.js", flask, camera, styles)
-        # unify("cannettes_v2/static/js/lobby", "js", "unified")
-        # unify("cannettes_v2/static/js/login", "js", "unified")
-        # unify("cannettes_v2/static/js/room", "js", "unified_purchase")
-        # unify("cannettes_v2/static/js/room", "js", "unified_inventory")
+        self.pack_client()
 
         self.app.users = users
         self.app.cache = cache
         self.socketio.init_app(self.app)
 
     def __call__(self, *args: Any, **kwds: Any) -> None:
-        print(banner)
         self.socketio.run(self.app)
-        
+
     @classmethod
     def create_app(cls) -> Scannettes:
         cfg = get_config(
             environ.get("CONFIG_FILEPATH", "./scannettes_configs/scannettes_config.yaml")
         )
         return cls(**cfg)
+        
+    def print_banner(self, configs: Payload):
+        print(banner)
+        print(f"Booting {configs['env']} ENV")
         
     def start_backup_cycle(self, backup: Payload, cache: Cache, logging: logging) -> BackUp:
         logging.info("Initializing Backup system...")
@@ -157,6 +165,31 @@ class Scannettes(object):
         return Cache.initialize(method=preference, configs=configs, backup_fname=fname, logging=logging)
 
         
-            
-            
+    def pack_client(self) -> None:
+        pack(
+            './scannettes/static/css/common',
+            './scannettes/static/css/lobby', 
+            outfile="./scannettes/static/css/pack/lobby.css"
+        )
+        pack(
+            './scannettes/static/css/common',
+            './scannettes/static/css/room', 
+            outfile="./scannettes/static/css/pack/room.css"
+        )
+
+        pack(
+            './scannettes/static/js/common',
+            './scannettes/static/js/room', 
+            outfile="./scannettes/static/js/pack/room.js",
+            priority= ["config.js", "callbacks.js"]
+        )
+
+        pack(
+            './scannettes/static/js/common',
+            './scannettes/static/js/lobby', 
+            outfile="./scannettes/static/js/pack/lobby.js",
+            priority= ["config.js", "callbacks.js"]
+        )
+        
+    
 
