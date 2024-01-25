@@ -159,7 +159,7 @@ class Inventories(Odoo):
 
         
     def _check_product_odoo_existence(self, payload: payload) -> payload:
-        outsiders = payload["inventory"].get_unknown_products()
+        outsiders = payload["inventory"].get_unknown_active_products()
         payload.update({"valid": not any(outsiders), "failing": outsiders, "error_code": "odout"})
         return payload
         
@@ -183,7 +183,7 @@ class Inventories(Odoo):
         records from purchase.table_done"""
         valid, failing = True, []
         oid = payload["container"].id
-        products = [p for p in payload["inventory"].products if p.state.current() == "done"]
+        products = [p for p in payload["inventory"].products if p.state.current() == "done" and p.active]
         for product in products:
             try:
                 self.create("stock.inventory.line", product.as_inventory_payload(oid))

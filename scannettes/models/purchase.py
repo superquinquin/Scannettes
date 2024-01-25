@@ -92,16 +92,22 @@ class Purchase(object):
             if brcd:
                 self.barcode_registry[brcd] = product
 
-    def get_modified_products(self) -> List[Uuid]:
+    def get_active_products(self) -> List[Product]:
+        return [p for p in self.products if p.active]
+    
+    def get_unknown_active_products(self) -> List[Product]:
+        return [p for p in self.products if p._unknown and p.active]
+
+    def get_modified_products(self) -> List[Product]:
         return [p for p in self.uuid_registry.values() if p._modified]
 
-    def get_new_products(self) -> List[Uuid]:
+    def get_new_products(self) -> List[Product]:
         return [p for p in self.uuid_registry.values() if p._new]
 
-    def get_unknown_products(self) -> List[Uuid]:
+    def get_unknown_products(self) -> List[Product]:
         return [p for p in self.uuid_registry.values() if p._unknown]
 
-    def get_scanned_products(self) -> List[Uuid]:
+    def get_scanned_products(self) -> List[Product]:
         return [p for p in self.uuid_registry.values() if p._scanned]
 
     def retrieve_initial_product(self, product: Product) -> Product:

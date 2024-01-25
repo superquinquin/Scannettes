@@ -161,7 +161,6 @@ class Deliveries(Odoo):
         while payload["flag"]:
             handler = next(handlers)
             payload = handler(payload)
-            print(handler, payload)
             if payload["valid"] is False:
                 return payload
         self._propagate_validate(oid, autoval)
@@ -169,14 +168,14 @@ class Deliveries(Odoo):
 
 
     def _check_product_odoo_existence(self, payload: payload) -> payload:
-        outsiders = payload["purchase"].get_unknown_products()
+        outsiders = payload["purchase"].get_unknown_active_products()
         payload.update({"valid": not any(outsiders), "failing": outsiders, "error_name": "odoout"})
         return payload
     
     def _check_product_into_odoo_delivery(self, payload: payload) -> payload:
         odoo_base = self.browse("stock.move", [("origin", "=", payload["purchase"].name)])
         odoo_pids = set([p.product_id.id for p in odoo_base])
-        current_pids = set([p.pid for p in payload["purchase"].products])
+        current_pids = set([p.pid for p in payload["purchase"].get_active_products()])
         outsiders = list(current_pids - odoo_pids)
         payload.update({"valid": True, "failing": outsiders, "error_name": "purout"})
         return payload
@@ -192,10 +191,10 @@ class Deliveries(Odoo):
         purchase = payload["purchase"]
         for pid in payload['failing']:
             product = purchase.pid_registry.get(pid, None)
-            self._inject_unknown_products(purchase, product)
+            self._inject_new_products(purchase, product)
         return payload
     
-    def _inject_unknown_products(self, purchase: Purchase,  product: Product) -> payload:
+    def _inject_new_products(self, purchase: Purchase,  product: Product) -> payload:
         oprod = self.get("product.product", [("id", "=", product.pid)])
         if not product:
             return False
@@ -228,7 +227,7 @@ class Deliveries(Odoo):
         for move in moves:
             mvid, pid = move.id, move.product_id.id
             product = payload["purchase"].pid_registry.get(pid, None)
-            if product and product.state.current() == "done":
+            if product and product.state.current() == "done" and product.active:
                 self.apply_purchase_record_change(mvid, product.qty_received)
         payload["flag"] = False
         payload["container"] = moves

@@ -48,6 +48,7 @@ class Product(object):
     qty_received: float = field(compare=False, default=float(0))
     uomid: int = field(compare=True, default=None)
     state: State = field(compare=False, default=None)
+    active: bool = field(compare=False, default=True)
     _modified: bool = field(compare=False, default=False),
     _scanned: bool = field(compare=False, default=False),
     _new: bool = field(compare=False, default=False),
@@ -64,6 +65,7 @@ class Product(object):
         qty_package: float = float(0),
         uomid: Optional[int] = None,
         state: Optional[State] = None,
+        active: bool=True,
         _modified: bool = False,
         _scanned: bool = False,
         _new: bool = False,
@@ -79,6 +81,7 @@ class Product(object):
         self.qty_package = float(qty_package)
         self.uomid = uomid
         self.state = state or State(ProductState)
+        self.active = active
         self._modified = _modified
         self._scanned = _scanned
         self._new = _new

@@ -43,7 +43,7 @@ def initialize(context):
         room = lobby.rooms.get(int(rid))
         context = {
             "room": room.to_payload(),
-            "data": [product.to_payload(single_brcd=True) for product in room.data.products]
+            "data": [product.to_payload(single_brcd=True) for product in room.data.get_active_products()]
         }
         join_room(str(rid))
         emit("room-initialization", context , include_self=True)
@@ -72,7 +72,7 @@ def admin_initialize(context):
         room = lobby.rooms.get(rid)
         context = {
             "room": room.to_payload(),
-            "data": [product.to_payload(single_brcd=True) for product in room.data.products]
+            "data": [product.to_payload(single_brcd=True) for product in room.data.get_active_products()]
         }
         join_room(str(rid))
         emit("room-initialization", context , include_self=True)
@@ -217,7 +217,8 @@ def delete_products(context):
     data = room.data
     for uuid in context["uuids"]:
         product = data.uuid_registry.get(uuid)
-        data.del_product(product)
+        product.update({"active": False, "_scanned": True})
+        # data.del_product(product)
     emit("delete-products", context, include_self=True, broadcast=True, to=str(context["rid"]))
     emit("close-modal", {}, include_self=True)
 
@@ -317,9 +318,9 @@ def suspend_room(context):
     for rid in context['rids']:
         lobby.delete_room(int(rid), inventories)
         emit("closing", {"origin": config["flask"]["address"]}, broadcast=True, to=str(rid))
-        
-    context["purchases"] = [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]
+    sel_payload = {"state": "ok", "data": {"purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]}}
     emit("suspend-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True, to="lobby")
+    emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True, to="lobby")
     emit("close-modal", {}, include_self=True)
     
 
