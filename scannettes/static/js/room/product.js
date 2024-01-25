@@ -255,7 +255,8 @@ function dstate(payload) {
         }
         return cls[maxx];
 
-    } else if (type === "inventory" && payload.state != "done") {
+    } else if (type === "inventory" && state == "open") {
+        // color only meaningful for closed and assembled inventories.
         return "normal";
 
     } else if (type === "inventory" && payload.state === "done") {
