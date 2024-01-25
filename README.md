@@ -29,30 +29,27 @@ On root
 ```bash
 poetry build
 poetry install
+mkdir volume
+chmod 777 volume
 ```
 when builded, you can `poetry shell` to enable the project venv.
 
-For launching the application `python wsgi_v2.py`.
+For launching the application `bash boot.sh`.
 
 ### On what to contribute
 Maybe those points will pop as Github issues if I have the time.
 
 **Backend**
+* [ ] make Odoo auto validation works for purchases.
 * [ ] Config validation ( probably in CUE lang )
-* [ ] Tracking system for logging catched errors.
-* [ ] in extension to previous bullet, build up exceptions
-* [ ] data validation during events
-* [ ] Continue Mailing system ( mainly for allerting bugs, very low priority )
+* [ ] maybe extension 
+* [ ] maybe data validation during events
 
 **Frontend**
-* [ ] Solve Camera environment camera bug ( camera doesn't switch to environment )
-
+* [ ] setup camera scanning
 
 **Testing**
 * Continue testing if app works properly. Soon deployment.
-
-**Bug**
-* [ ] Bug Uwsgi not ( not finding callback, or bad port mapping .. )
 
 ## Installation
 ### Setup
