@@ -154,7 +154,7 @@ class Inventories(Odoo):
             payload = handler(payload)
             if payload["valid"] is False:
                 return payload
-        self._propagate_validate(payload, autoval)
+        self._propagate_validate(payload["container"], autoval)
         return payload
 
         
@@ -204,7 +204,8 @@ class Inventories(Odoo):
         if autoval:
             try:
                 container.action_validate()
-            except Exception:
+            except Exception as e:
+                print(e)
                 # catch marshall error & pass it
                 pass
 
