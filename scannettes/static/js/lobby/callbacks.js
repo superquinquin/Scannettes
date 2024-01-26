@@ -3,7 +3,7 @@ var initialized = false;
 const admin = isAdmin();
 const socket = io.connect(config.address);
 
-
+var rPass = config["activate_room_password"] ?? false;
 
 
 // SOCKETIO EVENTS
@@ -27,6 +27,9 @@ socket.on("lobby-initialization", function(context) {
         new MenuFactory();
         addOptions(context.purchases, "purchases");
         addOptions(context.categories, "categories");
+        if (!rPass) {
+            document.getElementById("room-password").readOnly = true;
+        }
     } else {
         document.getElementById("confirmation-modal").remove();
         document.getElementById("creation-modal").remove();

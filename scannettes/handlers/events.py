@@ -32,7 +32,7 @@ def initialize(context):
     lobby: Lobby = cache.lobby
     if context["instance"] == "lobby":
         context = {
-            "origin": cache.config["flask"]["address"],
+            "origin": cache.config["app"]["address"],
             "rooms": [room.to_payload() for room in lobby.get_open_rooms()]
         }
         join_room("lobby")
@@ -60,7 +60,7 @@ def admin_initialize(context):
 
     if context["instance"] == "lobby":
         context = {
-            "origin": cache.config["flask"]["address"],
+            "origin": cache.config["app"]["address"],
             "rooms": [room.to_payload() for room in lobby.get_all_rooms()],
             "purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()],
             "categories": cache.inventories.categories,
@@ -87,7 +87,7 @@ def add_room(context):
     inventories: Inventories = cache.inventories
     deliveries: Deliveries = cache.deliveries
     erp = cache.config["odoo"]["erp"]
-    address = cache.config["flask"]["address"]
+    address = cache.config["app"]["address"]
     
     adding_type = context.get("type", None)
     payload = {"state": "ok", "data": {"origin": address}}
@@ -244,7 +244,7 @@ def closing(context):
             "sibling": sibling
         }
     emit("closing", context,  broadcast=True, to="lobby")
-    emit("closing", {"origin": cache.config["flask"]["address"]}, include_self=True, broadcast=True, to=str(rid))
+    emit("closing", {"origin": cache.config["app"]["address"]}, include_self=True, broadcast=True, to=str(rid))
     
     
     
@@ -258,13 +258,13 @@ def validation(context):
     lobby: Lobby = cache.lobby
     room = lobby.rooms.get(int(context["rid"]))
     
-    accept_new_lines = config["odoo"].get("odoo_create_new_purchase_line", True)
-    # auto_val = config["odoo"].get("odoo_auto_purchase_validation", False)
-    auto_val = context["autoval"]
-    print(auto_val)
+    accept_new_lines = config["option"].get("odoo_create_new_purchase_line", True)
     oid = room.data.oid
 
     if room.type == "purchase":
+        auto_val = config["options"].get("odoo_auto_purchase_validation", False)
+        if auto_val:
+            auto_val = context["autoval"]
         deliveries: Deliveries = cache.deliveries
         deliveries.connect(**config["odoo"]["erp"])
         payload = deliveries.export_to_odoo(
@@ -273,6 +273,9 @@ def validation(context):
             auto_val,      
         )
     else:
+        auto_val = config["options"].get("odoo_auto_inventory_validation", False)
+        if auto_val:
+            auto_val = context["autoval"]
         inventories: Inventories = cache.inventories
         inventories.connect(**config["odoo"]["erp"])
         payload = inventories.export_to_odoo(
@@ -282,7 +285,7 @@ def validation(context):
     
     if payload.get("valid", False):
         room.is_validated()
-        emit("closing", {"origin": cache.config["flask"]["address"]}, include_self=True, broadcast=True, to=str(context["rid"]))
+        emit("closing", {"origin": cache.config["app"]["address"]}, include_self=True, broadcast=True, to=str(context["rid"]))
         emit("validation", context,  broadcast=True, to="lobby")
     else:
         emit("validation-error", build_validation_error_payload(payload), include_self=True)
@@ -317,7 +320,7 @@ def suspend_room(context):
     
     for rid in context['rids']:
         lobby.delete_room(int(rid), inventories)
-        emit("closing", {"origin": config["flask"]["address"]}, broadcast=True, to=str(rid))
+        emit("closing", {"origin": config["app"]["address"]}, broadcast=True, to=str(rid))
     sel_payload = {"state": "ok", "data": {"purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]}}
     emit("suspend-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True, to="lobby")
     emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True, to="lobby")

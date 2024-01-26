@@ -57,6 +57,7 @@ class Scannettes(object):
         *,
         env: str,
         flask: Payload,
+        app: Payload,
         odoo: Payload,
         camera: Payload,
         socketio: Payload = {},
@@ -100,13 +101,12 @@ class Scannettes(object):
         if not flask.get("static_url"):
             raise KeyError("you must set a static path for Flask")
         self.app = Flask(__name__, static_url_path=flask.get("static_url"))
-        self.app.config.update({k.upper(): v for k, v in flask.items()})
-
+        self.app.config.update({k.upper(): v for k, v in {**app, **flask}.items()})
 
         import scannettes.handlers.routes as routes
         self.app.register_blueprint(routes.scannettes_bp)
 
-        parse_client_config("./scannettes/static/js/common/config.js", flask, camera, styles)
+        parse_client_config("./scannettes/static/js/common/config.js", app, camera, styles, options)
         self.pack_client()
 
         self.app.users = users

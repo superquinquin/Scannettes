@@ -42,7 +42,6 @@ class RoomFactory {
             table.appendChild(this.placeHolder())
         } else {
             let frame = this.buildRoom(payload);
-            console.log(frame);
             table.appendChild(frame);
         }
     }
@@ -108,6 +107,9 @@ class RoomFactory {
         inp.setAttribute("autocomplete", "off");
         inp.setAttribute("placeholder", "Mot de passe...");
 
+        if (!rPass) {
+            inp.readOnly = true;
+        }
         elm.appendChild(inp);
         return elm;
     }

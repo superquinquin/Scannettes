@@ -7,6 +7,7 @@ const admin = isAdmin();
 var state;
 var type;
 var scanned = [];
+var autoval;
 
 const socket = io.connect(config.address);
 
@@ -21,6 +22,7 @@ socket.on("room-initialization", function(context) {
     console.log(context);
     state = context.room.state;
     type = context.room.type;
+    autoval = setAutoval();
     new MenuFactory(context.room);
     addProducts(context.data);
     addPlaceholder("initial");
@@ -35,6 +37,13 @@ socket.on("room-initialization", function(context) {
 
 
 // 
+function setAutoval() {
+    if (type === "inventory") {
+        return config["odoo_auto_inventory_validation"] ?? false;
+    } else if (type === "purchase") {
+        return config["odoo_auto_purchase_validation"] ?? false;
+    }
+}
 
 //////////////////////////////  COLLAPSING BLOCKS
 
@@ -252,7 +261,9 @@ function confValidate() {
         "Confirmer la validation du salon ?",
         "validateRoom()",
   );
-  showAutoval("open");
+  if (autoval) {
+    showAutoval("open");
+  } 
 }
 
 function closeRoom() {
@@ -277,6 +288,7 @@ socket.on("closing", function(context) {
 socket.on("validation-error", function(context) {
     new MsgFactory("msg-box","err", "<strong>Erreur lors du processus de validation...</strong>", true, 5000, 1000);
     waitingConf("close");
+    lockwindow();
     openCModal(
         "Erreur...",
         context.error_message,
