@@ -110,30 +110,30 @@
 }
 
 .open {
-    background-color: var(--items-open);
+    background-color: var(--product-normal);
 }
 
 .open:hover {
     transition: background-color 0.2s ease;
-    background-color: var(--itemshover-open);
+    background-color: var(--producthover-normal);
 }
 
 .close {
-    background-color: var(--items-close);
+    background-color: var(--product-modified);
 }
 
 .close:hover {
     transition: background-color 0.2s ease;
-    background-color: var(--itemshover-close);
+    background-color: var(--producthover-modified);
 }
 
 .done {
-    background-color: var(--items-done);
+    background-color: var(--product-unknown);
 }
 
 .done:hover {
     transition: background-color 0.2s ease;
-    background-color: var(--itemshover-done);
+    background-color: var(--producthover-unknown);
 }
 
 .grid-cell, .header-cell {

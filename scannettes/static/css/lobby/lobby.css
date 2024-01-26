@@ -16,6 +16,12 @@
     --product-normal: #C1ECDF;
     --producthover-normal: #82D9BF;
 
+    --product-modified: #F8D6B4;
+    --producthover-modified: #F1AD6A;
+
+    --product-unknown: #F9B5AC;
+    --producthover-unknown: #F47766;
+
     --main-w: 60%
 }
 
