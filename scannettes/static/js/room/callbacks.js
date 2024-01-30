@@ -14,7 +14,11 @@ const socket = io.connect(config.address);
 socket.on("connect", function() {
     if (!initialized) {
         initialized = true;
-        socket.emit('admin-initialization-call', {"instance": "room", "rid": parseInt(rid)});
+        if (admin) {
+            socket.emit('admin-initialization-call', {"instance": "room", "rid": parseInt(rid)});
+        } else {
+            socket.emit('initialization-call', {"instance": "room", "rid": parseInt(rid)});
+        }
     }
 });
 
