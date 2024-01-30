@@ -16,13 +16,13 @@ class Authenticator(object):
         *,
         secret_key: Optional[str]= None, 
         salt: Optional[str]= None, 
-        max_age: Optional[int]= None,
+        options: Dict[str, Any] = {},
         users: Optional[Dict[str, Any]]= None,
         **kwargs
         ) -> None:
         self.secret_key = secret_key
         self.salt = salt
-        self.max_age = max_age
+        self.options = options
         self.users = users
 
     
@@ -51,12 +51,6 @@ class Authenticator(object):
         payload = jwt.decode(token, self.secret_key, algorithms="HS256")
         return payload
     
-    def get_auth_options(self) -> Dict[str, Any]:
-        options = {}
-        if self.max_age:
-            options.update({"max_age": self.max_age})
-        return options
-
     @classmethod
     def login(cls, request: Request) -> Response:
         context = {
@@ -69,7 +63,6 @@ class Authenticator(object):
         auth_request = auth.authenticate(**context)
         response = make_response(redirect(url_for("scannettes_bp.login")))
         if auth_request.get("status") == "success":
-            options = auth.get_auth_options()
             response = make_response(redirect(url_for("scannettes_bp.admin_lobby")))
-            response.set_cookie('Authorization', f"Bearer {auth_request['token']}",**options)
+            response.set_cookie('Authorization', f"Bearer {auth_request['token']}",**auth.options)
         return response
