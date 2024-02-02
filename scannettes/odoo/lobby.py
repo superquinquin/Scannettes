@@ -111,10 +111,10 @@ class Lobby(object):
                 self.rooms.pop(rid)
                 break
 
-    def remove_outdated_rooms(self):
+    def remove_outdated_rooms(self, max_age: int) -> None:
         for rid, room in self.rooms.items():
             _state = room.state.current()
-            if _state == "done" and is_too_old(room.closing_date, 604800):
+            if _state == "done" and is_too_old(room.closing_date, max_age):
                 self.rooms.pop(rid)
 
     def _generate_qrcode(self, origin: str, room: Room) -> Image:

@@ -135,11 +135,12 @@ class Update:
             try:
                 erp = cache.config["odoo"]["erp"]
                 delta = cache.config["odoo"]["delta_search_purchase"]
+                room_max_age = cache.config["options"].get("archivated_room_max_age",604800)
                 deliveries: Deliveries = cache.deliveries
                 lobby: Lobby = cache.lobby
                 deliveries.connect(**erp)
                 deliveries.fetch_purchases(delta, lobby)
-                lobby.remove_outdated_rooms()
+                lobby.remove_outdated_rooms(room_max_age)
                 self.UPDATE_RUNNER(cache, logging)
                 break
             except KeyError as e:
