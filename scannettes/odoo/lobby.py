@@ -111,10 +111,19 @@ class Lobby(object):
                 self.rooms.pop(rid)
                 break
 
-    def remove_outdated_rooms(self, max_age: int) -> None:
-        for rid, room in self.rooms.items():
-            _state = room.state.current()
-            if _state == "done" and is_too_old(room.closing_date, max_age):
+    def remove_outdated_rooms(self, max_age: int, inventories: object) -> None:
+        """
+        room & purchase/inventory removing process
+        purchase -> removed by update thread. rooms must be non displayable when room gets to old.
+        inventory -> removing when too old. remove room and inventory at same time.
+        """
+        for rid, room in deepcopy(self.rooms).items():
+            _state, _type = room.state.current(), room.type
+            if _state == "done" and _type == "purchase" and is_too_old(room.closing_date, max_age):
+                self.rooms.pop(rid)
+            elif _state == "done" and _type == "inventory" and is_too_old(room.closing_date, max_age):
+                oid = room.data.oid
+                inventories.inventories.pop(oid)
                 self.rooms.pop(rid)
 
     def _generate_qrcode(self, origin: str, room: Room) -> Image:
