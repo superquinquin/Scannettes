@@ -240,7 +240,9 @@ function round(val) {
 function dstate(payload) {
     let cls = {0: "normal", 1: "modified", 2:  "new", 3: "unknown"};
     let purValues = {"_modified": 1, "_new": 2, "_unknown": 3}
-    let invValues = {"sdiff": 10, "mdiff": 20, "ldiff": 30, "xldiff": 40} 
+    let invValues = {"sdiff": 1, "mdiff": 5, "xldiff": 10} // "ldiff": 10 "xldiff": 40 
+
+    //// PURCHASES COLOR SCHEMA
     if (type === "purchase") {
         let maxx = 0;
         for (var key in payload) {
@@ -255,6 +257,10 @@ function dstate(payload) {
         }
         return cls[maxx];
 
+    //// INVENTORY COLOR SCHEMA
+    } else if (type === "inventory" && payload._unknown == true) {
+        return "unknown";
+    
     } else if (type === "inventory" && state == "open") {
         // color only meaningful for closed and assembled inventories.
         return "normal";
