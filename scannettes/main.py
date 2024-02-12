@@ -8,7 +8,7 @@ from flask_socketio import SocketIO
 from scannettes.tools.authenticator import Authenticator
 from scannettes.tools.parsers import get_config, parse_client_config
 from scannettes.tools.backup import BackUp, Update, Cache
-from scannettes.tools.log import Logger
+from scannettes.tools.log import Logger, SimpleStreamLogger
 from scannettes.tools.utils import pack
 
 
@@ -82,7 +82,9 @@ class Scannettes(object):
 
         if logger:
             logging = Logger(**logger)
-
+        else:
+            logging = SimpleStreamLogger()
+        
         if mailling:
             pass
 

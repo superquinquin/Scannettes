@@ -52,3 +52,19 @@ class Logger(object):
         formatter = logging.Formatter(self.format)
         console.setFormatter(formatter)
         return console
+
+class SimpleStreamLogger(object):
+    format = "%(asctime)s - %(name)-12s - %(levelname)-8s - %(message)s"
+    level = "INFO"
+    
+    def __init__(self) -> None:
+        self.log = logging.getLogger("")
+        self.log.setLevel(self.level)
+        
+        console = self.console_handler()
+        self.log.addHandler(console)
+
+    def console_handler(self):
+        """base logger console stream"""
+        console = logging.StreamHandler()
+        console.setLevel(self.level)
