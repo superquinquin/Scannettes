@@ -30,6 +30,7 @@ def logging_hook(f):
             perf = round(perf_counter() - tick, 5)
             logging.info(f"{r.method} [200][{r.sid}][{f.__module__}.{f.__name__}][{perf}s]")
         except Exception as e:
+            out = None
             logging.error(f"[500][{f.__module__}.{f.__name__}][{args}][{kwargs}]")
             logging.exception(e, exc_info=True)
         return out

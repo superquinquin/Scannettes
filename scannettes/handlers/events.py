@@ -15,7 +15,6 @@ from scannettes.tools.backup import Cache
 from scannettes.tools.utils import build_validation_error_payload
 
 
-Cache = Dict[str, Any]
 Payload = Dict[str, Any]
 
 
@@ -258,10 +257,10 @@ def validation(context):
     lobby: Lobby = cache.lobby
     room = lobby.rooms.get(int(context["rid"]))
     
-    accept_new_lines = config["option"].get("odoo_create_new_purchase_line", True)
     oid = room.data.oid
 
     if room.type == "purchase":
+        accept_new_lines = config["options"].get("odoo_create_new_purchase_line", True)
         auto_val = config["options"].get("odoo_auto_purchase_validation", False)
         if auto_val:
             auto_val = context["autoval"]
