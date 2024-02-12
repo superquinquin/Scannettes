@@ -22,7 +22,7 @@ class Authenticator(object):
         ) -> None:
         self.secret_key = secret_key
         self.salt = salt
-        self.options = options
+        self.options = options or {}
         self.users = users
 
     
@@ -64,5 +64,5 @@ class Authenticator(object):
         response = make_response(redirect(url_for("scannettes_bp.login")))
         if auth_request.get("status") == "success":
             response = make_response(redirect(url_for("scannettes_bp.admin_lobby")))
-            response.set_cookie('Authorization', f"Bearer {auth_request['token']}",**auth.options)
+            response.set_cookie('Authorization', f"Bearer {auth_request['token']}", **auth.options)
         return response
