@@ -12,18 +12,9 @@ def protected(auth_level: Optional[str]):
         @wraps(f)
         def wrapped(*args, **kwargs):
             authenticator = current_app.cache.config["authenticator"]
-            cookie = request.cookies.get("Authorization")
-            try:
-                auth = Authenticator(
-                    **authenticator,
-                ).verify_access(cookie)
-            except Exception:
-                auth = None
-
-            if auth and auth_level in auth["authorizations"]:
+            if Authenticator.authorize(authenticator, request, auth_level):
                 return f(*args, **kwargs)
-            else:
-                return redirect(url_for("scannettes_bp.login"))
+            return redirect(url_for("scannettes_bp.login"))
         return wrapped
     return decorator
 

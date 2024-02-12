@@ -66,3 +66,26 @@ class Authenticator(object):
             response = make_response(redirect(url_for("scannettes_bp.admin_lobby")))
             response.set_cookie('Authorization', f"Bearer {auth_request['token']}", **auth.options)
         return response
+    
+    @classmethod
+    def authorize(
+        cls,
+        authenticator: Dict[str,Any],
+        request: Request,
+        auth_level: Optional[str] | None = None
+    ) -> bool:
+        cookie = request.cookies.get("Authorization")
+        try:
+            auth = Authenticator(
+                **authenticator,
+            ).verify_access(cookie)
+        except Exception:
+            auth = None
+        
+        if auth and auth_level and  auth_level in auth["authorizations"]:
+            return True
+        elif auth and auth_level is None:
+            return True
+        else:
+            return False
+        

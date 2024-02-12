@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, redirect, url_for, request, current_app
 
 from scannettes.tools.authenticator import Authenticator
 from scannettes.tools.decorators import protected
@@ -22,6 +22,9 @@ def set_cookie():
 
 @scannettes_bp.route("/lobby")
 def lobby():
+    authenticator = current_app.cache.config["authenticator"]
+    if Authenticator.authorize(authenticator, request):
+        return redirect(url_for("scannettes_bp.admin_lobby"))
     return render_template("lobby.html")
 
 
