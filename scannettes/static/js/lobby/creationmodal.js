@@ -12,13 +12,16 @@ function creationModal() {
     
     let display = modal.style.display;
     if (display != "block") {
-        modal.style.top = (window.scrollY - 5).toString() + 'px';
+        centerModal(modal);
+        lockwindow();
+        // modal.style.top = (window.scrollY - 5).toString() + 'px';
+        // page.style.overflowY = 'hidden';
         modal.style.display = "block";
         WaitingCreation("close");
         switcher.checked = false;
         purContainer.style.display = 'block';
         invContainer.style.display = 'none';
-        page.style.overflowY = 'hidden';
+        
     } else {
         modal.style.display = "none";
         WaitingCreation("close");
@@ -27,7 +30,8 @@ function creationModal() {
         purchase.selectedIndex = 0;
         inventory.selectedIndex = 0;
         switcher.checked = false;
-        page.style.overflowY = 'visible';
+        // page.style.overflowY = 'visible';
+        lockwindow();
     }
 }
 

@@ -83,7 +83,7 @@
 }
 
 
-@media only screen and (hover: none) and (pointer: coarse){
+@media (hover: none) and (pointer: coarse){
     .fx {
         top: 10px;
     }

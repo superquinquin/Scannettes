@@ -29,12 +29,27 @@
 /* theal #1AC7C4 -> #107E7D */
 /* verification #F9B5AC -> #F47766 */
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) { 
     :root {
         --head-w: 100%;
-        --main-w: 200%;
+        --main-w: 100%;
+    }
+
+    html {
+        width: 200%;
+        overflow-x: visible;
     }
 }
+
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) { 
+    :root {
+        --head-w: 95%;
+        --main-w: 95%;
+    }
+}
+
+
+
 
 html {
     font-family: 'Raleway', sans-serif;

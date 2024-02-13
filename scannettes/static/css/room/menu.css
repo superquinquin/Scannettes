@@ -59,20 +59,20 @@
     margin: 7px 0;
 }
 
-@media only screen and (pointer: fine) and (780px <= width <= 1171px) { 
+@media (pointer: fine) and (780px <= width <= 1171px) { 
     .menu-container {
         grid-template-columns: 70% 30%;
     }
 }
 
-@media only screen and (pointer: fine) and (width <= 779px) { 
+@media (pointer: fine) and (width <= 779px) { 
     .menu-container {
         grid-template-columns: 65% 35%;
     }
 }
 
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse){ 
     .menu-container {
         grid-template-columns: 1fr;
         grid-template-rows: repeat(2, auto);

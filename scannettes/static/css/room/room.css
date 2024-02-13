@@ -56,7 +56,7 @@ main {
     width: var(--main-w);
 }
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse){ 
     :root {
         --head-w: 100%;
         --main-w: 99%
@@ -120,7 +120,7 @@ main {
     margin: 10px 10px;
 }
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse){ 
     .section-container {
         min-width: 350px;
     }
@@ -170,25 +170,25 @@ main {
     grid-template-columns: 1fr;
 }
 
-@media only screen and (pointer: fine) and (1460px <= width <= 1900px) { 
+@media (pointer: fine) and (1460px <= width <= 1900px) { 
     .products-container {
         grid-template-columns: 1fr 1fr 1fr;
     }
 }
 
-@media only screen and (pointer: fine) and (990px <= width <= 1459px) { 
+@media (pointer: fine) and (990px <= width <= 1459px) { 
     .products-container {
         grid-template-columns: 1fr 1fr;
     }
 }
 
-@media only screen and (pointer: fine) and (width <= 989px) { 
+@media (pointer: fine) and (width <= 989px) { 
     .products-container {
         grid-template-columns: 1fr;
     }
 }
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse){ 
     .products-container {
         grid-template-columns: 1fr;
     }
@@ -289,7 +289,7 @@ main {
     font-weight: bold;
 }
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse){ 
     .totop-container {
         top: 50px;
     }

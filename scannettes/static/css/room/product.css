@@ -218,7 +218,7 @@
 }
 
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse){ 
     .product {
         min-width: 330px;
     }

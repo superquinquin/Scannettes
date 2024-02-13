@@ -124,7 +124,7 @@
     color: var(--secondary);
 }
 
-@media only screen and (hover: none) and (pointer: coarse){ 
+@media (hover: none) and (pointer: coarse){ 
     .searchbar {
         width: 75%;
     }

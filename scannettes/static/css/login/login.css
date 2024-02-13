@@ -29,6 +29,21 @@ main {
     width: var(--main-w);
 }
 
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) { 
+    :root {
+        --head-w: 100%;
+        --main-w: 100%;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) { 
+    :root {
+        --head-w: 80%;
+        --main-w: 80%;
+    }
+}
+
+
 
 .container {
     padding: 20px 25px 20px 25px;

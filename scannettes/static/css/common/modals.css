@@ -96,9 +96,8 @@
 }
 
 .centered-btn {
-    display: inline-block;
-    margin-top: 20px;
-    margin-left: calc(580px/2 - calc(425px/2));
+    margin: 20px auto 0 auto;
+    width: 430px;
 }
 
 
@@ -126,9 +125,8 @@
     }
 
     .centered-btn {
-        display: inline-block;
-        margin-top: 20px;
-        margin-left: calc(385px/2 - calc(285px/2));
+        margin: 20px auto 0 auto;
+        width: 290px;
     }
 
 }
