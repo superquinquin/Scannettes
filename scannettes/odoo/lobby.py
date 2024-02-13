@@ -127,6 +127,6 @@ class Lobby(object):
                 self.rooms.pop(rid)
 
     def _generate_qrcode(self, origin: str, room: Room) -> Image:
-        link = f"{origin}/lobby/room/{room.token}?rid={str(room.rid)}&type={room.type}"
+        link = f"{origin}/room/{room.token}?rid={str(room.rid)}"
         qrc = qrcode.make(link).convert("RGB")
         return qrc
