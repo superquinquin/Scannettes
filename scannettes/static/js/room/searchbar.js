@@ -21,7 +21,7 @@ function searchProduct(elm, containerId) {
 
 function resetSearch(containerId) {
     const table = document.getElementById(containerId);
-    document.getElementById("searchbar").value = "";
+    table.getElementsByClassName("searchbar")[0].value = "";
     let nodes = table.getElementsByClassName("product");
     for (node of nodes) { node.style.display = "grid" };
 }

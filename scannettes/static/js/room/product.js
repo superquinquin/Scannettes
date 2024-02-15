@@ -193,7 +193,7 @@ class ProductFactory {
         let inp = document.createElement("input");
         inp.setAttribute("type", "text");
         inp.setAttribute("inputmode", "numeric");
-        inp.setAttribute("maxlength", "3");
+        inp.setAttribute("maxlength", "6");
         inp.setAttribute("placeholder", "Quantité reçue...");
         inp.setAttribute("onkeypress", "keyModify(event, this)");
         inp.classList.add("grid-cell", "product-mod-input", "border", "sfield-text-inp");

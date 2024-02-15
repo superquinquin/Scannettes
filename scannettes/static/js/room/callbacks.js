@@ -356,7 +356,8 @@ function modifyProductQty(elm) {
 
     let okChars = checkIntChars(input);
     let okrange = parseFloat(input) < 200;
-    if (okChars &&  okrange) {
+    let okzeros = input[0] === "0" && input[1] != ".";
+    if (okChars &&  okrange && !okzeros) {
         socket.emit("modify-product",{"uuid": uuid, "original_state": state, "rid": rid, "has_modifications": true, "modifications": {"qty_received": input}});
         OpenModification(product.getElementsByClassName("apply-mod")[0].getElementsByTagName("button")[0]);
         giveLaserFocus();
@@ -366,8 +367,10 @@ function modifyProductQty(elm) {
     } else if (!okrange) {
         new MsgFactory("msg-box", "err", "<strong>La quantité doit être inférieur a 200 Unités</strong>", true, 5000, 1000);
         giveLaserFocus();
+    } else if (okzeros) {
+        new MsgFactory("msg-box", "err", "<strong>Une quantité de produit ne peux pas commencez par 0.</strong>", true, 5000, 1000);
+        giveLaserFocus();
     }
-
 }
 
 
