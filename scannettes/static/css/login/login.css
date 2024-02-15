@@ -43,6 +43,33 @@ main {
     }
 }
 
+@media (1500px < width <= 1700px) {
+    :root {
+        --head-w: 70%;
+        --main-w: 50%;
+    }
+}
+
+@media (1300px < width <= 1500px) {
+    :root {
+        --head-w: 80%;
+        --main-w: 70%;
+    }
+}
+
+@media (1100px < width <= 1300px) {
+    :root {
+        --head-w: 90%;
+        --main-w: 80%;
+    }
+}
+
+@media ( width <= 1100px) {
+    :root {
+        --head-w: 95%;
+        --main-w: 90%;
+    }
+}
 
 
 .container {
@@ -51,12 +78,10 @@ main {
 }
 
 .btn-container {
-    display: block;
-    margin: 30px 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
 }
 
 .btn-container button {
-    position: relative;
-    left: calc(90% - 175px);
+    grid-area: 1/3/1/3;
 }
-

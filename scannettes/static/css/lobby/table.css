@@ -58,9 +58,8 @@
 .col-header {
     display: grid;
     grid-template-columns: 5% 17% 32% 8% 15% 18%;
-    margin-left: 20px;
-    margin-right: 20px;
-    padding: 10px 20px 10px 20px;
+    margin: 0 20px;
+    padding: 10px 0;
     min-height: 30px;
     border-radius: 5px;
     flex-direction: row;
@@ -71,8 +70,8 @@
 /* table content */
 
 #room-table {
-    margin: 5px 20px 5px 20px;
-    padding: 10px 10px 10px 10px;
+    margin: 5px 10px;
+    padding: 10px 0;
     min-height: 30px;
     border-radius: 5px;
     flex-direction: row;

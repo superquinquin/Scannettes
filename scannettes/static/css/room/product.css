@@ -221,6 +221,7 @@
 @media (hover: none) and (pointer: coarse){ 
     .product {
         min-width: 330px;
+        margin: 10px 2px;
     }
     
     .pcheck {

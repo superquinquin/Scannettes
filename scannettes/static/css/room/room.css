@@ -59,7 +59,12 @@ main {
 @media (hover: none) and (pointer: coarse){ 
     :root {
         --head-w: 100%;
-        --main-w: 99%
+        --main-w: 100%
+    }
+
+    body {
+        margin: auto 1px;
+        overflow-x: hidden;
     }
 
     main {
@@ -123,12 +128,14 @@ main {
 @media (hover: none) and (pointer: coarse){ 
     .section-container {
         min-width: 350px;
+        width: 99%;
     }
 
     .inner-wrapper {
-        width: 95%;
+        width: 100%;
         margin: 2.5% 2.5%;
         font-size: 0.9em;
+        margin: 10px 3px;
     }
 }
 
@@ -170,19 +177,19 @@ main {
     grid-template-columns: 1fr;
 }
 
-@media (pointer: fine) and (1460px <= width <= 1900px) { 
+@media (1460px <= width <= 1900px) { 
     .products-container {
         grid-template-columns: 1fr 1fr 1fr;
     }
 }
 
-@media (pointer: fine) and (990px <= width <= 1459px) { 
+@media (990px <= width <= 1459px) { 
     .products-container {
         grid-template-columns: 1fr 1fr;
     }
 }
 
-@media (pointer: fine) and (width <= 989px) { 
+@media (width <= 989px) { 
     .products-container {
         grid-template-columns: 1fr;
     }

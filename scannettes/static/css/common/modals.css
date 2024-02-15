@@ -23,7 +23,7 @@
 .confirmation-modal {
     width: 600px;
     height: auto;
-    max-height: 800px;
+    max-height: 750px;
     margin: 100px auto auto auto;
     background-color: var(--primary-shade);
     padding-bottom: 20px;
@@ -36,6 +36,37 @@
     background-color: var(--primary-shade);
     z-index: 2;
 }
+
+@media (900px < height <= 1000px) {
+    .creation-modal {
+        margin: 75px auto;
+    }
+
+    .confirmation-modal {
+        margin: 75px auto auto auto;
+    }
+}
+
+@media (800px <= height <= 900px) {
+    .creation-modal {
+        margin: 50px auto;
+    }
+
+    .confirmation-modal {
+        margin: 50px auto auto auto;
+    }
+}
+
+@media (height < 800px) {
+    .creation-modal {
+        margin: 25px auto;
+    }
+
+    .confirmation-modal {
+        margin: 25px auto auto auto;
+    }
+}
+
 
 /* inner containers */
 
@@ -90,7 +121,7 @@
 }
 
 #open-content {
-    max-height: 500px;
+    max-height: 400px;
     overflow-y: auto;
     margin-right: 15px;
 }
