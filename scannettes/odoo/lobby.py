@@ -120,7 +120,8 @@ class Lobby(object):
         for rid, room in deepcopy(self.rooms).items():
             _state, _type = room.state.current(), room.type
             if _state == "done" and _type == "purchase" and is_too_old(room.closing_date, max_age):
-                self.rooms.pop(rid)
+                room = self.rooms.pop(rid)
+                room.data.associated_rid = None
             elif _state == "done" and _type == "inventory" and is_too_old(room.closing_date, max_age):
                 oid = room.data.oid
                 inventories.inventories.pop(oid)
