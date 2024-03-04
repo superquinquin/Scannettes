@@ -92,19 +92,6 @@ main {
 
 
 
-/* ROOM CREATION MODAL */
-
-#creation-modal {
-    display: none;
-}
-
-.creation-modal {
-    display: flex;
-    width: 600px;
-    height: 600px;
-}
-
-
 /* switch  */
 
 .switch-button {

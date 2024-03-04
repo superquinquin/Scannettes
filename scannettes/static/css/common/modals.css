@@ -37,6 +37,16 @@
     z-index: 2;
 }
 
+#creation-modal {
+    display: none;
+}
+
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) { 
+    #creation-modal {
+        width: 200%;
+    }
+}
+
 @media (900px < height <= 1000px) {
     .creation-modal {
         margin: 75px auto;
@@ -59,7 +69,9 @@
 
 @media (height < 800px) {
     .creation-modal {
+        height: 550px;
         margin: 25px auto;
+        padding: 0;
     }
 
     .confirmation-modal {

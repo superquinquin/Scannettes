@@ -17,3 +17,9 @@
 .centered {
     margin: auto;
 }
+
+@media (height < 800px) {
+    .centered {
+        margin: 0 auto;
+    }
+}
