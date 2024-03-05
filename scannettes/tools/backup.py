@@ -110,7 +110,11 @@ class BackUp:
     def BACKUP(self, cache: Cache, logging:logging):
         """BACKUP THREAD"""
         logging.info(f"Saving Backup into {self.filename}")
-        cache.to_backup(self.filename)
+        try:    
+            cache.to_backup(self.filename)
+        except Exception as e:
+            logging.error("Unable to save backup")
+            logging.exception(e, exc_info=True)
         self.BACKUP_RUNNER(cache, logging)
 
 
