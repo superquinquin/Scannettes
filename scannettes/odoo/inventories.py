@@ -22,11 +22,12 @@ class Inventories(Odoo):
     
     def __init__(
         self,
+        erp: payload,
         categories: List[Tuple[str, int]]= [],
         inventories: Dict[int, Optional[Inventory]]= {},
         last_update: Optional[datetime]= None
         ) -> None:
-        super().__init__()
+        super().__init__(erp)
         self.categories: List[Tuple[str, int]] = categories
         self.inventories: Dict[int, Optional[Inventory]] = inventories
         self.last_update: datetime = last_update
@@ -37,14 +38,15 @@ class Inventories(Odoo):
             self._create_stock_inventory_line_row,
             self._propagate_start
         ]
+        
+        self.connect(**erp)
 
     @classmethod
     def initialize(cls, odoo_configs: payload, init: payload= {}, **kwargs) -> Inventories:
         erp = odoo_configs.get("erp", False)
         if erp is False:
             raise KeyError("You must configure odoo.erp payload")
-        inventories = cls(**init)
-        inventories.connect(**erp)
+        inventories = cls(erp=erp, **init)
         inventories.import_categories()
         return inventories        
 

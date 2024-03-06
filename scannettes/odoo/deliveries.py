@@ -19,11 +19,12 @@ payload = Dict[str, Any]
 class Deliveries(Odoo):
     def __init__(
         self, 
-        *, 
+        *,
+        erp: payload,
         purchases: Dict[str, Purchase]= {}, 
         last_update: Optional[datetime]= None
         ) -> None:
-        super().__init__()
+        super().__init__(erp)
         self.purchases: Dict[int, Optional[Purchase]] = purchases
         self.last_update: datetime = last_update
         
@@ -33,6 +34,8 @@ class Deliveries(Odoo):
             self._add_products_into_odoo_delivery,
             self._export_products
         ]
+        
+        self.connect(**erp)
 
 
     @classmethod
@@ -43,8 +46,7 @@ class Deliveries(Odoo):
             raise KeyError("please configure odoo.delta_search_purchase")
         if erp is False:
             raise KeyError("You must configure odoo.erp payload")
-        deliveries = cls(**init)
-        deliveries.connect(**erp)
+        deliveries = cls(erp=erp, **init)
         deliveries.fetch_purchases(delta, lobby)
         return deliveries
 
