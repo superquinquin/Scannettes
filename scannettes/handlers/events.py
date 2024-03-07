@@ -143,6 +143,18 @@ def reinit_rooms(context):
     emit("close-modal", {}, include_self=True)
     
 
+@scannettes.socketio.on("Recharge-purchases")
+@protected(auth_level="admin")
+@logging_hook
+def Recharge_purchases(context):
+    cache: Cache = current_app.cache
+    delta = cache.config["odoo"]["delta_search_purchase"]
+    lobby: Lobby = cache.lobby
+    deliveries: Deliveries = cache.deliveries
+    deliveries.fetch_purchases(delta, lobby, update=False)
+    sel_payload = {"state": "ok", "data": {"purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]}}
+    emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True, to="lobby")
+    emit("close-modal", {}, include_self=True)
 
 @scannettes.socketio.on("generate-qrcodes")
 @logging_hook

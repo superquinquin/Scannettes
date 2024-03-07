@@ -21,7 +21,7 @@ class MenuFactory {
         const container = document.getElementById("actions");
         container.appendChild(this.btnBuilder("Créer", "create", ["btn-small", "border", "side-margin"], "creationModal()"));
         container.appendChild(this.btnBuilder("Supprimer", "del", ["btn-small", "border", "side-margin"], "delSelRooms()"));
-        container.appendChild(this.btnBuilder("Suspendre", "reset", ["btn-small", "border", "side-margin"], "confSuspension()"));
+        container.appendChild(this.btnBuilder("Recharger", "reset", ["btn-small", "border", "side-margin"], "confRecharge()"));
         container.appendChild(this.btnBuilder("QR-code", "qrcode", ["btn-small", "border", "side-margin"], "GenerateQrCode()"));
     }
 
