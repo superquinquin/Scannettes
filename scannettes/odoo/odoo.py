@@ -1,13 +1,21 @@
+from __future__ import annotations
+
 import re
 import time
 from erppeek import Client, Record
 from typing import Dict, List, Tuple, Union, Any
+from functools import wraps
+from http.client import CannotSendRequest
+import http.client as hc
 
 from scannettes.tools.utils import get_best_state
 
 class Odoo(object):
     connected: bool = False
     
+    def __init__(self, creds) -> None:
+        self.creds = creds
+        
     def connect(
         self,
         url: str,
@@ -15,38 +23,51 @@ class Odoo(object):
         password: str,
         db: str,
         verbose: bool,
-        max_retries: int=5,
-        **kwargs
-    ) -> None:
-        
-        tries = 0
-        while self.connected is False:
-            if tries > max_retries:
-                self.connected = False
-                raise RuntimeError("enable to connect to Odoo.") # Future exception
-            
+        max_retries: int=5
+        ) -> None:
+        _conn, _tries = False, 0
+        while (_conn is False and _tries <= max_retries):
             try:
                 self.client = Client(url, verbose=verbose)
                 self.log = self.client.login(username, password=password, database=db)
                 self.user = self.client.ResUsers.browse(self.log)
                 self.tz = self.user.tz
-                self.connected = True
-                
-            except Exception as e:
-                print(e)
-                tries += 1
-                time.sleep(60)
-
+                _conn = True
+            except Exception:
+                time.sleep(5)
+                _tries += 1
+        
+        if _conn is False:
+            raise ConnectionError("enable to connect to Odoo.")
+    
+    def _refresher(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            self = args[0]
+            res, _tries, _max_tries = None, 0, 3
+            while _tries <= _max_tries and res is None:                
+                try:
+                    res = f(*args, **kwargs)
+                except CannotSendRequest:
+                    self.connect(**self.creds)
+            if res is None:
+                raise ConnectionError("cannot connect to odoo")
+            return res
+        return wrapper
+        
+    @_refresher
     def get(self, model: str, cond: List[Tuple[str]]):
         """short for odoo client get method"""
         result = self.client.model(model).get(cond)
         return result
 
+    @_refresher
     def browse(self, model: str, cond: List[Tuple[str]]):
         """short for odoo client browse method"""
         result = self.client.model(model).browse(cond)
         return result
 
+    @_refresher
     def create(self, model: str, object: Dict[str, Any]):
         """short for odoo client create method"""
         result = self.client.model(model).create(object)
@@ -56,7 +77,7 @@ class Odoo(object):
         """during post purchase process update odoo record value"""
         move = self.get("stock.move.line", [("move_id.id", "=", move_id)])
         move.qty_done = received_qty
-        
+    
     def get_barcodes(self, product: Record) -> Union[List[int], List[bool]]:
         """collect all barcodes for a PP record"""
         main = product.barcode
@@ -66,7 +87,7 @@ class Odoo(object):
         ).barcode
         barcodes = [main] + alt
         return barcodes
-        
+    
     def search_product_from_barcode(self, barcode: str) -> Record:
         return self.get("product.product", [("barcode", "=", barcode)])
     
@@ -112,7 +133,6 @@ class Odoo(object):
             print(items)
             item_state = get_best_state(items)
         return item_state
-
 
     def prepare_product_from_record(self, product: Record, **kwargs) -> Dict[str, Any]:
         """from product.product and external to the purchase"""
