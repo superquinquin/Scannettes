@@ -7,10 +7,10 @@ def set_user_config():
     secrets = {"users": {}}
     path = os.path.dirname(__file__)
     root = os.listdir(path) 
-    if "cannettes_configs" not in root:
+    if "scannettes_configs" not in root:
         raise FileExistsError("You must create a cannettes_confgs folder")
     
-    config_path = f"{path}/cannettes_configs"
+    config_path = f"{path}/scannettes_configs"
     secrets_path = f"{config_path}/secrets.yaml"
     config = os.listdir(config_path)
     if "secrets.yaml" in config:
