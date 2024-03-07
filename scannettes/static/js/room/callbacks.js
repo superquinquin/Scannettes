@@ -356,7 +356,7 @@ function modifyProductQty(elm) {
 
     let okChars = checkIntChars(input);
     let okrange = parseFloat(input) < 200;
-    let okzeros = input[0] === "0" && input[1] != ".";
+    let okzeros = (input[0] === "0" && input[1] != ".") && (input[0] === "0" && input.length > 1);
     if (okChars &&  okrange && !okzeros) {
         socket.emit("modify-product",{"uuid": uuid, "original_state": state, "rid": rid, "has_modifications": true, "modifications": {"qty_received": input}});
         OpenModification(product.getElementsByClassName("apply-mod")[0].getElementsByTagName("button")[0]);
