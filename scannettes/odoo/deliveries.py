@@ -53,7 +53,7 @@ class Deliveries(Odoo):
     def as_backup(self) -> payload:
         return {"purchases": self.purchases, "last_update": self.last_update}
 
-    def fetch_purchases(self, delta: List[int], lobby: Lobby) -> None:
+    def fetch_purchases(self, delta: List[int], lobby: Lobby, update: bool=True) -> None:
         """
         collect purchases from "purchase.order"
         :states:
@@ -81,12 +81,12 @@ class Deliveries(Odoo):
         new_purchases = self.browse("purchase.order", [("create_date", ">", date_ceiling)])
         purchases = cached_drafts + new_purchases
         
-        self.purchase_factory(purchases, lobby)
+        self.purchase_factory(purchases, lobby, update)
         self.last_update = datetime.now().date().strftime("%Y-%m-%d %H:%M:%S")
 
 
 
-    def purchase_factory(self, purchases: RecordList, lobby: Lobby) -> None:
+    def purchase_factory(self, purchases: RecordList, lobby: Lobby, update: bool=True) -> None:
         for pur in purchases:
             oid = pur.id
             name = pur.name
@@ -114,7 +114,7 @@ class Deliveries(Odoo):
                         purchase.is_validated()
                         self.purchases.pop(oid)
                         
-                elif _picking_state == "assigned" and self.purchases.get(oid, False): # -- UNTESTED
+                elif _picking_state == "assigned" and self.purchases.get(oid, False) and update: # -- UNTESTED
                     self.recharge_purchase(oid)
 
                 elif (

@@ -191,6 +191,19 @@ socket.on("suspend-rooms", function(context) {
 });
 
 
+// RECHARGE
+function confRecharge() {
+    openCModal(
+        "Rechercher des commandes ?",
+        "Voullez vous rechercher de nouvelle commandes sur Odoo ?",
+        "RechargePurchases()",
+    );
+}
+
+function RechargePurchases() {
+    waitingConf("open");
+    socket.emit("Recharge-purchases", {});
+}
 
 // QR CODE GENERATION CALLBACK
 function GenerateQrCode() {
