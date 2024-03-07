@@ -162,7 +162,7 @@ class Inventories(Odoo):
         
     def _check_product_odoo_existence(self, payload: payload) -> payload:
         outsiders = payload["inventory"].get_unknown_active_products()
-        payload.update({"valid": not any(outsiders), "failing": outsiders, "error_code": "odout"})
+        payload.update({"valid": not any(outsiders), "failing": outsiders, "error_name": "odout"})
         return payload
         
     def _create_stock_inventory_row(self, payload: payload) -> payload:
@@ -176,7 +176,7 @@ class Inventories(Odoo):
                 {"name": name, "location_id": 12},
             )
         except Exception:
-            payload.update({"valid": False, "container": None, "error_code":"odostockinvfail"})
+            payload.update({"valid": False, "container": None, "error_name":"odostockinvfail"})
         payload.update({"container": container})
         return payload
 
