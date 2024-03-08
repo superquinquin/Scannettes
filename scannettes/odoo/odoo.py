@@ -44,13 +44,15 @@ class Odoo(object):
         @wraps(f)
         def wrapper(*args, **kwargs):
             self = args[0]
-            res, _tries, _max_tries = None, 0, 3
-            while _tries <= _max_tries and res is None:                
+            _ok, _tries, _max_tries = False, 0, 3
+            while _tries <= _max_tries and _ok is False:                
                 try:
                     res = f(*args, **kwargs)
-                except CannotSendRequest:
+                    _ok = True
+                except (CannotSendRequest, AssertionError):
+                    _tries += 1
                     self.connect(**self.creds)
-            if res is None:
+            if _ok is False:
                 raise ConnectionError("cannot connect to odoo")
             return res
         return wrapper
