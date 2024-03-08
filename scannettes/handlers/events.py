@@ -175,14 +175,19 @@ def generate_qrcodes(context):
 @logging_hook
 def laser_scan(context):
     cache: Cache = current_app.cache
-    config: Dict[str, Any] = cache.config
     lobby: Lobby = cache.lobby
-    
-    api = Odoo()
-    api.connect(**config["odoo"]["erp"])
     room = lobby.rooms.get(int(context["rid"]))
-    context = room.search_product("laser", context, api)
+    print(context)
+    if room.type == "purchase":
+        print("is purchase")
+        deliveries: Deliveries = cache.deliveries
+        context = room.search_product("laser", context, deliveries)
+    else:
+        print("is inv")
+        iventories: Inventories = cache.inventories
+        context = room.search_product("laser", context, iventories)
     
+    print(context)
     if context["res"].get("scanned", False):
         res = context["res"]
         emit("laser-scan-scanned", res, include_self=True)
