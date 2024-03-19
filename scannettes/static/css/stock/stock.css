@@ -29,6 +29,19 @@
 /* theal #1AC7C4 -> #107E7D */
 /* verification #F9B5AC -> #F47766 */
 
+html {
+    font-family: 'Raleway', sans-serif;
+    overflow-x: hidden;
+    background-color: var(--primary);
+}
+
+main {
+    margin: 100px auto;
+    margin-top: 20px;
+    width: var(--main-w);
+}
+
+
 @media (hover: none) and (pointer: coarse) and (orientation: portrait) { 
     :root {
         --head-w: 100%;
@@ -66,22 +79,19 @@
 
 @media ( width <= 1100px) {
     :root {
-        --head-w: 98%;
-        --main-w: 98%;
+        --head-w: 100%;
+        --main-w: 100%;
+    }
+
+    body {
+        margin: 0.1px;
+    }
+
+    main {
+        width: var(--main-w);
     }
 }
 
-html {
-    font-family: 'Raleway', sans-serif;
-    overflow-x: hidden;
-    background-color: var(--primary);
-}
-
-main {
-    margin: 100px auto;
-    margin-top: 20px;
-    width: var(--main-w);
-}
 
 
 /* LASER INPUT */
@@ -177,6 +187,14 @@ section {
     transition: background-color 0.2s ease;
     background-color: var(--producthover-normal);
 }
+
+@media (hover: none) and (pointer: coarse){ 
+    .product {
+        min-width: 330px;
+        margin: 10px 2px;
+    }
+}
+
 
 /* RATOTING WAITER */
 
