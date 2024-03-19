@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" onclick="keepLaserFocus()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scannetttes | Stock</title>
+    <link rel="stylesheet" media="all" href="../static/css/common/header.css">
+    <link rel="stylesheet" media="all" href="../static/css/common/notifications.css">
+    <link rel="stylesheet" media="all" href="../static/css/common/components.css">
+    <link rel="stylesheet" media="all" href="../static/css/stock/stock.css">
+</head>
+<body >
+    <main>
+        <div class="header">
+            <div class="head-container">
+                <img class="head-elm" src="../static/misc/superquinquin_logo2.png">
+                <h1 id="title" class="head-elm">Scannettes</h1>
+            </div>
+        </div>
+        <div id="msg-box" class="fx"></div>
+        <section>
+            <div class="table-header-container">
+                <h2>Stock</h2>
+            </div>
+            <input type="text" readonly="readonly" id="laser-output" onkeypress="RYaRdyYet(event)" onkeydown="getLaserOutput(event)">
+            <div class="container border" id="stock">
+                <div class="placeholder-container"></div>
+                <div id="laser-loader"><div class="lds-ring"><div></div><div></div><div></div><div></div></div></div>
+                <div id="stock-products" class="scanned-products-container"></div>
+            </div>
+        </section>
+        
+    </main>
+    <script type="text/javascript" src="../static/js/common/notifications.js"></script>
+    <script type="text/javascript" src="../static/js/room/product.js"></script>
+    <script type="text/javascript" src="../static/js/stock/stock.js"></script>
+</body>
+</html>

@@ -42,3 +42,18 @@ def room(tok):
 @protected(auth_level="admin")
 def admin_room(tok):
     return render_template("room.html")
+
+
+@scannettes_bp.route("/stock")
+def stock():
+    return render_template("stock.html")
+
+@scannettes_bp.route("/getProduct", methods=["POST"])
+def get_product():
+    payload = request.json
+    odoo = current_app.cache.inventories
+    record = odoo.search_product_from_barcode(payload["barcode"])
+    if record is None:
+        return {"state": "err", "message": "Aucun produit trouvé correspondant à ce code-barres."}
+    record = odoo.prepare_product_from_record(record)
+    return {"state": "ok", "product": record}
