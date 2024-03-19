@@ -161,7 +161,7 @@ class Inventories(Odoo):
 
         
     def _check_product_odoo_existence(self, payload: payload) -> payload:
-        outsiders = payload["inventory"].get_unknown_active_products()
+        outsiders = payload["inventory"].get_unknown_active_done_products()
         payload.update({"valid": not any(outsiders), "failing": outsiders, "error_name": "odout"})
         return payload
         

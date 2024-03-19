@@ -95,8 +95,8 @@ class Purchase(object):
     def get_active_products(self) -> List[Product]:
         return [p for p in self.products if p.active]
     
-    def get_unknown_active_products(self) -> List[Product]:
-        return [p for p in self.products if p._unknown and p.active]
+    def get_unknown_active_done_products(self) -> List[Product]:
+        return [p for p in self.products if p._unknown and p.active and p.state.current() == "done"]
 
     def get_modified_products(self) -> List[Product]:
         return [p for p in self.uuid_registry.values() if p._modified]
