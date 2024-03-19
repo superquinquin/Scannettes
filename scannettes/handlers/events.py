@@ -95,6 +95,12 @@ def add_room(context):
     if adding_type == "purchase":
         oid = context.get("oid")
         purchase = deliveries.purchases.get(oid, None)
+        if purchase is not None and purchase.associated_rid is not None:
+            payload = {"state": "err", "data": {"message": "La commande est déjà associée à un Salon."}}
+            emit("message", payload, include_self=True)
+            emit("close-creation-modal", include_self=True)
+            return
+            
         context.update({"data": purchase})
         room = lobby.room_factory(context)
         rooms = [room.to_payload()]
