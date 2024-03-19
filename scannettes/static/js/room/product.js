@@ -24,12 +24,21 @@ function addPlaceholder(containerId) {
 
 
 class ProductFactory {
-    constructor(payload, wId=true) {
+    constructor(payload, wId=true, isStock=false) {
         if (typeof payload === "string" || payload instanceof String) {
             let containerId = payload.split("-")[0];
             let container = document.getElementById(containerId);
             let placeholder = container.getElementsByClassName("placeholder-container")[0];
             placeholder.appendChild(this.placeHolder())
+            return;
+        }
+        if (isStock) {
+            let container = document.getElementById("stock-products"); 
+            let product = this.stockBuilder(payload);
+            product.appendChild(this.textCellBuilder(payload.name, ["product-name"]));
+            product.appendChild(this.textCellBuilder(payload.barcodes[0], ["product-barcode"]));
+            product = this.stockQtyBlock(product, payload);
+            container.appendChild(product);
             return;
         }
 
@@ -47,6 +56,16 @@ class ProductFactory {
         frame.appendChild(this.textCellBuilder(payload.name, ["product-name"]));
         frame.appendChild(this.boxCellBuilder());
         frame.appendChild(this.textCellBuilder(payload.barcodes, ["product-barcode"]));
+        return frame;
+    }
+
+    stockQtyBlock(frame, payload) {
+        let uom = {1: "Unités", 3: "Kilos", "11": "Litres", "21": "Kilos"};
+        let units_name = uom[payload.uomid] || "Unités";
+        frame.appendChild(this.textCellBuilder(
+            "<strong>En Stock:</strong> <span>"+round(payload.qty_virtual)+" "+units_name+"</span>",
+            ["product-stock"]
+        ));
         return frame;
     }
 
@@ -144,6 +163,12 @@ class ProductFactory {
         }
         product.classList.add("product", "border", this._dstate(payload));
         return product;
+    }
+
+    stockBuilder(payload) {
+        let product = document.createElement("div");
+        product.classList.add("product", "border", "normal");
+        return product
     }
 
     textCellBuilder(text, cls) {
