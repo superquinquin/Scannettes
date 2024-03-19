@@ -132,20 +132,20 @@ class Odoo(object):
             items = self.browse(
                 "stock.move", [("origin", "=", name), ("product_id.id", "=", id)]
             ).state
-            print(items)
             item_state = get_best_state(items)
         return item_state
 
     def prepare_product_from_record(self, product: Record, **kwargs) -> Dict[str, Any]:
         """from product.product and external to the purchase"""
+        pt = product.product_tmpl_id
         payload = {
             "pid": product.id,
-            "name": re.sub("\[.*?\]", "", self.get_name_translation(product)),
+            "name": re.sub("\[.*?\]", "", self.get_name_translation(pt)),
             "barcodes": self.get_barcodes(product),
             "qty": float(0),
-            "qty_virtual": float(0),
+            "qty_virtual": float(pt.virtual_available),
             "qty_package": float(0),
-            "uomid": product.product_tmpl_id.uom_id.id
+            "uomid": pt.uom_id.id
         }
         payload.update(kwargs)
         return payload
