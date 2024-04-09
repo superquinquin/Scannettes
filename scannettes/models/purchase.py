@@ -141,7 +141,8 @@ class Purchase(object):
             
         barcodes = payload.pop("barcodes", None)
         if barcodes and barcodes != product.barcodes:
-            [self.barcode_registry.pop(brcd) for brcd in product.barcodes]
+            # default pop to avoid keyerror on False barcodes
+            [self.barcode_registry.pop(brcd, None) for brcd in product.barcodes] 
             product.update({"barcodes": barcodes})
             self.register_barcodes(product)
             
