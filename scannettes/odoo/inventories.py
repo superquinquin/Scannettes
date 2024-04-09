@@ -118,8 +118,8 @@ class Inventories(Odoo):
             pid= product.id,
             name= re.sub("\[.*?\]", "", name).strip(),
             barcodes= self.get_barcodes(product),
-            qty = float(product.product_tmpl_id.virtual_available),
-            qty_virtual= float(product.product_tmpl_id.virtual_available),
+            qty = float(product.product_tmpl_id.qty_available),
+            qty_virtual= float(product.product_tmpl_id.qty_available),
             qty_package= float(0),
             uomid=product.product_tmpl_id.uom_id.id
         )
