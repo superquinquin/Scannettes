@@ -100,7 +100,10 @@ class Lobby(object):
         origin = context["origin"]
         for rid in context["rids"]:
             room = self.rooms.get(rid)
-            caption = {"id": room.data.name, "supplier": room.data.supplier.name}
+            caption = {"id": room.data.name, "supplier": ""}
+            if room.type == "purchase":
+                caption.update({"supplier": room.data.supplier.name})
+                
             qrcode = self._generate_qrcode(origin, room)
             payload["qrcodes"].append((qrcode, caption))
         return payload
