@@ -12,7 +12,8 @@ ERROR_MESSAGES = {
     "odoout": "Les produits suivant ne sont pas référencés dans Odoo. Veuillez les ajouter ou les supprimer de l'application.",
     "purout": "Les produits suivant n'ont pas été commandés. Veuillez les ajouter dans le bon de commande Odoo ou activer l'option pour que l'application rajoute automatiquement les produits.",
     "odostockinvfail": "Les produits suivant ne peuvent être ajouté à l'inventaire. Vérifiez sur Odoo qu'ils ne sont pas déjà dans un autre inventaire.",
-    "odostockinvlinefail": "L'application n'est pas configurée pour ajouter des lignes de produits."
+    "odostockinvlinefail": "L'application n'est pas configurée pour ajouter des lignes de produits.",
+    "odonopurchase": "La commande n'existe pas ou plus dans Odoo"
 }
 
 CHARS = ascii_lowercase + ascii_uppercase + digits

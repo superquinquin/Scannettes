@@ -30,6 +30,7 @@ class Deliveries(Odoo):
         
         self.export_pipeline = [
             self._check_product_odoo_existence,
+            self._check_purchase_existence,
             self._check_product_into_odoo_delivery,
             self._add_products_into_odoo_delivery,
             self._export_products
@@ -172,6 +173,12 @@ class Deliveries(Odoo):
     def _check_product_odoo_existence(self, payload: payload) -> payload:
         outsiders = payload["purchase"].get_unknown_active_done_products()
         payload.update({"valid": not any(outsiders), "failing": outsiders, "error_name": "odoout"})
+        return payload
+    
+    def _check_purchase_existence(self, payload: payload) -> payload:
+        p = self.get("purchase.order", [("id", "=", payload["purchase"].oid)])
+        if p is None:
+            payload.update({"valid": False, "failing": [], "error_name": "odonopurchase"})
         return payload
     
     def _check_product_into_odoo_delivery(self, payload: payload) -> payload:
