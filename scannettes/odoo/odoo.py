@@ -97,7 +97,7 @@ class Odoo(object):
         """get PT name or IR translation if any"""
         name = pt.name
         irt = self.browse("ir.translation", [("res_id", "=", pt.id), ("name", "=", "product.template,name")])
-        if irt:
+        if irt and irt[0].value != "":
             name = irt[0].value
         return name.strip()
     
