@@ -67,7 +67,7 @@ class Lobby(object):
     def delete_room(self, rid: str, inventories: Optional[Type]=None) -> None:
         room = self.rooms.pop(rid)
         room.data.associated_rid = None
-        if room.sibling:
+        if room.sibling is not None:
             other_rid = room.sibling
             self.rooms.get(other_rid).sibling = None
         if room.type == "inventory" and inventories:

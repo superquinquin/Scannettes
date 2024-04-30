@@ -131,8 +131,9 @@ def del_rooms(context):
     cache: Cache = current_app.cache
     lobby: Lobby = cache.lobby
     deliveries: Deliveries = cache.deliveries
+    inventories: Inventories = cache.inventories
     for rid in context["rids"]:
-        lobby.delete_room(rid)
+        lobby.delete_room(rid, inventories)
     sel_payload = {"state": "ok", "data": {"purchases": [pur.to_sel_tuple() for pur in deliveries.get_associable_purchases()]}}
     emit("del-rooms", {"state": "ok", "data": context}, include_self=True, broadcast=True, to="lobby")
     emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True, to="lobby")
