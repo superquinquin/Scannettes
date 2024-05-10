@@ -48,6 +48,11 @@ def admin_room(tok):
 def stock():
     return render_template("stock.html")
 
+@scannettes_bp.route("/stocks")
+def stocks():
+    return render_template("stocks.html")
+
+
 @scannettes_bp.route("/getProduct", methods=["POST"])
 def get_product():
     payload = request.json

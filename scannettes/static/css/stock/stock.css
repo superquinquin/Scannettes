@@ -118,6 +118,7 @@ section {
 /* CONTAINER */
 .container {
     background-color: var(--primary-shade);
+    min-height: 75px;
 }
 
 /* PLACEHOLDER */
@@ -240,3 +241,27 @@ section {
         transform: rotate(360deg);
     }
 }
+
+
+/* STOCKS */
+
+.admin-container {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.search {
+    display: inline-block;
+    width: 70%;
+}
+
+.wrapper {
+    width: 30%;
+    float: right;
+}
+
+.management {
+    display: inline-block;    
+    float: right;
+}
+

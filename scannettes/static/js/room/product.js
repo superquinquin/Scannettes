@@ -168,6 +168,12 @@ class ProductFactory {
     stockBuilder(payload) {
         let product = document.createElement("div");
         product.classList.add("product", "border", "normal");
+        let nonAttr = ["qty", "qty_package", "qty_preceived", "qty_virtual"];
+        for (var key in payload) {
+            if (!nonAttr.includes(key)) {
+                product.setAttribute(key, payload[key]);
+            }
+        }
         return product
     }
 

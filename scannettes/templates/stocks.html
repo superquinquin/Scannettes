@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" onclick="keepLaserFocus()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scannetttes | Stock</title>
+    <link rel="stylesheet" media="all" href="../static/css/common/header.css">
+    <link rel="stylesheet" media="all" href="../static/css/common/notifications.css">
+    <link rel="stylesheet" media="all" href="../static/css/common/components.css">
+    <link rel="stylesheet" media="all" href="../static/css/common/forms.css">
+    <link rel="stylesheet" media="all" href="../static/css/stock/stock.css">
+</head>
+<body >
+    <main>
+        <div class="header">
+            <div class="head-container">
+                <img class="head-elm" src="../static/misc/superquinquin_logo2.png">
+                <h1 id="title" class="head-elm">Scannettes</h1>
+            </div>
+        </div>
+        <div id="msg-box" class="fx"></div>
+        <section id="stocks-sections">
+            <div class="table-header-container">
+                <h2>Stocks</h2>
+            </div>
+            <input type="text" readonly="readonly" id="laser-output" onkeypress="RYaRdyYet(event)" onkeydown="getLaserOutput(event)">
+
+            <div class="admin-container">
+                <div class="search">
+                    <input class="searchbar border" type="text" placeholder="Rechercher un produit / code-barres..." onkeyup="searchProduct(this, 'stocks-sections')">
+                    <button class="reset-searchbar border" onclick="resetSearch('stocks-sections')">&#10006</button>
+                </div>
+                <div class="wrapper">
+                    <div class="management">
+                        <button class="del btn-small border" onclick="rmProduct()">Supprimer</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container border" id="stock">
+                <div class="placeholder-container"></div>
+                <div id="laser-loader"><div class="lds-ring"><div></div><div></div><div></div><div></div></div></div>
+                <div id="stock-products" class="scanned-products-container"></div>
+            </div>
+        </section>
+        
+    </main>
+    <script type="text/javascript" src="../static/js/common/notifications.js"></script>
+    <script type="text/javascript" src="../static/js/room/product.js"></script>
+    <script type="text/javascript" src="../static/js/room/searchbar.js"></script>
+    <script type="text/javascript" src="../static/js/stock/stocks.js"></script>
+</body>
+</html>
