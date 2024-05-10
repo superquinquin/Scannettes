@@ -1,6 +1,5 @@
 
 keepLaserFocus();
-rmProduct();
 addPlaceholder("stock");
 
 function keepLaserFocus() {
@@ -28,11 +27,14 @@ function RYaRdyYet(e) {
         let barcode = laser.value;
         let okL = checkBarcodeLength(barcode);
         let okChars = checkIntChars(barcode);
-        if (okL && okChars) {
+        let okscan =  isNotScannedYet(barcode);
+        if (okL && okChars && okscan) {
             laser.value = "";
             rmPlaceholder("stock");
-            // rmProduct();
             getProduct(barcode);
+        } else if (!okscan) {
+            laser.value = "";
+            new MsgFactory("msg-box", "err", "<strong>Produit déja scanné</strong>", true, 5000, 1000);
         } else if (!okChars || !okL) {
             laser.value = "";
             new MsgFactory("msg-box", "err", "<strong>Une erreur s'est produite lors du scanning. Veuillez recommencer.</strong>", true, 5000, 1000);
@@ -102,4 +104,24 @@ async function getProduct(barcode) {
 function rmProduct() {
     document.getElementById("stock-products").innerHTML = "";
     addPlaceholder("stock");
+}
+
+
+function isNotScannedYet(barcode) {
+    out = true;
+    if (getScannedBarcodes().includes(barcode)) {
+        out = false;
+    }
+    return out;
+}
+
+function getScannedBarcodes() {
+    const container = document.getElementById("stock");
+    let products = container.getElementsByClassName("product");
+    let scannedBarcodes = [];
+    Array.from(products).forEach(function(p) {
+        scannedBarcodes.push.apply(scannedBarcodes, p.getAttribute("barcodes").split(","));
+    });
+    console.log(scannedBarcodes);
+    return scannedBarcodes;
 }
