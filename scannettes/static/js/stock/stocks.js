@@ -122,6 +122,5 @@ function getScannedBarcodes() {
     Array.from(products).forEach(function(p) {
         scannedBarcodes.push.apply(scannedBarcodes, p.getAttribute("barcodes").split(","));
     });
-    console.log(scannedBarcodes);
     return scannedBarcodes;
 }

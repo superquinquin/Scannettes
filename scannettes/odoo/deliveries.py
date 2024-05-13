@@ -184,7 +184,7 @@ class Deliveries(Odoo):
     def _check_product_into_odoo_delivery(self, payload: payload) -> payload:
         odoo_base = self.browse("stock.move", [("origin", "=", payload["purchase"].name)])
         odoo_pids = set([p.product_id.id for p in odoo_base])
-        current_pids = set([p.pid for p in payload["purchase"].get_active_products()])
+        current_pids = set([p.pid for p in payload["purchase"].get_active_done_products()])
         outsiders = list(current_pids - odoo_pids)
         payload.update({"valid": True, "failing": outsiders, "error_name": "purout"})
         return payload

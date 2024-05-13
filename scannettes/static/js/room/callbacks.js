@@ -35,6 +35,7 @@ socket.on("room-initialization", function(context) {
 
     if (state != "open") {
         openAllCollapsers();
+        notifyProductInScannedList();
     }
 
 });
@@ -50,6 +51,13 @@ function setAutoval() {
 }
 
 //////////////////////////////  COLLAPSING BLOCKS
+function notifyProductInScannedList() {
+    const container = document.getElementById("scanned-products");
+    let nodes = container.getElementsByClassName("product");
+    if (nodes.length > 0) {
+        new MsgFactory("msg-box", "err", "<strong>Il reste un produit dans l'onglet du scanner!</strong>", false, 3000, 1000);
+    }
+}
 
 function openCollapser(elm) {
     elm.classList.toggle("active");
