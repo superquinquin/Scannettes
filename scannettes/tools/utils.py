@@ -12,7 +12,7 @@ ERROR_MESSAGES = {
     "odoout": "Les produits suivant ne sont pas référencés dans Odoo. Veuillez les ajouter ou les supprimer de l'application.",
     "purout": "Les produits suivant n'ont pas été commandés. Veuillez les ajouter dans le bon de commande Odoo ou activer l'option pour que l'application rajoute automatiquement les produits.",
     "odostockinvfail": "Les produits suivant ne peuvent être ajouté à l'inventaire. Vérifiez sur Odoo qu'ils ne sont pas déjà dans un autre inventaire.",
-    "odostockinvlinefail": "L'application n'est pas configurée pour ajouter des lignes de produits.",
+    "odostockinvlinefail": "L'application n'a pas pu crée la ligne d'inventaire des produits suivannts:",
     "odonopurchase": "La commande n'existe pas ou plus dans Odoo"
 }
 
@@ -84,7 +84,7 @@ def build_validation_error_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     for p in payload["failing"]:
         name = f"Produit inconnu ({p.barcodes[0]})"
         if p.pid:
-            name += f"{p.pid} - {p.name} ({p.barcodes[0]})"
+            name = f"{p.pid} - {p.name} ({p.barcodes[0]})"
         names.append(name)
     return {"faulty_products": names, "error_message": ERROR_MESSAGES[payload["error_name"]]}
 
