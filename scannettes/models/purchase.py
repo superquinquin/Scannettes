@@ -96,7 +96,7 @@ class Purchase(object):
         return [p for p in self.products if p.active]
     
     def get_active_done_products(self) -> list[Product]:
-        return [p for p in self.products if p.state.current() == "done"]
+        return [p for p in self.products if p.active and p.state.current() == "done"]
     
     def get_unknown_active_done_products(self) -> List[Product]:
         return [p for p in self.products if p._unknown and p.active and p.state.current() == "done"]
