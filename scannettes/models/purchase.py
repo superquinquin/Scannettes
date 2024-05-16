@@ -138,7 +138,7 @@ class Purchase(object):
     def update_product(
         self, product: Product, payload: Payload, with_initial: bool = False
     ) -> None:
-        if with_initial:
+        if with_initial and product._new is False:
             initial_product = self.retrieve_initial_product(product)
             initial_product.update(payload)
             
