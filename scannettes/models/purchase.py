@@ -94,10 +94,10 @@ class Purchase(object):
 
     def get_active_products(self) -> List[Product]:
         return [p for p in self.products if p.active]
-    
+
     def get_active_done_products(self) -> list[Product]:
         return [p for p in self.products if p.active and p.state.current() == "done"]
-    
+
     def get_unknown_active_done_products(self) -> List[Product]:
         return [p for p in self.products if p._unknown and p.active and p.state.current() == "done"]
 
@@ -141,14 +141,14 @@ class Purchase(object):
         if with_initial and product._new is False:
             initial_product = self.retrieve_initial_product(product)
             initial_product.update(payload)
-            
+
         barcodes = payload.pop("barcodes", None)
         if barcodes and barcodes != product.barcodes:
             # default pop to avoid keyerror on False barcodes
-            [self.barcode_registry.pop(brcd, None) for brcd in product.barcodes] 
+            [self.barcode_registry.pop(brcd, None) for brcd in product.barcodes]
             product.update({"barcodes": barcodes})
             self.register_barcodes(product)
-            
+
         pid = payload.pop("pid", None)
         if pid and pid != product.pid:
             product.update({"pid": pid})
@@ -164,33 +164,33 @@ class Purchase(object):
         self, products: List[RecordList], api: Type
     ) -> Payload:
         """Pid are supposed to be unique accross the purchased product list."""
-        
+
         for pur in products:
             pid = pur.product_id.id
             barcodes = api.get_barcodes(pur.product_id)
-            
+
             product = self.pid_registry.get(pid, None)
             if product is None:
                 res = list(filter(None,[self.barcode_registry.get(b, None) for b in barcodes]))
                 if res: product = res[0]
-            
+
             if product and pur.state == "cancel":
-                self.del_product(product, with_initial=True)   
-            
+                self.del_product(product, with_initial=True)
+
             elif product and pur.state != "cancel":
                 name = api.get_name_translation(pur.product_id.product_tmpl_id)
                 payload = {
-                    "pid": int(pid), 
-                    "name": name, 
-                    "barcodes": barcodes, 
-                    "qty": float(pur.product_qty), 
+                    "pid": int(pid),
+                    "name": name,
+                    "barcodes": barcodes,
+                    "qty": float(pur.product_qty),
                     "qty_package": float(pur.product_qty_package),
                     "_new": False,
                     "_unknown": False}
                 if product.state.current() in ["initial", "scanned"]:
                     payload.update({"qty_received": float(pur.product_qty)})
                 self.update_product(product, payload, with_initial=True)
-            
+
             elif product is None:
                 product = api.product_factory(pur)
                 self.add_product(product, with_initial=True)
@@ -223,8 +223,8 @@ class Purchase(object):
         product = api.search_product_from_barcode(context["barcode"])
         if product:
             payload = api.prepare_product_from_record(
-                product, 
-                _new=True, 
+                product,
+                _new=True,
                 _scanned=True,
                 state = State(ProductState, 2)
             )
@@ -265,29 +265,29 @@ class Purchase(object):
     def is_validated(self):
         self.state.bump_to("received")
         self.process_state.bump_to("done")
-        
+
     def display_name(self) -> str:
         return f"{self.name} - {self.supplier.name}"
-    
+
     def to_sel_tuple(self) -> Tuple[int, str]:
         return (self.oid, self.display_name())
-    
+
 
 class Inventory(Purchase):
     """
-    
+
     Attr:
         :catid:
         :catname:
         :sibling:
         Purchase attributes
-    
+
     """
     def __init__(
         self,
         *,
         oid: int,
-        catid: Optional[int] = None, 
+        catid: Optional[int] = None,
         name: str = "",
         sibling: Optional[int] = None,
         state: Optional[State] = None,
@@ -310,12 +310,12 @@ class Inventory(Purchase):
         self.name = name
         self.sibling = sibling
         self.build_registeries()
-    
+
     def assembler(self, other: Inventory) -> None:
-        """Product of both should be deepcopy do that uuid are the same."""   
+        """Product of both should be deepcopy do that uuid are the same."""
         verified_others = [p for p in other.products if p.state.current() == "done"]
         for product in verified_others:
-            ref = self.uuid_registry.get(product.uuid, None)
+            ref = self.uuid_registry.get(product.uuid, None) or self.pid_registry.get(product.pid, None)
             if ref:
                 ref.qty_received += product.qty_received
                 ref.state.take_max(product.state)
