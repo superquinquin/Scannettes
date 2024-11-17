@@ -113,8 +113,12 @@ class Purchase(object):
     def get_scanned_products(self) -> List[Product]:
         return [p for p in self.uuid_registry.values() if p._scanned]
 
-    def retrieve_initial_product(self, product: Product) -> Product:
-        return [p for p in self._initial_products if p.uuid == product.uuid][0]
+    def retrieve_initial_product(self, product: Product) -> Product | None:
+        ref = [p for p in self._initial_products if p.uuid == product.uuid]
+        if len(ref) > 0:
+            return ref[0]
+        return None
+
 
     def update(self, payload: Payload) -> None:
         update_object(self, payload)
@@ -132,15 +136,19 @@ class Purchase(object):
         self.products.pop(self.products.index(product))
         if with_initial:
             initial_product = self.retrieve_initial_product(product)
-            index = self._initial_products.index(initial_product)
-            self._initial_products.pop(index)
+            if initial_product is not None:
+                index = self._initial_products.index(initial_product)
+                self._initial_products.pop(index)
 
     def update_product(
         self, product: Product, payload: Payload, with_initial: bool = False
     ) -> None:
         if with_initial and product._new is False:
             initial_product = self.retrieve_initial_product(product)
-            initial_product.update(payload)
+            if initial_product is not None:
+                initial_product.update(payload)
+            else:
+                self._initial_products.append(product)
 
         barcodes = payload.pop("barcodes", None)
         if barcodes and barcodes != product.barcodes:
