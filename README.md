@@ -1,29 +1,7 @@
 # Scannettes
 Open source Flask webapp for delivieries and inventory management for COOP with an ODOO backend.
 
-* [Guideslines](#Contributions-Guideslines)
-  * [How to contribute](#How-to-contribute)
-  * [Dev setup](#Dev-setup)
-  * [On what to contribute](#On-what-to-contribute)
-* [Installation](#Installation)
-  * [Setup](#Setup)
-  * [Configuration](#Configuration)
-  * [Docker-compose](#Docker-compose)
-  * [Launching](#Launching)
 
-
-## Contributions Guideslines
-All development efforts are put into v1.0 branch, unless we need to fix a bug in production.
-
-### How to contribute
-* Create a branch based on v1.0. name your branch after the feature/fix you want to implement. prefix the branch witht the kind of change you will add ( feature/xxx ; fix/xxx ; etc.. )
-* For any contribution over the python parts, make sure to use formatter such as [BLack Formatter](https://github.com/psf/black) and [Flake8 Linter](https://github.com/PyCQA/flake8)
-  * Some pre-commit hooks will be added when I have the time to switch from pipenv to Poetry build.
-*  Similarly for JS however, I don't know any tools nor did proper formatting myself yet.
-*  Format your commits using tools such as [Commitizen](https://github.com/commitizen/cz-cli) or any equivalent tools.
-*  PR must heads towards the v1.0 branch
-
-### Dev setup
 
 On root
 ```bash
@@ -35,21 +13,6 @@ chmod 777 volume
 when builded, you can `poetry shell` to enable the project venv.
 
 For launching the application `bash boot.sh`.
-
-### On what to contribute
-Maybe those points will pop as Github issues if I have the time.
-
-**Backend**
-* [ ] make Odoo auto validation works for purchases.
-* [ ] Config validation ( probably in CUE lang )
-* [ ] maybe extension 
-* [ ] maybe data validation during events
-
-**Frontend**
-* [ ] setup camera scanning
-
-**Testing**
-* Continue testing if app works properly. Soon deployment.
 
 ## Installation
 ### Setup
