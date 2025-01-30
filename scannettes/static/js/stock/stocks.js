@@ -101,10 +101,7 @@ async function getProduct(barcode) {
     }
 }  
 
-function rmProduct() {
-    document.getElementById("stock-products").innerHTML = "";
-    addPlaceholder("stock");
-}
+
 
 
 function isNotScannedYet(barcode) {
@@ -123,4 +120,30 @@ function getScannedBarcodes() {
         scannedBarcodes.push.apply(scannedBarcodes, p.getAttribute("barcodes").split(","));
     });
     return scannedBarcodes;
+}
+
+function delProducts() {
+    const container = document.getElementById("stock-products");
+    let nodes = container.getElementsByClassName("product");
+    let selected = [];
+    for (node of nodes) {
+        let box = node.getElementsByClassName("pcheck")[0];
+        if (box.checked) {
+            selected.push(node);
+
+        }
+    }
+    for (node of selected) {
+        node.remove();
+    }
+
+    nodes = container.getElementsByClassName("product");
+    if (nodes.length == 0) {
+        addPlaceholder("stock");
+    }
+}
+
+function rmProduct() {
+    document.getElementById("stock-products").innerHTML = "";
+    addPlaceholder("stock");
 }

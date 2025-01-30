@@ -35,8 +35,7 @@ class ProductFactory {
         if (isStock) {
             let container = document.getElementById("stock-products"); 
             let product = this.stockBuilder(payload);
-            product.appendChild(this.textCellBuilder(payload.name, ["product-name"]));
-            product.appendChild(this.textCellBuilder(payload.barcodes[0], ["product-barcode"]));
+            product = this.infoBlock(product, payload);
             product = this.stockQtyBlock(product, payload);
             container.appendChild(product);
             return;
@@ -63,7 +62,7 @@ class ProductFactory {
         let uom = {1: "Unités", 3: "Kilos", "11": "Litres", "21": "Kilos"};
         let units_name = uom[payload.uomid] || "Unités";
         frame.appendChild(this.textCellBuilder(
-            "<strong>En Stock:</strong> <span>"+round(payload.qty_virtual)+" "+units_name+"</span>",
+            "<strong>En Stock:</strong><span>&#10240;"+round(payload.qty_virtual)+" "+units_name+"</span>",
             ["product-stock"]
         ));
         return frame;
@@ -166,8 +165,12 @@ class ProductFactory {
     }
 
     stockBuilder(payload) {
+        let state = "normal";
+        if (payload.qty_virtual <= 0) {
+            state = "unknown";
+        }
         let product = document.createElement("div");
-        product.classList.add("product", "border", "normal");
+        product.classList.add("product", "border", state);
         let nonAttr = ["qty", "qty_package", "qty_preceived", "qty_virtual"];
         for (var key in payload) {
             if (!nonAttr.includes(key)) {
