@@ -37,7 +37,7 @@ class ProductFactory {
             let product = this.stockBuilder(payload);
             product = this.infoBlock(product, payload);
             product = this.stockQtyBlock(product, payload);
-            container.appendChild(product);
+            container.insertBefore(product, container.firstChild)
             return;
         }
 
