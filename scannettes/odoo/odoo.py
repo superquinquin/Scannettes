@@ -105,34 +105,26 @@ class Odoo(object):
         """Search for purchase picking state
         :states: None < Cancel < assigned < done
         """
-        try:
-            picking_state = "draft"
-            picking = self.get("stock.picking", [("origin", "=", name)])
-            if picking:
-                picking_state = picking.state
-                
-        except ValueError:
-            picking = self.browse("stock.picking", [("origin", "=", name)]).state
+        picking_state = "draft"
+        picking = self.browse("stock.picking", [("origin", "=", name)]).state
+        if len(picking) > 1:
             picking_state = get_best_state(picking)
+        elif len(picking) == 1:
+            picking_state = picking[0]
         return picking_state
 
     def get_item_state(self, name: str, id: int) -> str:
         """Search for item state in a purchase
         :states: None < Cancel < assigned < done
         """
-        try:
-            item_state = "none"
-            item = self.get(
-                "stock.move", [("origin", "=", name), ("product_id.id", "=", id)]
-            )
-            if item:
-                item_state = item.state
-
-        except ValueError:
-            items = self.browse(
-                "stock.move", [("origin", "=", name), ("product_id.id", "=", id)]
-            ).state
+        item_state = "none"
+        items = self.browse(
+            "stock.move", [("origin", "=", name), ("product_id.id", "=", id)]
+        ).state
+        if len(items) > 1:
             item_state = get_best_state(items)
+        elif len(items) == 1:
+            item_state = items[0]
         return item_state
 
     def prepare_product_from_record(self, product: Record, **kwargs) -> Dict[str, Any]:

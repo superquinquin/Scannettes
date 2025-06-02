@@ -38,8 +38,11 @@ def get_update_time_ceiling(last_update: datetime, delta: List[int]) -> datetime
 
 def get_best_state(states: List[str]) -> str:
     """used for stock.move ; stock.picking status system"""
-    status = {"cancel": 0, "assigned": 1, "done": 2}
-    return max([(s, status.get(s)) for s in states], key= lambda x: x[1])[0]
+    states = list(filter(None, states))
+    if len(states) == 0:
+        return "cancel"
+    status = {"draft": -1, "cancel": 0, "assigned": 1, "done": 2}
+    return max([(s, status.get(s, -1)) for s in states], key= lambda x: x[1])[0]
 
 
 def update_object(cls: object, payload: Dict[str, Any]) -> None:

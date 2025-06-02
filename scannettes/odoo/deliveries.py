@@ -47,6 +47,7 @@ class Deliveries(Odoo):
             raise KeyError("please configure odoo.delta_search_purchase")
         if erp is False:
             raise KeyError("You must configure odoo.erp payload")
+
         deliveries = cls(erp=erp, **init)
         deliveries.fetch_purchases(delta, lobby)
         return deliveries
@@ -77,15 +78,27 @@ class Deliveries(Odoo):
         keep track of purchased in "draft" state by referencing them as self.purchases keys ( value set to None )
         """        
         
+        # track purchases
         date_ceiling = get_update_time_ceiling(self.last_update, delta)
         cached_drafts = self.browse("purchase.order", [("id", "in", list(self.purchases.keys()))])
         new_purchases = self.browse("purchase.order", [("create_date", ">", date_ceiling)])
         purchases = cached_drafts + new_purchases
-        
+
+        # track purchases absent from the tracking
+        purchases_ids = [p.id for p in purchases]
+        deleted_purchases = [k for k in list(self.purchases.keys()) if k not in purchases_ids]
+
+        self.delete_untracked_purchases(deleted_purchases, lobby)
         self.purchase_factory(purchases, lobby, update)
         self.last_update = datetime.now().date().strftime("%Y-%m-%d %H:%M:%S")
 
 
+    def delete_untracked_purchases(self, purchases: list[int], lobby: Lobby) -> None:
+        for oid in purchases:
+            purchase = self.purchases.pop(oid, None)
+            rid = purchase.associated_rid
+            if rid:
+                lobby.delete_room(rid)
 
     def purchase_factory(self, purchases: RecordList, lobby: Lobby, update: bool=True) -> None:
         for pur in purchases:
@@ -104,7 +117,7 @@ class Deliveries(Odoo):
                     purchase = self.purchases.pop(oid, None)
                     rid = purchase.associated_rid
                     if rid:
-                        lobby.delete_room(rid) 
+                        lobby.delete_room(rid)
 
                 elif _picking_state == "done" and self.purchases.get(oid): # -- must contain the purchase
                     purchase = self.purchases.get(oid)
