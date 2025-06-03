@@ -96,9 +96,10 @@ class Deliveries(Odoo):
     def delete_untracked_purchases(self, purchases: list[int], lobby: Lobby) -> None:
         for oid in purchases:
             purchase = self.purchases.pop(oid, None)
-            rid = purchase.associated_rid
-            if rid:
-                lobby.delete_room(rid)
+            if purchase is not None:
+                rid = purchase.associated_rid
+                if rid:
+                    lobby.delete_room(rid)
 
     def purchase_factory(self, purchases: RecordList, lobby: Lobby, update: bool=True) -> None:
         for pur in purchases:
@@ -115,9 +116,10 @@ class Deliveries(Odoo):
 
                 if _picking_state == "cancel": # -- UNTESTED
                     purchase = self.purchases.pop(oid, None)
-                    rid = purchase.associated_rid
-                    if rid:
-                        lobby.delete_room(rid)
+                    if purchase is not None:
+                        rid = purchase.associated_rid
+                        if rid:
+                            lobby.delete_room(rid)
 
                 elif _picking_state == "done" and self.purchases.get(oid): # -- must contain the purchase
                     purchase = self.purchases.get(oid)
