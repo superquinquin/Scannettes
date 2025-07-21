@@ -130,12 +130,12 @@ class Deliveries(Odoo):
                         purchase.is_validated()
                         self.purchases.pop(oid)
                         
-                elif _picking_state == "assigned" and self.purchases.get(oid, False) and update: # -- UNTESTED
+                elif _picking_state == "assigned" and self.purchases.get(oid, False) not in [False, None] and update: # -- UNTESTED
                     self.recharge_purchase(oid)
 
                 elif (
                     _picking_state == "assigned"
-                    and self.purchases.get(oid, False) is False
+                    and self.purchases.get(oid, False) in [False, None]
                 ):
                     self.purchases[oid] = Purchase(
                         oid= oid,
