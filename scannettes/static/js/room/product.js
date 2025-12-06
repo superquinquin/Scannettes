@@ -272,6 +272,7 @@ function round(val) {
 
 
 function dstate(payload) {
+    console.log(payload);
     let cls = {0: "normal", 1: "modified", 2:  "new", 3: "unknown"};
     let purValues = {"_modified": 1, "_new": 2, "_unknown": 3}
     let invValues = {"sdiff": 1, "mdiff": 5, "xldiff": 10} // "ldiff": 10 "xldiff": 40 
@@ -295,7 +296,15 @@ function dstate(payload) {
     } else if (type === "inventory" && payload._unknown == true) {
         return "unknown";
     
-    } else if (type === "inventory" && state == "open") {
+    } else if (type === "inventory" && payload.state == "scanned" && payload._new) {
+        // color only meaningful for closed and assembled inventories.
+        return "new";
+    
+    } else if (type === "inventory" && payload.state == "initial") {
+        // color only meaningful for closed and assembled inventories.
+        return "normal";
+
+    } else if (type === "inventory" && payload.state == "open") {
         // color only meaningful for closed and assembled inventories.
         return "normal";
 

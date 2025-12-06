@@ -59,7 +59,7 @@ function getSelectedOptions(type) {
         object_id = parseInt(purchase.options[purchase.selectedIndex].value);
         object_name = purchase.options[purchase.selectedIndex].innerHTML;
     } else {
-        object_id = parseInt(inventory.options[inventory.selectedIndex].value);
+        object_id = inventory.options[inventory.selectedIndex].value;
         object_name = inventory.options[inventory.selectedIndex].innerHTML;
     }
     return [object_id, object_name]

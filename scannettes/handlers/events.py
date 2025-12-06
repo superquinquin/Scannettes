@@ -110,7 +110,7 @@ def add_room(context):
         emit("update-purchase-selector", sel_payload, include_self=True, broadcast=True, to="lobby")
         
     elif adding_type == "inventory":
-        context.update({"catid": context.get("oid")})
+        context.update({"catids": context.get("oid")})
         inventories.connect(**erp)
         invs = inventories.inventory_siblings_factory(**context)
         (shelf, stock) = lobby.room_sibling_factory(context, *invs)

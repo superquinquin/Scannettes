@@ -23,12 +23,12 @@ class Inventories(Odoo):
     def __init__(
         self,
         erp: payload,
-        categories: List[Tuple[str, int]]= [],
+        categories: List[Tuple[str, str]]= [],
         inventories: Dict[int, Optional[Inventory]]= {},
         last_update: Optional[datetime]= None
         ) -> None:
         super().__init__(erp)
-        self.categories: List[Tuple[str, int]] = categories
+        self.categories: List[Tuple[str, str]] = categories
         self.inventories: Dict[int, Optional[Inventory]] = inventories
         self.last_update: datetime = last_update
         
@@ -54,27 +54,54 @@ class Inventories(Odoo):
         return {"categories": self.categories, "inventories": self.inventories, "last_update": self.last_update}
 
     def import_categories(self) -> None:
-        cats = self.browse("product.category", [("create_date", ">", "1900-01-01 01:01:01")])
-        self.categories = sorted(
-            [(c.id, c.complete_name) for c in cats],
-            key=lambda x: x[1],
-            reverse=False,
-        )
+        categories = []
+        for cat in self.browse("product.category", [("create_date", ">", "1900-01-01 01:01:01")]):
+            path = list(filter(None, cat.parent_path.split("/")))
+            path_ids = [int(p) for p in path]
+            size = len(self.browse("product.template", [("categ_id", "=", cat.id)])) 
+            category = {
+                "id": cat.id, 
+                "name": cat.complete_name, 
+                "path": path, 
+                "path_ids": path_ids, 
+                "size": size
+            }
+            categories.append(category)
 
+        tree = []
+        for cat in categories:
+            name = cat.get("name")
+            cat_id = cat.get("id")
+            children = [str(cat_id)]
+            size = [cat.get("size")]
+            for other_cat in categories:
+                other_id = other_cat.get("id")
+                other_size = cat.get("size")
+                path_ids = other_cat.get("path_ids")
+                if cat_id in path_ids:
+                    size.append(other_size)
+                    children.append(str(other_id))
+
+            if sum(size) > 0:
+                ids = "/".join(list(set(children)))
+                tree.append((ids, name))
+
+        self.categories = sorted(tree, key= lambda x: x[1])
+ 
     def define_inventory_id(self) -> int:
         return max(self.inventories.keys(), default=0) + 1
 
     def inventory_factory(
         self, 
-        catid: Optional[int]= None, 
+        catids: Optional[str]= None, 
         from_sibling_factory: bool= True,
         **kwargs
         ) -> Inventory:
         _opt = {}
-        if catid:
-            _opt.update({"catid": catid, "name": [c for c in self.categories if c[0] == catid][0][1]})
-        if from_sibling_factory is False and catid:
-            _opt.update({"_initial_products": self.fetch_products(catid)})
+        if catids:
+            _opt.update({"catid": catids, "name": [c for c in self.categories if c[0] == catids][0][1]})
+        if from_sibling_factory is False and catids:
+            _opt.update({"_initial_products": self.fetch_products(catids)})
             
         oid = self.define_inventory_id()
         inventory = Inventory(
@@ -85,13 +112,13 @@ class Inventories(Odoo):
         self.inventories[oid] = inventory
         return inventory
 
-    def inventory_siblings_factory(self, catid: Optional[int]= None, **kwargs) -> Tuple[Inventory, Inventory]:
+    def inventory_siblings_factory(self, catids: Optional[str]= None, **kwargs) -> Tuple[Inventory, Inventory]:
         _products = []
-        if catid:
-            _products = self.fetch_products(catid)        
+        if catids:
+            _products = self.fetch_products(catids)        
 
-        shelf = self.inventory_factory(catid, kwargs)
-        stock = self.inventory_factory(catid, kwargs)
+        shelf = self.inventory_factory(catids, kwargs)
+        stock = self.inventory_factory(catids, kwargs)
         shelf.late_init(
             deepcopy(_products),
             shelf.name,
@@ -107,10 +134,15 @@ class Inventories(Odoo):
         self.inventories[stock.oid] = stock
         return (shelf, stock)
 
-    def fetch_products(self, catid: int) -> List[Product]:
-        tmpl_ids = self.browse("product.template", [("categ_id", "=", catid), ("active", "=", True)]).id
-        products = self.browse("product.product", [("product_tmpl_id", "in", tmpl_ids)])
-        return [self.product_factory(product) for product in products]
+    def fetch_products(self, path: str) -> List[Product]:
+        categ_ids = [int(cat_id) for cat_id in path.split("/")]
+        
+        products = []
+        for cat_id in categ_ids:
+            tmpl_ids = self.browse("product.template", [("categ_id", "=", cat_id), ("active", "=", True)]).id
+            cat_products = self.browse("product.product", [("product_tmpl_id", "in", tmpl_ids)])
+            products.extend([self.product_factory(product) for product in cat_products])
+        return products
 
     def product_factory(self, product: Record, **kwargs):
         name = self.get_name_translation(product.product_tmpl_id)
