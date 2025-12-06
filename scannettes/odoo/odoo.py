@@ -134,7 +134,7 @@ class Odoo(object):
             "pid": product.id,
             "name": re.sub("\[.*?\]", "", self.get_name_translation(pt)),
             "barcodes": self.get_barcodes(product),
-            "qty": float(0),
+            "qty": float(pt.qty_available),
             "qty_virtual": float(pt.qty_available),
             "qty_package": float(0),
             "uomid": pt.uom_id.id
