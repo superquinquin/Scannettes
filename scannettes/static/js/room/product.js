@@ -296,9 +296,9 @@ function dstate(payload) {
     } else if (type === "inventory" && payload._unknown == true) {
         return "unknown";
     
-    } else if (type === "inventory" && payload.state == "scanned" && payload._new) {
+    } else if (type === "inventory" && payload._new) {
         // color only meaningful for closed and assembled inventories.
-        return "new";
+        return "unknown";
     
     } else if (type === "inventory" && payload.state == "initial") {
         // color only meaningful for closed and assembled inventories.
