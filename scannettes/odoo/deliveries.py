@@ -35,9 +35,7 @@ class Deliveries(Odoo):
             self._add_products_into_odoo_delivery,
             self._export_products
         ]
-        
         self.connect(**erp)
-
 
     @classmethod
     def initialize(cls, odoo_configs: payload, lobby:Lobby, init: payload= {}, **kwargs) -> Deliveries:
@@ -107,8 +105,8 @@ class Deliveries(Odoo):
             name = pur.name
             _state = pur.state
             print(f"<{oid} - {name} : {_state}>")
-
-            if _state == "draft":
+            
+            if _state in ["sent", "draft"]:
                 self.purchases[oid] = None
 
             elif _state == "purchase":
